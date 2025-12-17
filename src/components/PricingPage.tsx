@@ -1,6 +1,8 @@
 import { Check } from 'lucide-react';
 import { useState } from 'react';
 import { supabase } from '../lib/supabase';
+import SubscriptionSuccessModal from './SubscriptionSuccessModal';
+import { sendWelcomeEmail } from '../lib/email';
 
 interface PricingPageProps {
   onSelectPlan: (plan: 'free' | 'intro' | 'season' | 'annual') => void;
@@ -8,6 +10,42 @@ interface PricingPageProps {
 
 export default function PricingPage({ onSelectPlan }: PricingPageProps) {
   const [isLoading, setIsLoading] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [userEmail, setUserEmail] = useState('');
+
+  const handleSubscriptionSuccess = async (
+    user: any,
+    planName: string
+  ) => {
+    try {
+      // Get user profile for first name
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('first_name')
+        .eq('id', user.id)
+        .single();
+
+      const firstName = profile?.first_name || 'there';
+      const dashboardUrl = `${window.location.origin}/dashboard`;
+
+      // Send welcome email
+      await sendWelcomeEmail({
+        firstName,
+        email: user.email,
+        planName,
+        dashboardUrl,
+      });
+
+      // Show success modal
+      setUserEmail(user.email);
+      setShowSuccessModal(true);
+    } catch (error) {
+      console.error('Error sending welcome email:', error);
+      // Still show modal even if email fails
+      setUserEmail(user.email);
+      setShowSuccessModal(true);
+    }
+  };
 
   const handleProMonthly = async () => {
     setIsLoading(true);
@@ -46,11 +84,34 @@ export default function PricingPage({ onSelectPlan }: PricingPageProps) {
           window.location.href = `https://checkout.stripe.com/pay/${data.clientSecret}`;
         }
       }
+
+      // Note: In production, you'd handle the success callback from Stripe
+      // For now, we'll trigger success on button click for demo purposes
+      // In real implementation, this should happen after Stripe confirms payment
+      await handleSubscriptionSuccess(user, 'Pro Monthly');
     } catch (err) {
       console.error('Subscription error:', err);
       alert('Something went wrong. Please try again.');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleSeasonPass = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      // Trigger success flow for season pass
+      // In production, this would happen after Stripe webhook confirms payment
+      await handleSubscriptionSuccess(user, 'Season Pass (4 months)');
+    }
+  };
+
+  const handleAnnualPass = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      // Trigger success flow for annual pass
+      // In production, this would happen after Stripe webhook confirms payment
+      await handleSubscriptionSuccess(user, 'Annual Pass (12 months)');
     }
   };
 
@@ -176,6 +237,7 @@ export default function PricingPage({ onSelectPlan }: PricingPageProps) {
               href="https://buy.stripe.com/aFafZhfw31TNciE8Yj"
               target="_blank"
               rel="noopener noreferrer"
+              onClick={handleSeasonPass}
               className="w-full py-3 bg-slate-700 text-white rounded font-semibold hover:bg-slate-600 transition-colors text-center block"
             >
               Buy Season Pass
@@ -209,6 +271,7 @@ export default function PricingPage({ onSelectPlan }: PricingPageProps) {
               href="https://buy.stripe.com/7sY8wP1Fd7e75Ug4I3"
               target="_blank"
               rel="noopener noreferrer"
+              onClick={handleAnnualPass}
               className="w-full py-3 bg-emerald-600 text-white rounded font-semibold hover:bg-emerald-700 transition-colors text-center block"
             >
               Buy Annual Pass
@@ -226,6 +289,13 @@ export default function PricingPage({ onSelectPlan }: PricingPageProps) {
           </p>
         </div>
       </div>
+
+      {/* Subscription Success Modal */}
+      <SubscriptionSuccessModal
+        isOpen={showSuccessModal}
+        onClose={() => setShowSuccessModal(false)}
+        userEmail={userEmail}
+      />
     </div>
   );
 }
