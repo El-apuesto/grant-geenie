@@ -1,11 +1,104 @@
-// Email service using Resend for Grant Genie onboarding
-// This module handles transactional emails sent during user onboarding
+import { Resend } from 'resend';
+
+// Initialize Resend with API key from environment
+const resend = new Resend(import.meta.env.VITE_RESEND_API_KEY);
+
+interface EmailOptions {
+  to: string;
+  subject: string;
+  html: string;
+}
+
+/**
+ * Send an email using Resend
+ * @param options Email configuration
+ * @returns Promise with email response
+ */
+export async function sendEmail({ to, subject, html }: EmailOptions) {
+  try {
+    const { data, error } = await resend.emails.send({
+      from: 'Grant Hustle <onboarding@granthustle.com>',
+      to,
+      subject,
+      html,
+    });
+
+    if (error) {
+      console.error('Resend email error:', error);
+      throw new Error(`Failed to send email: ${error.message}`);
+    }
+
+    return { success: true, data };
+  } catch (err) {
+    console.error('Email service error:', err);
+    throw err;
+  }
+}
 
 interface WelcomeEmailParams {
   firstName: string;
   email: string;
   planName: string;
   dashboardUrl: string;
+}
+
+/**
+ * Send welcome email (Email 1) after subscription
+ */
+export async function sendWelcomeEmail({
+  firstName,
+  email,
+  planName,
+  dashboardUrl,
+}: WelcomeEmailParams) {
+  const subject = 'Your Grant Hustle receipt & what's next';
+  
+  const html = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <style>
+          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: white; padding: 30px 20px; text-align: center; border-radius: 8px 8px 0 0; }
+          .content { background: #ffffff; padding: 30px 20px; border-left: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0; }
+          .button { display: inline-block; background: #10b981; color: white; padding: 14px 28px; text-decoration: none; border-radius: 6px; font-weight: 600; margin: 20px 0; }
+          .footer { background: #f8fafc; padding: 20px; text-align: center; font-size: 14px; color: #64748b; border-radius: 0 0 8px 8px; border: 1px solid #e2e8f0; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1 style="margin: 0; font-size: 28px;">Welcome to Grant Hustle</h1>
+          </div>
+          <div class="content">
+            <p>Hi ${firstName},</p>
+            
+            <p>Thank you for subscribing to Grant Hustle — your new helper for finding and managing grants across the U.S. This email confirms your subscription to the <strong>${planName}</strong> plan and serves as your receipt. Your account is now ready so you can explore grant matches, track applications, and stay ahead of every deadline from one simple dashboard.</p>
+            
+            <p>In a little while, you'll receive a second email from Grant Hustle that walks you through your dashboard and shows you how to get more out of your matches. That short tour email will include a link that takes you straight into the app, where <strong>The Grant Genie</strong> (our small green mascot) will guide you step‑by‑step.</p>
+            
+            <p>For now, you can log in anytime to start browsing your matches and saving promising grants:</p>
+            
+            <div style="text-align: center;">
+              <a href="${dashboardUrl}" class="button">Go to your Grant Hustle dashboard</a>
+            </div>
+            
+            <p>Thanks again for trusting Grant Hustle to simplify your funding process.</p>
+            
+            <p>Warmly,<br>The Grant Hustle Team</p>
+          </div>
+          <div class="footer">
+            <p>You received this email because you subscribed to Grant Hustle.</p>
+          </div>
+        </div>
+      </body>
+    </html>
+  `;
+
+  return sendEmail({ to: email, subject, html });
 }
 
 interface MatchesEmailParams {
@@ -15,216 +108,74 @@ interface MatchesEmailParams {
   dashboardTourUrl: string;
 }
 
-const RESEND_API_KEY = import.meta.env.VITE_RESEND_API_KEY;
-const FROM_EMAIL = 'Grant Genie <noreply@grantgeenie.com>';
-
-// Email subject options for welcome email
-const WELCOME_SUBJECTS = [
-  'Your Grant Genie receipt & what\'s next',
-  'Welcome to Grant Genie — your grant helper is ready',
-  'You\'re in! Grant Genie is now working for you',
-  'Grant Genie receipt inside + a quick heads-up',
-  'Thanks for subscribing to Grant Genie'
-];
-
-// Email subject options for matches email
-const MATCHES_SUBJECTS = [
-  'Your first grant matches are waiting in Grant Genie',
-  'Grant Genie found matches — ready for a quick tour?',
-  'See your grant pool, calendar, and more',
-  'Meet the Grant Genie on your dashboard',
-  'Take a 2-minute tour of your Grant Genie dashboard',
-  'Your Grant Genie tour: see matches, templates, and wins',
-  'Come back to your Grant Genie dashboard for a guided walkthrough'
-];
-
-// Generate welcome email HTML
-function generateWelcomeEmailHTML(params: WelcomeEmailParams): string {
-  return `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f4f4f4; }
-    .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; }
-    .header { background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 40px 20px; text-align: center; }
-    .genie-icon { width: 80px; height: 80px; margin: 0 auto 20px; }
-    .header h1 { color: #ffffff; margin: 0; font-size: 28px; }
-    .content { padding: 40px 30px; }
-    .content p { margin: 0 0 16px 0; color: #374151; }
-    .cta-button { display: inline-block; background-color: #10b981; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; margin: 24px 0; }
-    .cta-button:hover { background-color: #059669; }
-    .footer { padding: 30px; text-align: center; color: #6b7280; font-size: 14px; border-top: 1px solid #e5e7eb; }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <div class="header">
-      <div class="genie-icon">
-        <!-- Placeholder for Grant Genie icon/image -->
-        <div style="width: 80px; height: 80px; background-color: rgba(255,255,255,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 40px;">🧞</div>
-      </div>
-      <h1>Welcome to Grant Genie!</h1>
-    </div>
-    <div class="content">
-      <p>Hi ${params.firstName},</p>
-      
-      <p>Thank you for subscribing to Grant Genie — your new helper for finding and managing grants across the U.S. This email confirms your subscription to the <strong>${params.planName}</strong> plan and serves as your receipt. Your account is now ready so you can explore grant matches, track applications, and stay ahead of every deadline from one simple dashboard.</p>
-      
-      <p>In a little while, you'll receive a second email from Grant Genie that walks you through your dashboard and shows you how to get more out of your matches. That short tour email will include a link that takes you straight into the app, where the Grant Genie (our helpful mascot) will guide you step-by-step.</p>
-      
-      <p>For now, you can log in anytime to start browsing your matches and saving promising grants:</p>
-      
-      <div style="text-align: center;">
-        <a href="${params.dashboardUrl}" class="cta-button">Go to your Grant Genie dashboard →</a>
-      </div>
-      
-      <p>Thanks again for trusting Grant Genie to simplify your funding process.</p>
-      
-      <p>Warmly,<br>The Grant Genie Team</p>
-    </div>
-    <div class="footer">
-      <p>This email serves as your receipt for your Grant Genie subscription.</p>
-    </div>
-  </div>
-</body>
-</html>
-  `;
-}
-
-// Generate matches email HTML
-function generateMatchesEmailHTML(params: MatchesEmailParams): string {
-  const matchesText = params.matchesCount > 0 ? ` (you have ${params.matchesCount} so far)` : '';
+/**
+ * Send matches + tour invitation email (Email 2) after questionnaire completion
+ */
+export async function sendMatchesEmail({
+  firstName,
+  email,
+  matchesCount,
+  dashboardTourUrl,
+}: MatchesEmailParams) {
+  const subject = 'Your first grant matches are waiting in Grant Hustle';
   
-  return `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f4f4f4; }
-    .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; }
-    .header { background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 40px 20px; text-align: center; }
-    .genie-icon { width: 80px; height: 80px; margin: 0 auto 20px; }
-    .header h1 { color: #ffffff; margin: 0; font-size: 28px; }
-    .content { padding: 40px 30px; }
-    .content p { margin: 0 0 16px 0; color: #374151; }
-    .feature-list { background-color: #f9fafb; border-left: 4px solid #10b981; padding: 20px; margin: 24px 0; }
-    .feature-list ul { margin: 0; padding-left: 20px; }
-    .feature-list li { margin-bottom: 12px; color: #374151; }
-    .cta-button { display: inline-block; background-color: #10b981; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; margin: 24px 0; }
-    .cta-button:hover { background-color: #059669; }
-    .footer { padding: 30px; text-align: center; color: #6b7280; font-size: 14px; border-top: 1px solid #e5e7eb; }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <div class="header">
-      <div class="genie-icon">
-        <!-- Placeholder for Grant Genie icon/image -->
-        <div style="width: 80px; height: 80px; background-color: rgba(255,255,255,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 40px;">🧞</div>
-      </div>
-      <h1>Your Grant Matches Are Ready!</h1>
-    </div>
-    <div class="content">
-      <p>Hi ${params.firstName},</p>
-      
-      <p>Thanks again for joining Grant Genie — you've already completed your questionnaire and started seeing your first grant matches${matchesText}. Those matches are now saved on your dashboard, where you can track each opportunity from first idea to post-award reporting.</p>
-      
-      <div class="feature-list">
-        <p style="margin-top: 0; font-weight: 600;">On the guided tour, you'll see:</p>
-        <ul>
-          <li><strong>Grant pool</strong> – all of your matched and saved grants in one place, with statuses like Researching, LOI, Application, Awarded, or Declined.</li>
-          <li><strong>Fiscal sponsor partners</strong> – which fiscal sponsor is connected to each grant, so you can keep relationships and requirements straight.</li>
-          <li><strong>LOIs & applications</strong> – track every LOI and full proposal from "Not started" through "Submitted," with due dates, decision dates, and key documents.</li>
-          <li><strong>Templates library</strong> – best-practice starting points for LOIs, full proposals, budgets, and simple reports that you can copy, customize, and attach to grants.</li>
-          <li><strong>Wins & records</strong> – how many grants you've submitted, awarded, and declined, plus your success rate and total dollars requested and awarded.</li>
-          <li><strong>Calendar</strong> – LOI, application, and reporting deadlines automatically added so you can see all your key dates at a glance.</li>
-        </ul>
-      </div>
-      
-      <p>When you click the button below, the Grant Genie will appear on your dashboard and guide you through each of these sections with simple "Next" prompts. If you skip the tour now, you can always start it again later from inside the app.</p>
-      
-      <div style="text-align: center;">
-        <a href="${params.dashboardTourUrl}" class="cta-button">Meet the Grant Genie on your dashboard →</a>
-      </div>
-      
-      <p>See you inside Grant Genie,<br>The Grant Genie Team</p>
-    </div>
-    <div class="footer">
-      <p>Questions? Just reply to this email — we're here to help!</p>
-    </div>
-  </div>
-</body>
-</html>
+  const matchesText = matchesCount > 0 ? ` (you have ${matchesCount} so far)` : '';
+  
+  const html = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <style>
+          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: white; padding: 30px 20px; text-align: center; border-radius: 8px 8px 0 0; }
+          .content { background: #ffffff; padding: 30px 20px; border-left: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0; }
+          .feature-list { background: #f8fafc; padding: 20px; border-radius: 6px; margin: 20px 0; }
+          .feature-list ul { margin: 0; padding-left: 20px; }
+          .feature-list li { margin: 10px 0; }
+          .button { display: inline-block; background: #10b981; color: white; padding: 14px 28px; text-decoration: none; border-radius: 6px; font-weight: 600; margin: 20px 0; }
+          .footer { background: #f8fafc; padding: 20px; text-align: center; font-size: 14px; color: #64748b; border-radius: 0 0 8px 8px; border: 1px solid #e2e8f0; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1 style="margin: 0; font-size: 28px;">Your Grant Matches Are Ready!</h1>
+          </div>
+          <div class="content">
+            <p>Hi ${firstName},</p>
+            
+            <p>Thanks again for joining Grant Hustle — you've already completed your questionnaire and started seeing your first grant matches${matchesText}. Those matches are now saved on your dashboard, where you can track each opportunity from first idea to post‑award reporting.</p>
+            
+            <div class="feature-list">
+              <p style="margin-top: 0; font-weight: 600;">On the guided tour, you'll see:</p>
+              <ul>
+                <li><strong>Grant pool</strong> – all of your matched and saved grants in one place, with statuses like Researching, LOI, Application, Awarded, or Declined.</li>
+                <li><strong>Fiscal sponsor partners</strong> – which fiscal sponsor is connected to each grant, so you can keep relationships and requirements straight.</li>
+                <li><strong>LOIs & applications</strong> – track every LOI and full proposal from "Not started" through "Submitted," with due dates, decision dates, and key documents.</li>
+                <li><strong>Templates library</strong> – best‑practice starting points for LOIs, full proposals, budgets, and simple reports that you can copy, customize, and attach to grants.</li>
+                <li><strong>Wins & records</strong> – how many grants you've submitted, awarded, and declined, plus your success rate and total dollars requested and awarded.</li>
+                <li><strong>Calendar</strong> – LOI, application, and reporting deadlines automatically added so you can see all your key dates at a glance.</li>
+              </ul>
+            </div>
+            
+            <p>When you click the button below, <strong>The Grant Genie</strong> will appear on your dashboard and guide you through each of these sections with simple "Next" prompts. If you skip the tour now, you can always start it again later from inside the app.</p>
+            
+            <div style="text-align: center;">
+              <a href="${dashboardTourUrl}" class="button">Meet The Grant Genie on your dashboard</a>
+            </div>
+            
+            <p>See you inside Grant Hustle,<br>The Grant Hustle Team</p>
+          </div>
+          <div class="footer">
+            <p>You received this email because you completed the Grant Hustle questionnaire.</p>
+          </div>
+        </div>
+      </body>
+    </html>
   `;
-}
 
-// Send welcome email (Email 1)
-export async function sendWelcomeEmail(params: WelcomeEmailParams): Promise<{ success: boolean; error?: string }> {
-  try {
-    const subject = WELCOME_SUBJECTS[0]; // Use first subject as default
-    const html = generateWelcomeEmailHTML(params);
-    
-    const response = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${RESEND_API_KEY}`
-      },
-      body: JSON.stringify({
-        from: FROM_EMAIL,
-        to: params.email,
-        subject: subject,
-        html: html
-      })
-    });
-    
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error('Resend API error:', errorData);
-      return { success: false, error: errorData.message || 'Failed to send email' };
-    }
-    
-    return { success: true };
-  } catch (error) {
-    console.error('Error sending welcome email:', error);
-    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
-  }
-}
-
-// Send matches email (Email 2)
-export async function sendMatchesEmail(params: MatchesEmailParams): Promise<{ success: boolean; error?: string }> {
-  try {
-    const subject = MATCHES_SUBJECTS[0]; // Use first subject as default
-    const html = generateMatchesEmailHTML(params);
-    
-    const response = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${RESEND_API_KEY}`
-      },
-      body: JSON.stringify({
-        from: FROM_EMAIL,
-        to: params.email,
-        subject: subject,
-        html: html
-      })
-    });
-    
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error('Resend API error:', errorData);
-      return { success: false, error: errorData.message || 'Failed to send email' };
-    }
-    
-    return { success: true };
-  } catch (error) {
-    console.error('Error sending matches email:', error);
-    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
-  }
+  return sendEmail({ to: email, subject, html });
 }
