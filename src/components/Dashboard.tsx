@@ -3,7 +3,10 @@ import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { Grant, Profile } from '../types';
 import { getStateName } from '../lib/states';
-import { ExternalLink, LogOut } from 'lucide-react';
+import { ExternalLink, LogOut, Lamp } from 'lucide-react';
+import ProductTour from './ProductTour';
+import HelpButton from './HelpButton';
+import { useTour } from '../hooks/useTour';
 
 export default function Dashboard() {
   const { user, signOut } = useAuth();
@@ -11,6 +14,8 @@ export default function Dashboard() {
   const [grants, setGrants] = useState<Grant[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+
+  const { isTourActive, startTour, completeTour, skipTour } = useTour();
 
   useEffect(() => {
     loadProfile();
@@ -80,18 +85,32 @@ export default function Dashboard() {
       <div className="border-b border-slate-700 bg-slate-900/50 backdrop-blur-sm sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
           <div>
-            <h1 className="text-2xl font-bold text-white">Grant Geenie</h1>
+            <h1 className="text-2xl font-bold text-white">Grant Hustle</h1>
             <p className="text-slate-400 text-sm">
               {profile && `${getStateName(profile.state)} • ${profile.org_type}`}
             </p>
           </div>
-          <button
-            onClick={handleSignOut}
-            className="flex items-center gap-2 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition"
-          >
-            <LogOut className="w-4 h-4" />
-            Sign Out
-          </button>
+          <div className="flex items-center gap-3">
+            {/* Genie Lamp Icon */}
+            <button
+              id="genie-lamp-icon"
+              onClick={startTour}
+              className="p-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors group relative"
+              title="Summon The Grant Genie for help"
+            >
+              <Lamp className="w-5 h-5" />
+              <span className="absolute -top-8 right-0 bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                Need help?
+              </span>
+            </button>
+            <button
+              onClick={handleSignOut}
+              className="flex items-center gap-2 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition"
+            >
+              <LogOut className="w-4 h-4" />
+              Sign Out
+            </button>
+          </div>
         </div>
       </div>
 
@@ -103,74 +122,181 @@ export default function Dashboard() {
           </div>
         )}
 
-        <div className="mb-8">
-          <h2 className="text-3xl font-bold text-white mb-2">
-            Grants Matching Your Profile
-          </h2>
-          <p className="text-slate-400">
-            Showing {grants.length} opportunities for {profile?.org_type} in {profile && getStateName(profile.state)}
-          </p>
-        </div>
-
-        {grants.length === 0 ? (
-          <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-12 text-center">
-            <p className="text-slate-300 text-lg">No grants found yet.</p>
-            <p className="text-slate-400 mt-2">Check back soon as we add more opportunities!</p>
+        {/* Grant Pool Section */}
+        <section id="grant-pool-section" className="mb-12">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-3xl font-bold text-white mb-2">Grant Pool</h2>
+              <p className="text-slate-400">
+                Showing {grants.length} opportunities for {profile?.org_type} in{' '}
+                {profile && getStateName(profile.state)}
+              </p>
+            </div>
+            <HelpButton
+              sectionName="Grant Pool"
+              content="All your matched and saved grants live here. Use statuses like Researching, LOI, Application, Awarded, and Declined to track where each opportunity stands."
+            />
           </div>
-        ) : (
-          <div className="grid gap-6">
-            {grants.map(grant => (
-              <div
-                key={grant.id}
-                className="bg-slate-800/50 border border-slate-700 rounded-lg p-6 hover:border-emerald-500/30 transition"
-              >
-                <div className="flex justify-between items-start mb-3">
-                  <div className="flex-1">
-                    <h3 className="text-xl font-bold text-white mb-1">{grant.title}</h3>
-                    <p className="text-slate-400 text-sm">{grant.description}</p>
-                  </div>
-                  <div className="text-right ml-4">
-                    <div className="text-2xl font-bold text-emerald-400">
-                      ${(grant.amount / 1000).toFixed(0)}K
+
+          {grants.length === 0 ? (
+            <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-12 text-center">
+              <p className="text-slate-300 text-lg">No grants found yet.</p>
+              <p className="text-slate-400 mt-2">
+                Check back soon as we add more opportunities!
+              </p>
+            </div>
+          ) : (
+            <div className="grid gap-6">
+              {grants.map((grant) => (
+                <div
+                  key={grant.id}
+                  className="bg-slate-800/50 border border-slate-700 rounded-lg p-6 hover:border-emerald-500/30 transition"
+                >
+                  <div className="flex justify-between items-start mb-3">
+                    <div className="flex-1">
+                      <h3 className="text-xl font-bold text-white mb-1">
+                        {grant.title}
+                      </h3>
+                      <p className="text-slate-400 text-sm">{grant.description}</p>
                     </div>
-                    <p className="text-slate-400 text-xs">Funding</p>
+                    <div className="text-right ml-4">
+                      <div className="text-2xl font-bold text-emerald-400">
+                        ${(grant.amount / 1000).toFixed(0)}K
+                      </div>
+                      <p className="text-slate-400 text-xs">Funding</p>
+                    </div>
                   </div>
-                </div>
 
-                <div className="flex flex-wrap gap-2 mb-4">
-                  {grant.org_types.map(type => (
-                    <span
-                      key={type}
-                      className="px-3 py-1 bg-emerald-600/20 border border-emerald-500/30 text-emerald-400 text-xs rounded-full"
-                    >
-                      {type}
-                    </span>
-                  ))}
-                </div>
-
-                <div className="flex justify-between items-center">
-                  <div>
-                    <p className="text-slate-400 text-sm">
-                      Deadline: <span className="text-white font-semibold">
-                        {new Date(grant.deadline).toLocaleDateString()}
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    {grant.org_types.map((type) => (
+                      <span
+                        key={type}
+                        className="px-3 py-1 bg-emerald-600/20 border border-emerald-500/30 text-emerald-400 text-xs rounded-full"
+                      >
+                        {type}
                       </span>
-                    </p>
+                    ))}
                   </div>
-                  <a
-                    href={grant.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition"
-                  >
-                    <span>View Grant</span>
-                    <ExternalLink className="w-4 h-4" />
-                  </a>
+
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <p className="text-slate-400 text-sm">
+                        Deadline:{' '}
+                        <span className="text-white font-semibold">
+                          {new Date(grant.deadline).toLocaleDateString()}
+                        </span>
+                      </p>
+                    </div>
+                    <a
+                      href={grant.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition"
+                    >
+                      <span>View Grant</span>
+                      <ExternalLink className="w-4 h-4" />
+                    </a>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
+          )}
+        </section>
+
+        {/* Fiscal Sponsor Partners Section */}
+        <section id="fiscal-sponsors-section" className="mb-12">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-2xl font-bold text-white">Fiscal Sponsor Partners</h2>
+            <HelpButton
+              sectionName="Fiscal Sponsor Partners"
+              content="See which fiscal sponsor is connected to each grant. Keep those relationships and requirements up to date in one place."
+            />
           </div>
-        )}
+          <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-8 text-center">
+            <p className="text-slate-400">No fiscal sponsors added yet.</p>
+          </div>
+        </section>
+
+        {/* LOIs & Applications Section */}
+        <section id="lois-applications-section" className="mb-12">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-2xl font-bold text-white">LOIs & Applications</h2>
+            <HelpButton
+              sectionName="LOIs & Applications"
+              content="Track every LOI and full application with status, due dates, submitted dates, and linked documents all in one place."
+            />
+          </div>
+          <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-8 text-center">
+            <p className="text-slate-400">No applications in progress yet.</p>
+          </div>
+        </section>
+
+        {/* Templates Library Section */}
+        <section id="templates-section" className="mb-12">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-2xl font-bold text-white">Templates Library</h2>
+            <HelpButton
+              sectionName="Templates Library"
+              content="Best-practice examples for LOIs, full proposals, budgets, and reports. Start from a template, customize it, and attach it to your grant."
+            />
+          </div>
+          <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-8 text-center">
+            <p className="text-slate-400">Templates coming soon.</p>
+          </div>
+        </section>
+
+        {/* Wins & Records Section */}
+        <section id="wins-records-section" className="mb-12">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-2xl font-bold text-white">Wins & Records</h2>
+            <HelpButton
+              sectionName="Wins & Records"
+              content="Track grants submitted, awarded, and declined, plus your success rate and total dollars requested and awarded over time."
+            />
+          </div>
+          <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-8">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+              <div>
+                <div className="text-3xl font-bold text-emerald-400">0</div>
+                <div className="text-slate-400 text-sm">Submitted</div>
+              </div>
+              <div>
+                <div className="text-3xl font-bold text-emerald-400">0</div>
+                <div className="text-slate-400 text-sm">Awarded</div>
+              </div>
+              <div>
+                <div className="text-3xl font-bold text-slate-400">0</div>
+                <div className="text-slate-400 text-sm">Declined</div>
+              </div>
+              <div>
+                <div className="text-3xl font-bold text-emerald-400">$0</div>
+                <div className="text-slate-400 text-sm">Total Awarded</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Calendar Section */}
+        <section id="calendar-section" className="mb-12">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-2xl font-bold text-white">Calendar</h2>
+            <HelpButton
+              sectionName="Calendar"
+              content="LOI, application, and reporting deadlines automatically added as you update grants. Plan your workload and avoid last-minute rushes."
+            />
+          </div>
+          <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-8 text-center">
+            <p className="text-slate-400">No upcoming deadlines.</p>
+          </div>
+        </section>
       </div>
+
+      {/* Product Tour */}
+      <ProductTour
+        isActive={isTourActive}
+        onComplete={completeTour}
+        onSkip={skipTour}
+      />
     </div>
   );
 }
