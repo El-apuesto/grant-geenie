@@ -18,50 +18,50 @@ export default function Dashboard() {
   const { isTourActive, startTour, completeTour, skipTour } = useTour();
 
   useEffect(() => {
+    if (!user) return;
+    
+    const loadProfile = async () => {
+      try {
+        const { data, error: err } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .maybeSingle();
+
+        if (err) throw err;
+        if (data) setProfile(data);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load profile');
+      }
+    };
+
     loadProfile();
   }, [user]);
 
   useEffect(() => {
-    if (profile?.state) {
-      loadGrants(profile.state);
-    }
-  }, [profile]);
+    if (!profile?.state) return;
+    
+    const loadGrants = async () => {
+      try {
+        setLoading(true);
+        const { data, error: err } = await supabase
+          .from('grants')
+          .select('*')
+          .or(`state.eq.${profile.state},state.is.null`)
+          .order('deadline', { ascending: true })
+          .limit(20);
 
-  const loadProfile = async () => {
-    if (!user) return;
+        if (err) throw err;
+        setGrants(data || []);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load grants');
+      } finally {
+        setLoading(false);
+      }
+    };
 
-    try {
-      const { data, error: err } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .maybeSingle();
-
-      if (err) throw err;
-      if (data) setProfile(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load profile');
-    }
-  };
-
-  const loadGrants = async (state: string) => {
-    try {
-      setLoading(true);
-      const { data, error: err } = await supabase
-        .from('grants')
-        .select('*')
-        .or(`state.eq.${state},state.is.null`)
-        .order('deadline', { ascending: true })
-        .limit(20);
-
-      if (err) throw err;
-      setGrants(data || []);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load grants');
-    } finally {
-      setLoading(false);
-    }
-  };
+    loadGrants();
+  }, [profile?.state]);
 
   const handleSignOut = async () => {
     try {
