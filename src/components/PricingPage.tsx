@@ -133,7 +133,7 @@ export default function PricingPage({ onSelectPlan }: PricingPageProps) {
           <div className="bg-slate-800 border-2 border-slate-700 rounded-lg p-6">
             <h3 className="text-lg font-semibold text-white mb-2">Annual Pass</h3>
             <div className="mb-4">
-              <span className="text-3xl font-bold text-white">$149.99</span>
+              <span className="text-3xl font-bold text-white">$199.99</span>
               <span className="text-slate-400 block text-sm">one-time payment</span>
             </div>
             <ul className="space-y-3 mb-6">
@@ -147,7 +147,7 @@ export default function PricingPage({ onSelectPlan }: PricingPageProps) {
               </li>
               <li className="flex items-start gap-2 text-slate-300">
                 <Check className="w-5 h-5 text-emerald-500 flex-shrink-0 mt-0.5" />
-                <span>Save $185/year</span>
+                <span>Save $135/year vs monthly</span>
               </li>
             </ul>
             <a
