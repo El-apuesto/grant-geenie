@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { US_STATES } from '../lib/states';
+import { sendMatchesEmail } from '../lib/email';
 
 interface QuestionnaireProps {
   onComplete: () => void;
@@ -86,12 +87,44 @@ export default function Questionnaire({ onComplete }: QuestionnaireProps) {
     setError('');
 
     try {
+      // Save profile
       await supabase.from('profiles').upsert({
         id: user.id,
         org_type: answers.org_type,
         state: answers.state,
         questionnaire_completed: true,
       });
+
+      // Get user profile for first name and email
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('first_name')
+        .eq('id', user.id)
+        .single();
+
+      // Count grant matches for the user's state
+      const { count: matchesCount } = await supabase
+        .from('grants')
+        .select('*', { count: 'exact', head: true })
+        .or(`state.eq.${answers.state},state.is.null`);
+
+      // Send matches email with tour invitation
+      const firstName = profile?.first_name || 'there';
+      const dashboardTourUrl = `${window.location.origin}/dashboard?tour=genie`;
+
+      try {
+        await sendMatchesEmail({
+          firstName,
+          email: user.email!,
+          matchesCount: matchesCount || 0,
+          dashboardTourUrl,
+        });
+      } catch (emailError) {
+        // Log email error but don't block completion
+        console.error('Failed to send matches email:', emailError);
+      }
+
+      // Complete questionnaire and navigate to dashboard
       onComplete();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save answers');
