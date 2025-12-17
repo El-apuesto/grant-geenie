@@ -1,7 +1,19 @@
 import { Resend } from 'resend';
 
-// Initialize Resend with API key from environment
-const resend = new Resend(import.meta.env.VITE_RESEND_API_KEY);
+// Only initialize Resend if API key is available
+let resend: Resend | null = null;
+
+function getResendClient() {
+  if (!resend) {
+    const apiKey = import.meta.env.VITE_RESEND_API_KEY;
+    if (!apiKey) {
+      console.warn('VITE_RESEND_API_KEY not set - email sending will be disabled');
+      return null;
+    }
+    resend = new Resend(apiKey);
+  }
+  return resend;
+}
 
 interface EmailOptions {
   to: string;
@@ -15,8 +27,15 @@ interface EmailOptions {
  * @returns Promise with email response
  */
 export async function sendEmail({ to, subject, html }: EmailOptions) {
+  const client = getResendClient();
+  
+  if (!client) {
+    console.warn('Resend not configured - skipping email send');
+    return { success: false, error: 'Email service not configured' };
+  }
+  
   try {
-    const { data, error } = await resend.emails.send({
+    const { data, error } = await client.emails.send({
       from: 'Grant Hustle <onboarding@granthustle.com>',
       to,
       subject,
