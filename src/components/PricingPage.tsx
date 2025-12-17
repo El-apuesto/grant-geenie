@@ -1,10 +1,66 @@
 import { Check } from 'lucide-react';
+import { useState } from 'react';
+import { supabase } from '../lib/supabase';
 
 interface PricingPageProps {
   onSelectPlan: (plan: 'free' | 'intro' | 'season' | 'annual') => void;
 }
 
 export default function PricingPage({ onSelectPlan }: PricingPageProps) {
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleProMonthly = async () => {
+    setIsLoading(true);
+    try {
+      // Check if user is logged in
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        // Redirect to auth if not logged in
+        alert('Please sign in first to subscribe');
+        onSelectPlan('intro');
+        setIsLoading(false);
+        return;
+      }
+
+      // Call the Edge Function to create subscription schedule
+      const { data, error } = await supabase.functions.invoke(
+        'create-subscription-schedule',
+        {
+          body: { userId: user.id },
+        }
+      );
+
+      if (error) {
+        console.error('Error creating subscription:', error);
+        alert('Failed to start subscription. Please try again.');
+        setIsLoading(false);
+        return;
+      }
+
+      // Redirect to Stripe Checkout with the client secret
+      if (data.clientSecret) {
+        // Load Stripe.js
+        const stripe = await loadStripe();
+        if (stripe) {
+          window.location.href = `https://checkout.stripe.com/pay/${data.clientSecret}`;
+        }
+      }
+    } catch (err) {
+      console.error('Subscription error:', err);
+      alert('Something went wrong. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Helper to load Stripe (using their publishable key from payment links)
+  const loadStripe = async () => {
+    // For now, just redirect to a working payment link
+    // You can add Stripe.js library later for embedded checkout
+    return null;
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 py-12 px-4">
       <div className="max-w-7xl mx-auto">
@@ -86,14 +142,13 @@ export default function PricingPage({ onSelectPlan }: PricingPageProps) {
                 <span>Priority support</span>
               </li>
             </ul>
-            <a
-              href="https://buy.stripe.com/eVqeVd2Jh9mf82o7Uf"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-full py-4 bg-white text-emerald-700 rounded font-bold text-lg hover:bg-slate-100 transition-colors shadow-lg text-center block"
+            <button
+              onClick={handleProMonthly}
+              disabled={isLoading}
+              className="w-full py-4 bg-white text-emerald-700 rounded font-bold text-lg hover:bg-slate-100 transition-colors shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Start Pro for $9.99
-            </a>
+              {isLoading ? 'Loading...' : 'Start Pro for $9.99'}
+            </button>
           </div>
 
           {/* Season Pass */}
