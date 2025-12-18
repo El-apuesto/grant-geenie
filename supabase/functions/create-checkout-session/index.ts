@@ -9,9 +9,8 @@ const supabaseAdmin = createClient(
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
 );
 
-// Price IDs - update these with your actual Stripe price IDs
+// Price ID for intro offer
 const INTRO_PRICE_ID = "price_1Sa8yzG85r4wkmwW8CGlyij4"; // $9.99 intro
-const ONE_DOLLAR_PRICE_ID = Deno.env.get("STRIPE_ONE_DOLLAR_PRICE_ID") || "price_1dollar"; // $1/month
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -54,8 +53,8 @@ Deno.serve(async (req: Request): Promise<Response> => {
       });
     }
 
-    // Determine which price to use
-    const selectedPriceId = priceId || ONE_DOLLAR_PRICE_ID;
+    // Use provided priceId or default to intro price
+    const selectedPriceId = priceId || INTRO_PRICE_ID;
 
     // Create Checkout Session with subscription mode
     // This handles payment method collection automatically
