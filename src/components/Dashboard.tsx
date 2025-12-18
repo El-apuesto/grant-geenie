@@ -49,14 +49,20 @@ export default function Dashboard() {
         
         // Check if user is on free tier (no active subscription)
         const isFree = !profile.subscription_status || profile.subscription_status !== 'active';
-        const limit = isFree ? 5 : 20; // Free tier gets 5, Pro gets 20
         
-        const { data, error: err } = await supabase
+        // Build query
+        const query = supabase
           .from('grants')
           .select('*')
           .or(`state.eq.${profile.state},state.is.null`)
-          .order('deadline', { ascending: true })
-          .limit(limit);
+          .order('deadline', { ascending: true });
+        
+        // Only apply limit for free users (Pro gets unlimited)
+        if (isFree) {
+          query.limit(5);
+        }
+        
+        const { data, error: err } = await query;
 
         if (err) throw err;
         setGrants(data || []);
@@ -189,16 +195,16 @@ export default function Dashboard() {
                   <h3 className="text-xl font-bold text-white">Unlock Full Access with Pro</h3>
                 </div>
                 <p className="text-slate-300 mb-3">
-                  You're on the free tier with limited grant previews. Upgrade to Pro to unlock:
+                  You're viewing 5 grant searches per month with basic information only. Upgrade to Pro to unlock:
                 </p>
                 <ul className="text-slate-300 space-y-1 mb-4 ml-4">
-                  <li>• Unlimited grant matches with full details</li>
-                  <li>• Apply directly to grants with all contact info</li>
-                  <li>• Track LOIs & applications</li>
-                  <li>• Access templates library</li>
+                  <li>• <strong>Unlimited grant searches</strong> with full application details</li>
+                  <li>• Direct application links and contact information</li>
+                  <li>• Track LOIs & applications with status updates</li>
+                  <li>• Access templates library for proposals and budgets</li>
                   <li>• Manage fiscal sponsor relationships</li>
-                  <li>• Calendar with deadline tracking</li>
-                  <li>• Wins & performance records</li>
+                  <li>• Calendar with automatic deadline tracking</li>
+                  <li>• Wins & performance analytics</li>
                   <li>• Guided dashboard tour with The Grant Genie</li>
                 </ul>
                 <button
@@ -217,13 +223,13 @@ export default function Dashboard() {
           <div className="flex items-center justify-between mb-4">
             <div>
               <h2 className="text-3xl font-bold text-white mb-2">
-                {isPro ? 'Grant Pool' : 'Grant Matches Preview'}
+                {isPro ? 'Grant Pool' : 'Grant Search Results'}
               </h2>
               <p className="text-slate-400">
                 {isPro ? (
-                  `Showing ${grants.length} opportunities for ${profile?.org_type} in ${profile && getStateName(profile.state)}`
+                  `Showing all ${grants.length} matching grant opportunities for ${profile?.org_type} in ${profile && getStateName(profile.state)}`
                 ) : (
-                  `Showing ${grants.length} of 5 grant previews (titles & funding amounts only)`
+                  `Showing ${grants.length} of 5 monthly searches (basic info only)`
                 )}
               </p>
             </div>
@@ -254,14 +260,17 @@ export default function Dashboard() {
                       <h3 className="text-xl font-bold text-white mb-1">
                         {grant.title}
                       </h3>
-                      {/* Free users: No description or details */}
+                      {/* Free users: Brief description, then lock message */}
                       {!isPro && (
-                        <div className="flex items-center gap-2 mt-2">
-                          <Lock className="w-4 h-4 text-slate-500" />
-                          <p className="text-slate-500 text-sm italic">
-                            Upgrade to Pro to see full details and apply
-                          </p>
-                        </div>
+                        <>
+                          <p className="text-slate-400 text-sm mb-2">{grant.description}</p>
+                          <div className="flex items-center gap-2">
+                            <Lock className="w-4 h-4 text-slate-500" />
+                            <p className="text-slate-500 text-sm italic">
+                              Upgrade to Pro to see application details and apply
+                            </p>
+                          </div>
+                        </>
                       )}
                       {/* Pro users: Full description */}
                       {isPro && (
