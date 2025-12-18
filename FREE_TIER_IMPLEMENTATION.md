@@ -1,146 +1,152 @@
-# Free Tier & Settings Implementation
+# Free Tier & Pro Tier Implementation
 
-This document outlines the free tier enforcement and settings features added to Grant Hustle.
+This document outlines the strict free tier limitations and Pro-only features in Grant Hustle.
 
-## Features Implemented
+## Free Tier (Extremely Limited)
 
-### 1. Free Tier 5-Match Limit Enforcement
+### What Free Users Get:
+- **5 grant previews only**
+  - Grant title
+  - Funding amount
+  - Lock icon with "Upgrade to see full details" message
+- Sign out button
+- Permanent upgrade banner at top
+- "Free Tier" badge in header
 
-**What it does:**
-- Free users (no active subscription) see maximum 5 grant matches
-- Pro users (subscription_status = 'active') see up to 20 matches
-- Automatically enforced in the database query
+### What Free Users CANNOT Access:
+- ❌ Grant descriptions
+- ❌ Grant deadlines
+- ❌ Organization type tags
+- ❌ "View Grant" / Apply buttons
+- ❌ Fiscal Sponsor Partners section
+- ❌ LOIs & Applications tracking
+- ❌ Templates Library
+- ❌ Wins & Records
+- ❌ Calendar
+- ❌ Product Tour (The Grant Genie)
+- ❌ Help buttons
+- ❌ Settings page
+- ❌ Lamp icon (tour launcher)
+- ❌ Settings icon
 
-**How it works:**
+### Free User Experience:
+1. Sign up without subscribing
+2. Complete questionnaire
+3. See dashboard with:
+   - "Free Tier" badge
+   - Big upgrade banner listing Pro benefits
+   - 5 grant titles + amounts only (no other details)
+   - Lock icons on grants
+   - Big "Pro Features Locked" section below grants
+   - Only Sign Out button in header
+4. Must upgrade to access ANY features beyond basic grant list
+
+---
+
+## Pro Tier (Full Access)
+
+### What Pro Users Get:
+- ✅ Up to 20 full grant matches with:
+  - Title, description, amount
+  - Deadlines
+  - Organization type tags
+  - Direct "View Grant" / Apply buttons
+- ✅ Fiscal Sponsor Partners section
+- ✅ LOIs & Applications tracking
+- ✅ Templates Library
+- ✅ Wins & Records dashboard
+- ✅ Calendar with deadlines
+- ✅ Product Tour with The Grant Genie (8 steps)
+- ✅ Help buttons on every section
+- ✅ Settings page (edit profile, restart tour)
+- ✅ Lamp icon (summon Genie anytime)
+- ✅ Settings icon
+- ✅ "Pro" badge with crown in header
+
+### Pro User Experience:
+1. Sign up and subscribe (or upgrade later)
+2. Complete questionnaire
+3. Receive welcome + matches emails
+4. See full dashboard with:
+   - "Pro" badge with crown
+   - Lamp icon, Settings icon
+   - Full grant details with apply buttons
+   - All 6 dashboard sections
+   - Help buttons
+   - Product tour available
+5. Can edit settings, restart tour anytime
+
+---
+
+## Technical Implementation
+
+### Subscription Detection:
 ```typescript
-const isFree = !profile.subscription_status || profile.subscription_status !== 'active';
+const isPro = profile?.subscription_status === 'active';
+```
+
+### Grant Limit:
+```typescript
 const limit = isFree ? 5 : 20;
 ```
 
-**Visual indicators:**
-- "Free Tier" badge in header for free users
-- "Pro" badge with crown icon for paid users
-- Grant count shows "Showing X of 5" for free users
-- "(Free Tier)" label next to grant pool description
+### Conditional Rendering:
+- All Pro features wrapped in `{isPro && (...)}`
+- Free users see locked state
+- Settings/Tour completely hidden for free users
 
-### 2. Upgrade Prompt at 5 Matches
+---
 
-**What it does:**
-- Dismissible banner appears when free users hit their 5-match limit
-- Explains the limitation and benefits of upgrading
-- One-click upgrade to Stripe checkout
+## Conversion Strategy
 
-**When it appears:**
-- Automatically shown when free user has 5 or more matches
-- Can be dismissed by user
-- Reappears on page reload (until they upgrade)
+Free tier is intentionally very limited to encourage upgrades:
 
-**Design:**
-- Gradient emerald/blue background
-- Crown icon
-- "Upgrade to Pro" CTA button
-- "Dismiss" option
+1. **Teaser**: Show grant titles & amounts to prove value
+2. **Clear CTA**: Prominent upgrade banner at top
+3. **Feature list**: Detailed list of what Pro unlocks
+4. **Lock icons**: Visual reminder on each grant
+5. **Big lock section**: Below grants showing all locked features
+6. **No friction**: One-click upgrade to Stripe
 
-### 3. Settings Page
-
-**What it includes:**
-
-#### Account Information
-- Email address (read-only)
-- Current plan (Free or Pro)
-- Plan badge with match limit indicator
-
-#### Profile Settings (Editable)
-- Organization Type dropdown
-- State dropdown
-- Save Changes button
-- Success/error messages
-
-#### Dashboard Tour
-- "Restart Dashboard Tour" button
-- Launches The Grant Genie tour from Settings
-
-**Navigation:**
-- Settings icon (gear) in header next to Lamp icon
-- Back button to return to Dashboard
-- Settings state maintained separately from Dashboard
-
-## Database Fields Used
-
-The implementation relies on these `profiles` table fields:
-
-```sql
-subscription_status: string | null  -- 'active', 'past_due', 'canceled', etc.
-subscription_current_period_end: string | null
-subscription_cancel_at_period_end: boolean | null
-```
-
-These fields are automatically updated by the `stripe-webhook` Edge Function when subscription events occur.
-
-## User Experience Flow
-
-### Free User Experience:
-1. Sign up → See "Free Tier" badge
-2. Complete questionnaire → See 5 matches max
-3. Upgrade prompt appears
-4. Can edit settings, restart tour
-5. Click "Upgrade to Pro" → Stripe checkout
-6. After payment → "Pro" badge, unlimited matches
-
-### Pro User Experience:
-1. Sign up and subscribe → See "Pro" badge with crown
-2. Complete questionnaire → See up to 20 matches
-3. No upgrade prompts
-4. Full access to all features
-5. Can edit settings, restart tour
+---
 
 ## Files Modified
 
-### Created:
-- `src/components/Settings.tsx` - Settings page component
+- `src/components/Dashboard.tsx` - Strict Pro-only feature gates
+- `src/components/Settings.tsx` - Pro-only (free users redirected)
+- `src/types/index.ts` - Subscription fields in Profile
 
-### Modified:
-- `src/components/Dashboard.tsx` - Added free tier logic, upgrade prompt, Settings integration
-- `src/types/index.ts` - Added subscription fields to Profile interface
+---
 
 ## Testing
 
 ### Test Free Tier:
 1. Create account without subscribing
-2. Complete questionnaire
-3. Verify only 5 grants shown
-4. Verify upgrade prompt appears
-5. Verify "Free Tier" badge shown
+2. ✅ Verify only title + amount shown
+3. ✅ Verify NO description, deadline, apply button
+4. ✅ Verify lock icons on grants
+5. ✅ Verify upgrade banner at top
+6. ✅ Verify NO lamp icon, settings icon
+7. ✅ Verify NO help buttons
+8. ✅ Verify "Pro Features Locked" section
+9. ✅ Verify clicking Settings does nothing
 
 ### Test Pro Tier:
-1. Subscribe to Pro plan
-2. Complete questionnaire
-3. Verify more than 5 grants shown
-4. Verify no upgrade prompt
-5. Verify "Pro" badge with crown shown
+1. Subscribe to Pro
+2. ✅ Verify full grant details
+3. ✅ Verify apply buttons work
+4. ✅ Verify all sections visible
+5. ✅ Verify tour, settings, help all available
+6. ✅ Verify "Pro" badge with crown
 
-### Test Settings:
-1. Click Settings icon in header
-2. Verify current org type and state shown
-3. Change values and save
-4. Return to Dashboard
-5. Verify changes reflected
-6. Test "Restart Tour" button
+---
 
-## Future Enhancements
+## Upgrade Flow
 
-### Potential additions:
-- Usage tracking (how many times viewed matches this month)
-- Match history
-- Email preferences
-- Account deletion
-- Billing portal link for Pro users
-- Export data
-
-## Notes
-
-- Free tier limit is enforced at query time, not stored per-user
-- Upgrade prompt can be dismissed but will reappear on reload
-- Settings changes take effect immediately
-- Tour restart from Settings properly closes Settings page first
-- Subscription status comes from Stripe webhooks, not manual updates
+1. Free user clicks "Upgrade to Pro" button
+2. Opens Stripe checkout in new tab
+3. User completes payment
+4. Stripe webhook updates `subscription_status` to 'active'
+5. User refreshes dashboard
+6. Sees "Pro" badge and all features unlock
+7. Receives welcome email (if first subscription)
