@@ -1,5 +1,4 @@
-// supabase/functions/create-subscription-schedule/index.ts
-// Updated to use Stripe Checkout instead of manual PaymentIntent handling
+// supabase/functions/create-checkout-session/index.ts
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import Stripe from "npm:stripe@15.12.0";
 import { createClient } from "npm:@supabase/supabase-js@2";
@@ -10,8 +9,9 @@ const supabaseAdmin = createClient(
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
 );
 
-const INTRO_PRICE_ID = "price_1Sa8yzG85r4wkmwW8CGlyij4"; // 9.99
-const REGULAR_PRICE_ID = "price_1Sa918G85r4wkmwW786cBMaH"; // 27.99
+// Price IDs - update these with your actual Stripe price IDs
+const INTRO_PRICE_ID = "price_1Sa8yzG85r4wkmwW8CGlyij4"; // $9.99 intro
+const ONE_DOLLAR_PRICE_ID = Deno.env.get("STRIPE_ONE_DOLLAR_PRICE_ID") || "price_1dollar"; // $1/month
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -24,7 +24,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { userId, successUrl, cancelUrl } = await req.json();
+    const { userId, priceId, successUrl, cancelUrl } = await req.json();
 
     if (!userId) {
       return new Response(
@@ -54,16 +54,18 @@ Deno.serve(async (req: Request): Promise<Response> => {
       });
     }
 
-    // Create Checkout Session for subscription with intro pricing
-    // Stripe Checkout handles all payment method collection automatically
+    // Determine which price to use
+    const selectedPriceId = priceId || ONE_DOLLAR_PRICE_ID;
+
+    // Create Checkout Session with subscription mode
+    // This handles payment method collection automatically
     const session = await stripe.checkout.sessions.create({
       customer: customer.id,
       mode: "subscription",
-      // Support both card and Cash App Pay
       payment_method_types: ["card", "cashapp"],
       line_items: [
         {
-          price: INTRO_PRICE_ID,
+          price: selectedPriceId,
           quantity: 1,
         },
       ],
@@ -71,14 +73,11 @@ Deno.serve(async (req: Request): Promise<Response> => {
       cancel_url: cancelUrl || `${req.headers.get("origin")}/cancel`,
       metadata: {
         user_id: userId,
-        pricing_type: "scheduled", // Flag to indicate this needs schedule setup
       },
       subscription_data: {
         metadata: {
           user_id: userId,
-          pricing_type: "scheduled",
         },
-        // We'll create the schedule via webhook after successful payment
       },
     });
 
@@ -94,7 +93,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
       }
     );
   } catch (error) {
-    console.error("Error creating subscription schedule checkout:", error);
+    console.error("Error creating checkout session:", error);
     return new Response(
       JSON.stringify({ error: error.message }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
