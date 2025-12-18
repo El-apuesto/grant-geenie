@@ -65,7 +65,11 @@ export default function PricingPage({ onSelectPlan }: PricingPageProps) {
       const { data, error } = await supabase.functions.invoke(
         'create-subscription-schedule',
         {
-          body: { userId: user.id },
+          body: { 
+            userId: user.id,
+            successUrl: `${window.location.origin}/dashboard`,
+            cancelUrl: window.location.href
+          },
         }
       );
 
@@ -76,23 +80,17 @@ export default function PricingPage({ onSelectPlan }: PricingPageProps) {
         return;
       }
 
-      // Redirect to Stripe Checkout with the client secret
-      if (data.clientSecret) {
-        // Load Stripe.js
-        const stripe = await loadStripe();
-        if (stripe) {
-          window.location.href = `https://checkout.stripe.com/pay/${data.clientSecret}`;
-        }
+      // Redirect to Stripe Checkout with the URL returned from the function
+      if (data?.url) {
+        window.location.href = data.url;
+      } else {
+        console.error('No checkout URL returned:', data);
+        alert('Failed to create checkout session. Please try again.');
+        setIsLoading(false);
       }
-
-      // Note: In production, you'd handle the success callback from Stripe
-      // For now, we'll trigger success on button click for demo purposes
-      // In real implementation, this should happen after Stripe confirms payment
-      await handleSubscriptionSuccess(user, 'Pro Monthly');
     } catch (err) {
       console.error('Subscription error:', err);
       alert('Something went wrong. Please try again.');
-    } finally {
       setIsLoading(false);
     }
   };
@@ -113,13 +111,6 @@ export default function PricingPage({ onSelectPlan }: PricingPageProps) {
       // In production, this would happen after Stripe webhook confirms payment
       await handleSubscriptionSuccess(user, 'Annual Pass (12 months)');
     }
-  };
-
-  // Helper to load Stripe (using their publishable key from payment links)
-  const loadStripe = async () => {
-    // For now, just redirect to a working payment link
-    // You can add Stripe.js library later for embedded checkout
-    return null;
   };
 
   return (
