@@ -11,6 +11,9 @@ export interface Profile {
   org_type: string;
   questionnaire_completed: boolean;
   has_coupon_code: string | null;
+  subscription_status: string | null; // 'active', 'past_due', 'canceled', etc.
+  subscription_current_period_end: string | null;
+  subscription_cancel_at_period_end: boolean | null;
   created_at: string;
 }
 
