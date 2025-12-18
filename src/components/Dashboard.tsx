@@ -7,6 +7,7 @@ import { ExternalLink, LogOut, Lamp, Settings as SettingsIcon, Crown, Lock } fro
 import ProductTour from './ProductTour';
 import HelpButton from './HelpButton';
 import Settings from './Settings';
+import Questionnaire from './Questionnaire';
 import { useTour } from '../hooks/useTour';
 
 export default function Dashboard() {
@@ -16,6 +17,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showSettings, setShowSettings] = useState(false);
+  const [showQuestionnaire, setShowQuestionnaire] = useState(false);
 
   const { isTourActive, startTour, completeTour, skipTour } = useTour();
 
@@ -31,7 +33,13 @@ export default function Dashboard() {
           .maybeSingle();
 
         if (err) throw err;
-        if (data) setProfile(data);
+        if (data) {
+          setProfile(data);
+          // Show questionnaire if not completed
+          if (!data.state || !data.org_type) {
+            setShowQuestionnaire(true);
+          }
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load profile');
       }
@@ -97,8 +105,29 @@ export default function Dashboard() {
     startTour();
   };
 
+  const handleQuestionnaireComplete = async () => {
+    // Reload profile after questionnaire completion
+    if (!user) return;
+    
+    const { data } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', user.id)
+      .single();
+    
+    if (data) {
+      setProfile(data);
+      setShowQuestionnaire(false);
+    }
+  };
+
   const isPro = profile?.subscription_status === 'active';
   const hasCompletedQuestionnaire = profile?.state && profile?.org_type;
+
+  // Show questionnaire if not completed
+  if (showQuestionnaire) {
+    return <Questionnaire onComplete={handleQuestionnaireComplete} />;
+  }
 
   // Free users cannot access Settings
   if (showSettings) {
@@ -189,16 +218,6 @@ export default function Dashboard() {
         {error && (
           <div className="mb-6 p-4 bg-red-900/20 border border-red-500/50 rounded-lg text-red-200">
             {error}
-          </div>
-        )}
-
-        {/* Show message if questionnaire not completed */}
-        {!hasCompletedQuestionnaire && (
-          <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-12 text-center">
-            <h2 className="text-2xl font-bold text-white mb-4">Welcome to Grant Hustle!</h2>
-            <p className="text-slate-400 mb-6">
-              Complete the questionnaire to start finding grant opportunities tailored to your organization.
-            </p>
           </div>
         )}
 
