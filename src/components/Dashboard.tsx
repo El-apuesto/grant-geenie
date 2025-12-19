@@ -3,7 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { Grant, Profile } from '../types';
 import { getStateName } from '../lib/states';
-import { ExternalLink, LogOut, Lamp, Settings as SettingsIcon, Crown, Lock, Search, Plus } from 'lucide-react';
+import { ExternalLink, LogOut, Lamp, Settings as SettingsIcon, Crown, Lock, Search, Plus, Calendar, DollarSign } from 'lucide-react';
 import ProductTour from './ProductTour';
 import HelpButton from './HelpButton';
 import Settings from './Settings';
@@ -65,16 +65,19 @@ export default function Dashboard() {
         setSearchingGrants(true);
         setLoading(true);
         
-        const isFree = !profile.subscription_status || profile.subscription_status !== 'active';
+        const isPro = profile.subscription_status === 'active';
         
+        // Query matching granthustle's working approach
         const query = supabase
           .from('grants')
           .select('*')
-          .or(`state.eq.${profile.state},state.is.null`)
+          .eq('is_active', true)
           .order('deadline', { ascending: true });
         
-        if (isFree) {
+        if (!isPro) {
           query.limit(5);
+        } else {
+          query.limit(10000);
         }
         
         const { data, error: err } = await query;
@@ -127,6 +130,24 @@ export default function Dashboard() {
       setProfile(data);
       setShowQuestionnaire(false);
     }
+  };
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      maximumFractionDigits: 0,
+    }).format(amount);
+  };
+
+  const formatDeadline = (deadline: string | null, isRolling: boolean) => {
+    if (isRolling) return 'Rolling';
+    if (!deadline) return 'TBD';
+    return new Date(deadline).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    });
   };
 
   const isPro = profile?.subscription_status === 'active';
@@ -187,7 +208,7 @@ export default function Dashboard() {
         <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
           <div>
             <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-bold text-white">Grant Hustle</h1>
+              <h1 className="text-2xl font-bold text-white">Grant Geenie</h1>
               {!isPro && (
                 <span className="text-xs bg-slate-700 text-slate-300 px-2 py-1 rounded">
                   Free Tier
@@ -258,17 +279,15 @@ export default function Dashboard() {
                       <h3 className="text-xl font-bold text-white">Unlock Full Access with Pro</h3>
                     </div>
                     <p className="text-slate-300 mb-3">
-                      You're viewing 5 grant searches per month with basic information only. Upgrade to Pro to unlock:
+                      You're viewing 5 grants with limited information. Upgrade to Pro to unlock:
                     </p>
                     <ul className="text-slate-300 space-y-1 mb-4 ml-4">
-                      <li>• <strong>Unlimited grant searches</strong> with full application details</li>
-                      <li>• Direct application links and contact information</li>
-                      <li>• Track LOIs & applications with status updates</li>
-                      <li>• Access templates library for proposals and budgets</li>
-                      <li>• Manage fiscal sponsor relationships</li>
-                      <li>• Calendar with automatic deadline tracking</li>
-                      <li>• Wins & performance analytics</li>
-                      <li>• Guided dashboard tour with The Grant Genie</li>
+                      <li>• <strong>8,000+ grants</strong> with full details</li>
+                      <li>• Direct application links</li>
+                      <li>• LOI Generator with auto-fill</li>
+                      <li>• 30+ Fiscal Sponsor database</li>
+                      <li>• Application templates</li>
+                      <li>• Track submissions & wins</li>
                     </ul>
                     <button
                       onClick={handleUpgrade}
@@ -289,9 +308,9 @@ export default function Dashboard() {
                   </h2>
                   <p className="text-slate-400">
                     {isPro ? (
-                      `Showing all ${grants.length} matching grant opportunities for ${profile?.org_type} in ${profile && getStateName(profile.state)}`
+                      `Showing ${grants.length.toLocaleString()} active grant opportunities`
                     ) : (
-                      `Showing ${grants.length} of 5 monthly searches (basic info only)`
+                      `Showing ${grants.length} of your 5 monthly free searches`
                     )}
                   </p>
                 </div>
@@ -308,77 +327,64 @@ export default function Dashboard() {
                   <Search className="w-16 h-16 text-slate-600 mx-auto mb-4" />
                   <p className="text-slate-300 text-lg mb-2">No matching grants found at this time.</p>
                   <p className="text-slate-400">
-                    We're constantly adding new opportunities. Check back soon or update your profile criteria in Settings to see more matches.
+                    We're constantly adding new opportunities. Check back soon!
                   </p>
                 </div>
               ) : (
-                <div className="grid gap-6">
+                <div className="space-y-4">
                   {grants.map((grant) => (
                     <div
                       key={grant.id}
                       className="bg-slate-800/50 border border-slate-700 rounded-lg p-6 hover:border-emerald-500/30 transition"
                     >
-                      <div className="flex justify-between items-start mb-3">
+                      <div className="flex justify-between items-start mb-4">
                         <div className="flex-1">
-                          <h3 className="text-xl font-bold text-white mb-1">
-                            {grant.title}
-                          </h3>
-                          {!isPro && (
-                            <>
-                              <p className="text-slate-400 text-sm mb-2">{grant.description}</p>
-                              <div className="flex items-center gap-2">
-                                <Lock className="w-4 h-4 text-slate-500" />
-                                <p className="text-slate-500 text-sm italic">
-                                  Upgrade to Pro to see application details and apply
-                                </p>
-                              </div>
-                            </>
-                          )}
-                          {isPro && (
-                            <p className="text-slate-400 text-sm">{grant.description}</p>
-                          )}
-                        </div>
-                        <div className="text-right ml-4">
-                          <div className="text-2xl font-bold text-emerald-400">
-                            ${(grant.amount / 1000).toFixed(0)}K
+                          <div className="flex items-start gap-3 mb-2">
+                            <h3 className="text-xl font-semibold text-white flex-1">
+                              {grant.title}
+                            </h3>
                           </div>
-                          <p className="text-slate-400 text-xs">Funding</p>
+                          <div className="flex items-center gap-4 text-sm text-slate-400 mb-3">
+                            <span className="font-medium">{grant.funder_name}</span>
+                            <span className="px-2 py-1 bg-slate-700 rounded text-xs capitalize">
+                              {grant.funder_type}
+                            </span>
+                          </div>
                         </div>
                       </div>
 
-                      {isPro && (
-                        <>
-                          <div className="flex flex-wrap gap-2 mb-4">
-                            {grant.org_types.map((type) => (
-                              <span
-                                key={type}
-                                className="px-3 py-1 bg-emerald-600/20 border border-emerald-500/30 text-emerald-400 text-xs rounded-full"
-                              >
-                                {type}
-                              </span>
-                            ))}
-                          </div>
+                      <p className="text-slate-300 mb-4 line-clamp-2">
+                        {grant.description}
+                      </p>
 
-                          <div className="flex justify-between items-center">
-                            <div>
-                              <p className="text-slate-400 text-sm">
-                                Deadline:{' '}
-                                <span className="text-white font-semibold">
-                                  {new Date(grant.deadline).toLocaleDateString()}
-                                </span>
-                              </p>
-                            </div>
-                            <a
-                              href={grant.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition"
-                            >
-                              <span>View Grant</span>
-                              <ExternalLink className="w-4 h-4" />
-                            </a>
-                          </div>
-                        </>
+                      <div className="flex flex-wrap gap-4 mb-4">
+                        <div className="flex items-center gap-2 text-slate-300">
+                          <DollarSign className="w-4 h-4 text-emerald-500" />
+                          <span>
+                            {formatCurrency(grant.award_min)} - {formatCurrency(grant.award_max)}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 text-slate-300">
+                          <Calendar className="w-4 h-4 text-emerald-500" />
+                          <span>{formatDeadline(grant.deadline, grant.is_rolling)}</span>
+                        </div>
+                      </div>
+
+                      {isPro ? (
+                        <a
+                          href={grant.apply_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded font-semibold hover:bg-emerald-700 transition-colors"
+                        >
+                          View Grant
+                          <ExternalLink className="w-4 h-4" />
+                        </a>
+                      ) : (
+                        <div className="flex items-center gap-2 text-slate-500">
+                          <Lock className="w-4 h-4" />
+                          <span className="text-sm italic">Upgrade to Pro to view application details</span>
+                        </div>
                       )}
                     </div>
                   ))}
@@ -391,7 +397,7 @@ export default function Dashboard() {
                 <Lock className="w-16 h-16 text-slate-600 mx-auto mb-4" />
                 <h3 className="text-2xl font-bold text-white mb-2">Pro Features Locked</h3>
                 <p className="text-slate-400 mb-6 max-w-2xl mx-auto">
-                  Fiscal Sponsors, LOI Tracking, Application Management, Templates Library, Wins & Records, and Calendar are available exclusively to Pro subscribers.
+                  Fiscal Sponsors, LOI Generator, Application Templates, and more are available exclusively to Pro subscribers.
                 </p>
                 <button
                   onClick={handleUpgrade}
@@ -404,19 +410,6 @@ export default function Dashboard() {
 
             {isPro && (
               <>
-                <section id="fiscal-sponsors-section" className="mb-12">
-                  <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-2xl font-bold text-white">Fiscal Sponsor Partners</h2>
-                    <HelpButton
-                      sectionName="Fiscal Sponsor Partners"
-                      content="See which fiscal sponsor is connected to each grant. Keep those relationships and requirements up to date in one place."
-                    />
-                  </div>
-                  <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-8 text-center">
-                    <p className="text-slate-400">No fiscal sponsors added yet.</p>
-                  </div>
-                </section>
-
                 <section id="lois-applications-section" className="mb-12">
                   <div className="flex items-center justify-between mb-4">
                     <h2 className="text-2xl font-bold text-white">LOIs & Applications</h2>
@@ -437,19 +430,6 @@ export default function Dashboard() {
                       </button>
                     </div>
                     <p className="text-slate-500 text-sm">No applications in progress yet.</p>
-                  </div>
-                </section>
-
-                <section id="templates-section" className="mb-12">
-                  <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-2xl font-bold text-white">Templates Library</h2>
-                    <HelpButton
-                      sectionName="Templates Library"
-                      content="Best-practice examples for LOIs, full proposals, budgets, and reports. Start from a template, customize it, and attach it to your grant."
-                    />
-                  </div>
-                  <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-8 text-center">
-                    <p className="text-slate-400">Templates coming soon.</p>
                   </div>
                 </section>
 
@@ -480,19 +460,6 @@ export default function Dashboard() {
                         <div className="text-slate-400 text-sm">Total Awarded</div>
                       </div>
                     </div>
-                  </div>
-                </section>
-
-                <section id="calendar-section" className="mb-12">
-                  <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-2xl font-bold text-white">Calendar</h2>
-                    <HelpButton
-                      sectionName="Calendar"
-                      content="LOI, application, and reporting deadlines automatically added as you update grants. Plan your workload and avoid last-minute rushes."
-                    />
-                  </div>
-                  <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-8 text-center">
-                    <p className="text-slate-400">No upcoming deadlines.</p>
                   </div>
                 </section>
               </>
