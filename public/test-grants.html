@@ -40,25 +40,60 @@
             color: #94a3b8;
             font-size: 14px;
         }
+        .debug {
+            background: #0f172a;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 12px;
+        }
     </style>
 </head>
 <body>
-    <h1>Grant Geenie - Test Page</h1>
-    <div id="status" class="loading">Loading grants...</div>
+    <h1>Grant Geenie - Direct Database Test</h1>
+    <div id="debug" class="debug"></div>
+    <div id="status" class="loading">Initializing...</div>
     <div id="grants"></div>
 
     <script>
-        const SUPABASE_URL = 'https://ooxkwrnmnygatsxahspd.supabase.co';
-        const SUPABASE_ANON_KEY = 'REPLACE_WITH_YOUR_ANON_KEY';
+        const debugDiv = document.getElementById('debug');
+        const statusDiv = document.getElementById('status');
+        const grantsDiv = document.getElementById('grants');
 
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        // Try multiple ways to get the env vars
+        const SUPABASE_URL = 'https://ooxkwrnmnygatsxahspd.supabase.co';
+        
+        // These will be undefined in static HTML, but let's try anyway
+        let SUPABASE_KEY = null;
+        
+        // Show debug info
+        debugDiv.innerHTML = `
+            <strong>Debug Info:</strong><br>
+            URL: ${SUPABASE_URL}<br>
+            Key available: ${SUPABASE_KEY ? 'YES (hidden)' : 'NO - needs to be added'}<br>
+            <br>
+            <strong>Instructions:</strong><br>
+            1. Go to Supabase → Settings → API<br>
+            2. Copy your <strong>anon public</strong> key<br>
+            3. Paste it in the JavaScript below (line ~75)<br>
+            4. Or add it to Vercel env vars and rebuild
+        `;
+
+        // PASTE YOUR SUPABASE ANON KEY HERE:
+        SUPABASE_KEY = 'YOUR_KEY_HERE';
 
         async function loadGrants() {
-            const statusDiv = document.getElementById('status');
-            const grantsDiv = document.getElementById('grants');
-
             try {
-                statusDiv.innerHTML = 'Fetching grants from database...';
+                if (!SUPABASE_KEY || SUPABASE_KEY === 'YOUR_KEY_HERE') {
+                    throw new Error('Supabase anon key not configured. Edit line 75 of this file.');
+                }
+
+                statusDiv.innerHTML = 'Connecting to Supabase...';
+                
+                const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+                
+                statusDiv.innerHTML = 'Fetching grants...';
                 
                 const { data, error } = await supabase
                     .from('grants')
@@ -70,10 +105,10 @@
                     throw error;
                 }
 
-                statusDiv.innerHTML = `Found ${data.length} grants!`;
+                statusDiv.innerHTML = `✅ Found ${data.length} grants!`;
 
                 if (data.length === 0) {
-                    grantsDiv.innerHTML = '<div class="error">No grants found in database</div>';
+                    grantsDiv.innerHTML = '<div class="error">⚠️ No grants found in database. Check if grants exist in Supabase.</div>';
                     return;
                 }
 
@@ -83,23 +118,28 @@
                         <p class="info"><strong>${grant.funder_name}</strong> (${grant.funder_type})</p>
                         <p>${grant.description}</p>
                         <p class="info">
-                            <strong>Award:</strong> $${grant.award_min.toLocaleString()} - $${grant.award_max.toLocaleString()}<br>
-                            <strong>Deadline:</strong> ${grant.is_rolling ? 'Rolling' : (grant.deadline || 'TBD')}<br>
-                            <strong>Apply:</strong> <a href="${grant.apply_url}" target="_blank" style="color: #10b981">${grant.apply_url}</a>
+                            💰 <strong>Award:</strong> $${grant.award_min.toLocaleString()} - $${grant.award_max.toLocaleString()}<br>
+                            📅 <strong>Deadline:</strong> ${grant.is_rolling ? 'Rolling' : (grant.deadline || 'TBD')}<br>
+                            🔗 <strong>Apply:</strong> <a href="${grant.apply_url}" target="_blank" style="color: #10b981">${grant.apply_url}</a>
                         </p>
                     </div>
                 `).join('');
 
             } catch (error) {
-                statusDiv.innerHTML = '';
+                statusDiv.innerHTML = '❌ Error';
                 grantsDiv.innerHTML = `
                     <div class="error">
                         <h3>Error Loading Grants</h3>
-                        <p>${error.message}</p>
-                        <p class="info">Check that your SUPABASE_ANON_KEY is correct in this file.</p>
+                        <p><strong>Error:</strong> ${error.message}</p>
+                        <p class="info">This could mean:</p>
+                        <ul>
+                            <li>Supabase anon key is missing or incorrect</li>
+                            <li>RLS policies are blocking access</li>
+                            <li>Network/CORS issue</li>
+                        </ul>
                     </div>
                 `;
-                console.error('Error:', error);
+                console.error('Full error:', error);
             }
         }
 
