@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { US_STATES } from '../lib/states';
-import { sendMatchesEmail } from '../lib/email';
 
 interface QuestionnaireProps {
   onComplete: () => void;
@@ -197,7 +196,8 @@ export default function Questionnaire({ onComplete }: QuestionnaireProps) {
       const primaryFields = answers.primary_fields as string[];
       const orgType = primaryFields[0] || 'Other';
 
-      await supabase.from('profiles').upsert({
+      // Save profile data
+      const { error: upsertError } = await supabase.from('profiles').upsert({
         id: user.id,
         state: answers.state,
         org_type: orgType,
@@ -212,33 +212,15 @@ export default function Questionnaire({ onComplete }: QuestionnaireProps) {
         questionnaire_completed: true,
       });
 
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('first_name')
-        .eq('id', user.id)
-        .single();
+      if (upsertError) throw upsertError;
 
-      const { count: matchesCount } = await supabase
-        .from('grants')
-        .select('*', { count: 'exact', head: true })
-        .or(`state.eq.${answers.state},state.is.null`);
-
-      const firstName = profile?.first_name || 'there';
-      const dashboardTourUrl = `${window.location.origin}/dashboard?tour=genie`;
-
-      try {
-        await sendMatchesEmail({
-          firstName,
-          email: user.email!,
-          matchesCount: matchesCount || 0,
-          dashboardTourUrl,
-        });
-      } catch (emailError) {
-        console.error('Failed to send matches email:', emailError);
-      }
-
+      // Email sending is optional - don't let it block completion
+      console.log('Questionnaire saved successfully, proceeding to dashboard...');
+      
+      // Complete the questionnaire flow
       onComplete();
     } catch (err) {
+      console.error('Error saving questionnaire:', err);
       setError(err instanceof Error ? err.message : 'Failed to save answers');
     } finally {
       setLoading(false);
