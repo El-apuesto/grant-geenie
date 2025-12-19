@@ -3,11 +3,12 @@ import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { Grant, Profile } from '../types';
 import { getStateName } from '../lib/states';
-import { ExternalLink, LogOut, Lamp, Settings as SettingsIcon, Crown, Lock, Search } from 'lucide-react';
+import { ExternalLink, LogOut, Lamp, Settings as SettingsIcon, Crown, Lock, Search, Plus } from 'lucide-react';
 import ProductTour from './ProductTour';
 import HelpButton from './HelpButton';
 import Settings from './Settings';
 import Questionnaire from './Questionnaire';
+import LOIGenerator from './LOIGenerator';
 import { useTour } from '../hooks/useTour';
 
 export default function Dashboard() {
@@ -19,6 +20,7 @@ export default function Dashboard() {
   const [error, setError] = useState('');
   const [showSettings, setShowSettings] = useState(false);
   const [showQuestionnaire, setShowQuestionnaire] = useState(false);
+  const [showLOIGenerator, setShowLOIGenerator] = useState(false);
 
   const { isTourActive, startTour, completeTour, skipTour } = useTour();
 
@@ -145,6 +147,27 @@ export default function Dashboard() {
         onRestartTour={handleRestartTour}
         onRetakeQuestionnaire={handleRetakeQuestionnaire}
       />
+    );
+  }
+
+  if (showLOIGenerator) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+        <div className="border-b border-slate-700 bg-slate-900/50 backdrop-blur-sm sticky top-0 z-10">
+          <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+            <h1 className="text-2xl font-bold text-white">LOI Generator</h1>
+            <button
+              onClick={() => setShowLOIGenerator(false)}
+              className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition"
+            >
+              Back to Dashboard
+            </button>
+          </div>
+        </div>
+        <div className="max-w-7xl mx-auto px-4 py-8">
+          <LOIGenerator isPro={isPro} />
+        </div>
+      </div>
     );
   }
 
@@ -402,8 +425,18 @@ export default function Dashboard() {
                       content="Track every LOI and full application with status, due dates, submitted dates, and linked documents all in one place."
                     />
                   </div>
-                  <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-8 text-center">
-                    <p className="text-slate-400">No applications in progress yet.</p>
+                  <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-8">
+                    <div className="flex items-center justify-between mb-4">
+                      <p className="text-slate-400">Generate professional Letters of Inquiry pre-filled with your organization details.</p>
+                      <button
+                        onClick={() => setShowLOIGenerator(true)}
+                        className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition font-semibold"
+                      >
+                        <Plus className="w-4 h-4" />
+                        Generate LOI
+                      </button>
+                    </div>
+                    <p className="text-slate-500 text-sm">No applications in progress yet.</p>
                   </div>
                 </section>
 
