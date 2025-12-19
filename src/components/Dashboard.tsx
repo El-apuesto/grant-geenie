@@ -3,12 +3,14 @@ import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { Grant, Profile } from '../types';
 import { getStateName } from '../lib/states';
-import { ExternalLink, LogOut, Lamp, Settings as SettingsIcon, Crown, Lock, Search, Plus, Calendar, DollarSign } from 'lucide-react';
+import { ExternalLink, LogOut, Lamp, Settings as SettingsIcon, Crown, Lock, Search, Plus, Calendar, DollarSign, Building2, FileText } from 'lucide-react';
 import ProductTour from './ProductTour';
 import HelpButton from './HelpButton';
 import Settings from './Settings';
 import Questionnaire from './Questionnaire';
 import LOIGenerator from './LOIGenerator';
+import FiscalSponsorMatcher from './FiscalSponsorMatcher';
+import ApplicationWizard from './ApplicationWizard';
 import { useTour } from '../hooks/useTour';
 
 export default function Dashboard() {
@@ -21,6 +23,8 @@ export default function Dashboard() {
   const [showSettings, setShowSettings] = useState(false);
   const [showQuestionnaire, setShowQuestionnaire] = useState(false);
   const [showLOIGenerator, setShowLOIGenerator] = useState(false);
+  const [showFiscalSponsors, setShowFiscalSponsors] = useState(false);
+  const [showApplicationTemplates, setShowApplicationTemplates] = useState(false);
 
   const { isTourActive, startTour, completeTour, skipTour } = useTour();
 
@@ -67,7 +71,6 @@ export default function Dashboard() {
         
         const isPro = profile.subscription_status === 'active';
         
-        // Query matching granthustle's working approach
         const query = supabase
           .from('grants')
           .select('*')
@@ -103,6 +106,7 @@ export default function Dashboard() {
     }
   };
 
+  // NO STRIPE CODE - just opens link
   const handleUpgrade = () => {
     window.open('https://buy.stripe.com/test_4gw5lmdQa3S42NW4gi', '_blank');
   };
@@ -187,6 +191,48 @@ export default function Dashboard() {
         </div>
         <div className="max-w-7xl mx-auto px-4 py-8">
           <LOIGenerator isPro={isPro} />
+        </div>
+      </div>
+    );
+  }
+
+  if (showFiscalSponsors) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+        <div className="border-b border-slate-700 bg-slate-900/50 backdrop-blur-sm sticky top-0 z-10">
+          <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+            <h1 className="text-2xl font-bold text-white">Fiscal Sponsor Matcher</h1>
+            <button
+              onClick={() => setShowFiscalSponsors(false)}
+              className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition"
+            >
+              Back to Dashboard
+            </button>
+          </div>
+        </div>
+        <div className="max-w-7xl mx-auto px-4 py-8">
+          <FiscalSponsorMatcher isPro={isPro} />
+        </div>
+      </div>
+    );
+  }
+
+  if (showApplicationTemplates) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+        <div className="border-b border-slate-700 bg-slate-900/50 backdrop-blur-sm sticky top-0 z-10">
+          <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+            <h1 className="text-2xl font-bold text-white">Application Templates</h1>
+            <button
+              onClick={() => setShowApplicationTemplates(false)}
+              className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition"
+            >
+              Back to Dashboard
+            </button>
+          </div>
+        </div>
+        <div className="max-w-7xl mx-auto px-4 py-8">
+          <ApplicationWizard isPro={isPro} />
         </div>
       </div>
     );
@@ -410,6 +456,28 @@ export default function Dashboard() {
 
             {isPro && (
               <>
+                <section id="fiscal-sponsors-section" className="mb-12">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-2xl font-bold text-white">Fiscal Sponsor Matcher</h2>
+                    <HelpButton
+                      sectionName="Fiscal Sponsors"
+                      content="Browse 30+ trusted fiscal sponsors. Filter by focus area, location, and fee range to find the right fit for your project."
+                    />
+                  </div>
+                  <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-8">
+                    <div className="flex items-center justify-between mb-4">
+                      <p className="text-slate-400">Access our curated database of 30+ fiscal sponsors with detailed information.</p>
+                      <button
+                        onClick={() => setShowFiscalSponsors(true)}
+                        className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition font-semibold"
+                      >
+                        <Building2 className="w-4 h-4" />
+                        Browse Sponsors
+                      </button>
+                    </div>
+                  </div>
+                </section>
+
                 <section id="lois-applications-section" className="mb-12">
                   <div className="flex items-center justify-between mb-4">
                     <h2 className="text-2xl font-bold text-white">LOIs & Applications</h2>
@@ -430,6 +498,28 @@ export default function Dashboard() {
                       </button>
                     </div>
                     <p className="text-slate-500 text-sm">No applications in progress yet.</p>
+                  </div>
+                </section>
+
+                <section id="templates-section" className="mb-12">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-2xl font-bold text-white">Application Templates</h2>
+                    <HelpButton
+                      sectionName="Templates"
+                      content="Choose from 4 professional templates: Federal, Foundation, Corporate, and Arts grants. Each template auto-fills with your profile information."
+                    />
+                  </div>
+                  <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-8">
+                    <div className="flex items-center justify-between mb-4">
+                      <p className="text-slate-400">Access 4 grant application templates pre-filled with your organization information.</p>
+                      <button
+                        onClick={() => setShowApplicationTemplates(true)}
+                        className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition font-semibold"
+                      >
+                        <FileText className="w-4 h-4" />
+                        Browse Templates
+                      </button>
+                    </div>
                   </div>
                 </section>
 
