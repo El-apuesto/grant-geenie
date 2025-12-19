@@ -3,7 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { Grant, Profile } from '../types';
 import { getStateName } from '../lib/states';
-import { ExternalLink, LogOut, Lamp, Settings as SettingsIcon, Crown, Lock } from 'lucide-react';
+import { ExternalLink, LogOut, Lamp, Settings as SettingsIcon, Crown, Lock, Search } from 'lucide-react';
 import ProductTour from './ProductTour';
 import HelpButton from './HelpButton';
 import Settings from './Settings';
@@ -15,6 +15,7 @@ export default function Dashboard() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [grants, setGrants] = useState<Grant[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchingGrants, setSearchingGrants] = useState(false);
   const [error, setError] = useState('');
   const [showSettings, setShowSettings] = useState(false);
   const [showQuestionnaire, setShowQuestionnaire] = useState(false);
@@ -35,13 +36,16 @@ export default function Dashboard() {
         if (err) throw err;
         if (data) {
           setProfile(data);
-          // Show questionnaire if not completed
           if (!data.state || !data.org_type) {
             setShowQuestionnaire(true);
+            setLoading(false);
           }
+        } else {
+          setLoading(false);
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load profile');
+        setLoading(false);
       }
     };
 
@@ -49,7 +53,6 @@ export default function Dashboard() {
   }, [user]);
 
   useEffect(() => {
-    // Only load grants if profile exists, has a state, AND questionnaire is completed
     if (!profile?.state || !profile?.org_type) {
       setLoading(false);
       return;
@@ -57,19 +60,17 @@ export default function Dashboard() {
     
     const loadGrants = async () => {
       try {
+        setSearchingGrants(true);
         setLoading(true);
         
-        // Check if user is on free tier (no active subscription)
         const isFree = !profile.subscription_status || profile.subscription_status !== 'active';
         
-        // Build query
         const query = supabase
           .from('grants')
           .select('*')
           .or(`state.eq.${profile.state},state.is.null`)
           .order('deadline', { ascending: true });
         
-        // Only apply limit for free users (Pro gets unlimited)
         if (isFree) {
           query.limit(5);
         }
@@ -82,6 +83,7 @@ export default function Dashboard() {
         setError(err instanceof Error ? err.message : 'Failed to load grants');
       } finally {
         setLoading(false);
+        setSearchingGrants(false);
       }
     };
 
@@ -106,7 +108,6 @@ export default function Dashboard() {
   };
 
   const handleQuestionnaireComplete = async () => {
-    // Reload profile after questionnaire completion
     if (!user) return;
     
     const { data } = await supabase
@@ -124,12 +125,10 @@ export default function Dashboard() {
   const isPro = profile?.subscription_status === 'active';
   const hasCompletedQuestionnaire = profile?.state && profile?.org_type;
 
-  // Show questionnaire if not completed
   if (showQuestionnaire) {
     return <Questionnaire onComplete={handleQuestionnaireComplete} />;
   }
 
-  // Free users cannot access Settings
   if (showSettings) {
     if (!isPro) {
       setShowSettings(false);
@@ -143,17 +142,18 @@ export default function Dashboard() {
     );
   }
 
-  if (loading) {
+  if (loading || searchingGrants) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
-        <div className="text-white text-xl">Loading your grants...</div>
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex flex-col items-center justify-center">
+        <Search className="w-16 h-16 text-emerald-500 animate-pulse mb-4" />
+        <div className="text-white text-2xl font-semibold mb-2">Searching for grants...</div>
+        <div className="text-slate-400 text-sm">This may take a few moments</div>
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-      {/* Header */}
       <div className="border-b border-slate-700 bg-slate-900/50 backdrop-blur-sm sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
           <div>
@@ -178,7 +178,6 @@ export default function Dashboard() {
             )}
           </div>
           <div className="flex items-center gap-3">
-            {/* Settings Button - Pro Only */}
             {isPro && (
               <button
                 onClick={() => setShowSettings(true)}
@@ -188,7 +187,6 @@ export default function Dashboard() {
                 <SettingsIcon className="w-5 h-5" />
               </button>
             )}
-            {/* Genie Lamp Icon - Pro Only */}
             {isPro && (
               <button
                 id="genie-lamp-icon"
@@ -213,7 +211,6 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 py-8">
         {error && (
           <div className="mb-6 p-4 bg-red-900/20 border border-red-500/50 rounded-lg text-red-200">
@@ -221,10 +218,8 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* Only show content if questionnaire is completed */}
         {hasCompletedQuestionnaire && (
           <>
-            {/* Permanent Upgrade Banner for Free Users */}
             {!isPro && (
               <div className="mb-6 bg-gradient-to-r from-emerald-900/20 to-blue-900/20 border border-emerald-500/30 rounded-lg p-6">
                 <div className="flex items-start justify-between">
@@ -257,7 +252,6 @@ export default function Dashboard() {
               </div>
             )}
 
-            {/* Grant Pool Section - FREE: Basic list only, PRO: Full details */}
             <section id="grant-pool-section" className="mb-12">
               <div className="flex items-center justify-between mb-4">
                 <div>
@@ -282,9 +276,10 @@ export default function Dashboard() {
 
               {grants.length === 0 ? (
                 <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-12 text-center">
-                  <p className="text-slate-300 text-lg">No grants found yet.</p>
-                  <p className="text-slate-400 mt-2">
-                    Check back soon as we add more opportunities!
+                  <Search className="w-16 h-16 text-slate-600 mx-auto mb-4" />
+                  <p className="text-slate-300 text-lg mb-2">No matching grants found at this time.</p>
+                  <p className="text-slate-400">
+                    We're constantly adding new opportunities. Check back soon or update your profile criteria in Settings to see more matches.
                   </p>
                 </div>
               ) : (
@@ -299,7 +294,6 @@ export default function Dashboard() {
                           <h3 className="text-xl font-bold text-white mb-1">
                             {grant.title}
                           </h3>
-                          {/* Free users: Brief description, then lock message */}
                           {!isPro && (
                             <>
                               <p className="text-slate-400 text-sm mb-2">{grant.description}</p>
@@ -311,7 +305,6 @@ export default function Dashboard() {
                               </div>
                             </>
                           )}
-                          {/* Pro users: Full description */}
                           {isPro && (
                             <p className="text-slate-400 text-sm">{grant.description}</p>
                           )}
@@ -324,7 +317,6 @@ export default function Dashboard() {
                         </div>
                       </div>
 
-                      {/* Pro-only: Tags, deadline, apply button */}
                       {isPro && (
                         <>
                           <div className="flex flex-wrap gap-2 mb-4">
@@ -365,7 +357,6 @@ export default function Dashboard() {
               )}
             </section>
 
-            {/* All sections below are PRO-ONLY */}
             {!isPro && (
               <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-12 text-center">
                 <Lock className="w-16 h-16 text-slate-600 mx-auto mb-4" />
@@ -382,10 +373,8 @@ export default function Dashboard() {
               </div>
             )}
 
-            {/* PRO-ONLY SECTIONS */}
             {isPro && (
               <>
-                {/* Fiscal Sponsor Partners Section */}
                 <section id="fiscal-sponsors-section" className="mb-12">
                   <div className="flex items-center justify-between mb-4">
                     <h2 className="text-2xl font-bold text-white">Fiscal Sponsor Partners</h2>
@@ -399,7 +388,6 @@ export default function Dashboard() {
                   </div>
                 </section>
 
-                {/* LOIs & Applications Section */}
                 <section id="lois-applications-section" className="mb-12">
                   <div className="flex items-center justify-between mb-4">
                     <h2 className="text-2xl font-bold text-white">LOIs & Applications</h2>
@@ -413,7 +401,6 @@ export default function Dashboard() {
                   </div>
                 </section>
 
-                {/* Templates Library Section */}
                 <section id="templates-section" className="mb-12">
                   <div className="flex items-center justify-between mb-4">
                     <h2 className="text-2xl font-bold text-white">Templates Library</h2>
@@ -427,7 +414,6 @@ export default function Dashboard() {
                   </div>
                 </section>
 
-                {/* Wins & Records Section */}
                 <section id="wins-records-section" className="mb-12">
                   <div className="flex items-center justify-between mb-4">
                     <h2 className="text-2xl font-bold text-white">Wins & Records</h2>
@@ -458,7 +444,6 @@ export default function Dashboard() {
                   </div>
                 </section>
 
-                {/* Calendar Section */}
                 <section id="calendar-section" className="mb-12">
                   <div className="flex items-center justify-between mb-4">
                     <h2 className="text-2xl font-bold text-white">Calendar</h2>
@@ -477,7 +462,6 @@ export default function Dashboard() {
         )}
       </div>
 
-      {/* Product Tour - PRO ONLY */}
       {isPro && (
         <ProductTour
           isActive={isTourActive}
