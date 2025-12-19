@@ -52,8 +52,8 @@
 </head>
 <body>
     <h1>Grant Geenie - Direct Database Test</h1>
-    <div id="debug" class="debug"></div>
-    <div id="status" class="loading">Initializing...</div>
+    <div id="debug" class="debug">Connecting to database...</div>
+    <div id="status" class="loading">Loading...</div>
     <div id="grants"></div>
 
     <script>
@@ -61,39 +61,24 @@
         const statusDiv = document.getElementById('status');
         const grantsDiv = document.getElementById('grants');
 
-        // Try multiple ways to get the env vars
         const SUPABASE_URL = 'https://ooxkwrnmnygatsxahspd.supabase.co';
-        
-        // These will be undefined in static HTML, but let's try anyway
-        let SUPABASE_KEY = null;
-        
-        // Show debug info
-        debugDiv.innerHTML = `
-            <strong>Debug Info:</strong><br>
-            URL: ${SUPABASE_URL}<br>
-            Key available: ${SUPABASE_KEY ? 'YES (hidden)' : 'NO - needs to be added'}<br>
-            <br>
-            <strong>Instructions:</strong><br>
-            1. Go to Supabase → Settings → API<br>
-            2. Copy your <strong>anon public</strong> key<br>
-            3. Paste it in the JavaScript below (line ~75)<br>
-            4. Or add it to Vercel env vars and rebuild
-        `;
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9veGt3cm5tbnlnYXRzeGFoc3BkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ3MjU5MzMsImV4cCI6MjA4MDMwMTkzM30.6bT_Tlhvqxy5YXkQ9vqY6J_OGQrN0arLMPMFNseSh1M';
 
-        // PASTE YOUR SUPABASE ANON KEY HERE:
-        SUPABASE_KEY = 'YOUR_KEY_HERE';
+        debugDiv.innerHTML = `
+            <strong>✅ Configuration:</strong><br>
+            URL: ${SUPABASE_URL}<br>
+            Key: Loaded (hidden for security)<br>
+            Status: Attempting to connect...
+        `;
 
         async function loadGrants() {
             try {
-                if (!SUPABASE_KEY || SUPABASE_KEY === 'YOUR_KEY_HERE') {
-                    throw new Error('Supabase anon key not configured. Edit line 75 of this file.');
-                }
-
-                statusDiv.innerHTML = 'Connecting to Supabase...';
+                statusDiv.innerHTML = '🔄 Connecting to Supabase...';
                 
                 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
                 
-                statusDiv.innerHTML = 'Fetching grants...';
+                debugDiv.innerHTML += '<br>✅ Client created';
+                statusDiv.innerHTML = '🔄 Fetching grants from database...';
                 
                 const { data, error } = await supabase
                     .from('grants')
@@ -102,13 +87,15 @@
                     .limit(20);
 
                 if (error) {
+                    debugDiv.innerHTML += `<br>❌ Query error: ${error.message}`;
                     throw error;
                 }
 
-                statusDiv.innerHTML = `✅ Found ${data.length} grants!`;
+                debugDiv.innerHTML += `<br>✅ Query successful - ${data.length} grants found`;
+                statusDiv.innerHTML = `✅ Success! Found ${data.length} grants`;
 
                 if (data.length === 0) {
-                    grantsDiv.innerHTML = '<div class="error">⚠️ No grants found in database. Check if grants exist in Supabase.</div>';
+                    grantsDiv.innerHTML = '<div class="error">⚠️ No grants found. Database is empty or filtered out.</div>';
                     return;
                 }
 
@@ -126,17 +113,18 @@
                 `).join('');
 
             } catch (error) {
-                statusDiv.innerHTML = '❌ Error';
+                statusDiv.innerHTML = '❌ Error occurred';
                 grantsDiv.innerHTML = `
                     <div class="error">
-                        <h3>Error Loading Grants</h3>
+                        <h3>❌ Error Loading Grants</h3>
                         <p><strong>Error:</strong> ${error.message}</p>
-                        <p class="info">This could mean:</p>
+                        <p class="info">Possible causes:</p>
                         <ul>
-                            <li>Supabase anon key is missing or incorrect</li>
-                            <li>RLS policies are blocking access</li>
+                            <li>RLS (Row Level Security) policies blocking access</li>
                             <li>Network/CORS issue</li>
+                            <li>Table doesn't exist or is empty</li>
                         </ul>
+                        <p><strong>Check browser console (F12) for more details.</strong></p>
                     </div>
                 `;
                 console.error('Full error:', error);
