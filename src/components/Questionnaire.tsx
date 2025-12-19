@@ -52,8 +52,8 @@ const QUESTIONS = [
   },
   {
     id: 'grant_amount',
-    label: 'How much funding are you seeking?',
-    type: 'single',
+    label: 'How much funding are you seeking? (select all that apply)',
+    type: 'multi',
     options: [
       'Under $10,000',
       '$10,000 - $50,000',
@@ -121,7 +121,7 @@ export default function Questionnaire({ onComplete }: QuestionnaireProps) {
     business_location: '',
     legal_entity: '',
     annual_revenue: '',
-    grant_amount: '',
+    grant_amount: [],
     primary_fields: [],
     demographic_focus: [],
     project_stage: '',
@@ -144,13 +144,11 @@ export default function Questionnaire({ onComplete }: QuestionnaireProps) {
     const maxSelections = question.maxSelections || 99;
 
     if (current.includes(value)) {
-      // Remove if already selected
       setAnswers(prev => ({
         ...prev,
         [question.id]: current.filter(v => v !== value),
       }));
     } else if (current.length < maxSelections) {
-      // Add if under limit
       setAnswers(prev => ({
         ...prev,
         [question.id]: [...current, value],
@@ -196,16 +194,13 @@ export default function Questionnaire({ onComplete }: QuestionnaireProps) {
     setError('');
 
     try {
-      // Get first primary field for org_type compatibility
       const primaryFields = answers.primary_fields as string[];
       const orgType = primaryFields[0] || 'Other';
 
-      // Save profile with all answers
       await supabase.from('profiles').upsert({
         id: user.id,
         state: answers.state,
-        org_type: orgType, // For backward compatibility
-        // Store all eligibility data as JSON
+        org_type: orgType,
         business_location: answers.business_location,
         legal_entity: answers.legal_entity,
         annual_revenue: answers.annual_revenue,
@@ -217,20 +212,17 @@ export default function Questionnaire({ onComplete }: QuestionnaireProps) {
         questionnaire_completed: true,
       });
 
-      // Get user profile for first name and email
       const { data: profile } = await supabase
         .from('profiles')
         .select('first_name')
         .eq('id', user.id)
         .single();
 
-      // Count grant matches for the user's state
       const { count: matchesCount } = await supabase
         .from('grants')
         .select('*', { count: 'exact', head: true })
         .or(`state.eq.${answers.state},state.is.null`);
 
-      // Send matches email
       const firstName = profile?.first_name || 'there';
       const dashboardTourUrl = `${window.location.origin}/dashboard?tour=genie`;
 
@@ -259,14 +251,12 @@ export default function Questionnaire({ onComplete }: QuestionnaireProps) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 py-12 px-4">
       <div className="max-w-2xl mx-auto">
-        {/* Header */}
         <div className="mb-8 text-center">
           <h1 className="text-3xl font-bold text-white mb-2">Eligibility Questionnaire</h1>
-          <p className="text-slate-400">7 questions • One-time setup</p>
+          <p className="text-slate-400">9 questions • One-time setup</p>
           <p className="text-slate-400 text-sm mt-1">Your answers will be saved and used to match you with grants</p>
         </div>
 
-        {/* Progress Bar */}
         <div className="mb-8">
           <div className="flex justify-between items-center mb-2">
             <span className="text-slate-400 text-sm">Progress</span>
@@ -288,11 +278,9 @@ export default function Questionnaire({ onComplete }: QuestionnaireProps) {
           </div>
         )}
 
-        {/* Question */}
         <div className="bg-slate-800 border border-slate-700 rounded-lg p-8">
           <h2 className="text-2xl font-bold text-white mb-6">{question.label}</h2>
 
-          {/* State dropdown */}
           {question.type === 'select' && (
             <select
               value={US_STATES.find(s => s.code === answers.state)?.name || ''}
@@ -308,7 +296,6 @@ export default function Questionnaire({ onComplete }: QuestionnaireProps) {
             </select>
           )}
 
-          {/* Single choice */}
           {question.type === 'single' && (
             <div className="space-y-3">
               {question.options.map((option) => (
@@ -327,7 +314,6 @@ export default function Questionnaire({ onComplete }: QuestionnaireProps) {
             </div>
           )}
 
-          {/* Multi-select */}
           {question.type === 'multi' && (
             <>
               {question.maxSelections && (
@@ -358,7 +344,15 @@ export default function Questionnaire({ onComplete }: QuestionnaireProps) {
           )}
         </div>
 
-        {/* Navigation Buttons */}
+        {/* Info box on last question */}
+        {isLastQuestion && (
+          <div className="mt-6 p-4 bg-blue-900/20 border border-blue-500/30 rounded-lg">
+            <p className="text-blue-300 text-sm">
+              ℹ️ You can update your answers anytime in Settings after completing the questionnaire.
+            </p>
+          </div>
+        )}
+
         <div className="flex gap-4 mt-8">
           <button
             onClick={handleBack}
@@ -373,7 +367,7 @@ export default function Questionnaire({ onComplete }: QuestionnaireProps) {
               disabled={!isQuestionAnswered() || loading}
               className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition"
             >
-              {loading ? 'Saving...' : 'Complete & Find Grants'}
+              {loading ? 'Saving & Finding Grants...' : 'Complete & Find Grants'}
             </button>
           ) : (
             <button
