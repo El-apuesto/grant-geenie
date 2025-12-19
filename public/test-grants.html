@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grant Test Page</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #1e293b;
+            color: white;
+        }
+        .grant {
+            background: #334155;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border: 1px solid #475569;
+        }
+        .grant h3 {
+            margin-top: 0;
+            color: #10b981;
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            font-size: 20px;
+        }
+        .error {
+            background: #991b1b;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .info {
+            color: #94a3b8;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Grant Geenie - Test Page</h1>
+    <div id="status" class="loading">Loading grants...</div>
+    <div id="grants"></div>
+
+    <script>
+        const SUPABASE_URL = 'https://ooxkwrnmnygatsxahspd.supabase.co';
+        const SUPABASE_ANON_KEY = 'REPLACE_WITH_YOUR_ANON_KEY';
+
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        async function loadGrants() {
+            const statusDiv = document.getElementById('status');
+            const grantsDiv = document.getElementById('grants');
+
+            try {
+                statusDiv.innerHTML = 'Fetching grants from database...';
+                
+                const { data, error } = await supabase
+                    .from('grants')
+                    .select('*')
+                    .eq('is_active', true)
+                    .limit(20);
+
+                if (error) {
+                    throw error;
+                }
+
+                statusDiv.innerHTML = `Found ${data.length} grants!`;
+
+                if (data.length === 0) {
+                    grantsDiv.innerHTML = '<div class="error">No grants found in database</div>';
+                    return;
+                }
+
+                grantsDiv.innerHTML = data.map(grant => `
+                    <div class="grant">
+                        <h3>${grant.title}</h3>
+                        <p class="info"><strong>${grant.funder_name}</strong> (${grant.funder_type})</p>
+                        <p>${grant.description}</p>
+                        <p class="info">
+                            <strong>Award:</strong> $${grant.award_min.toLocaleString()} - $${grant.award_max.toLocaleString()}<br>
+                            <strong>Deadline:</strong> ${grant.is_rolling ? 'Rolling' : (grant.deadline || 'TBD')}<br>
+                            <strong>Apply:</strong> <a href="${grant.apply_url}" target="_blank" style="color: #10b981">${grant.apply_url}</a>
+                        </p>
+                    </div>
+                `).join('');
+
+            } catch (error) {
+                statusDiv.innerHTML = '';
+                grantsDiv.innerHTML = `
+                    <div class="error">
+                        <h3>Error Loading Grants</h3>
+                        <p>${error.message}</p>
+                        <p class="info">Check that your SUPABASE_ANON_KEY is correct in this file.</p>
+                    </div>
+                `;
+                console.error('Error:', error);
+            }
+        }
+
+        loadGrants();
+    </script>
+</body>
+</html>
