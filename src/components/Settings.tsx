@@ -3,16 +3,17 @@ import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { Profile } from '../types';
 import { US_STATES } from '../lib/states';
-import { ArrowLeft, Play } from 'lucide-react';
+import { ArrowLeft, Play, RefreshCw } from 'lucide-react';
 
 const ORG_TYPES = ['Nonprofit', 'Small Business', 'Freelancer/Solo', 'Artist/Creator', 'Other'];
 
 interface SettingsProps {
   onBack: () => void;
   onRestartTour: () => void;
+  onRetakeQuestionnaire?: () => void;
 }
 
-export default function Settings({ onBack, onRestartTour }: SettingsProps) {
+export default function Settings({ onBack, onRestartTour, onRetakeQuestionnaire }: SettingsProps) {
   const { user } = useAuth();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [orgType, setOrgType] = useState('');
@@ -73,6 +74,12 @@ export default function Settings({ onBack, onRestartTour }: SettingsProps) {
       setError(err instanceof Error ? err.message : 'Failed to save settings');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleRetakeQuestionnaire = () => {
+    if (onRetakeQuestionnaire) {
+      onRetakeQuestionnaire();
     }
   };
 
@@ -183,6 +190,21 @@ export default function Settings({ onBack, onRestartTour }: SettingsProps) {
               {saving ? 'Saving...' : 'Save Changes'}
             </button>
           </div>
+        </div>
+
+        {/* Retake Questionnaire */}
+        <div className="bg-slate-800 border border-slate-700 rounded-lg p-6 mb-6">
+          <h2 className="text-xl font-bold text-white mb-4">Update Eligibility Answers</h2>
+          <p className="text-slate-300 mb-4">
+            Want to update your full eligibility profile? Retake the questionnaire to refine your grant matches based on your current needs.
+          </p>
+          <button
+            onClick={handleRetakeQuestionnaire}
+            className="flex items-center gap-2 px-4 py-3 bg-slate-700 hover:bg-slate-600 text-white font-semibold rounded-lg transition"
+          >
+            <RefreshCw className="w-4 h-4" />
+            Retake Questionnaire
+          </button>
         </div>
 
         {/* Dashboard Tour */}
