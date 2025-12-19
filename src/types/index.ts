@@ -20,11 +20,17 @@ export interface Profile {
 export interface Grant {
   id: string;
   title: string;
+  funder_name: string;
+  funder_type: string;
   description: string;
-  amount: number;
-  deadline: string;
-  state: string | null; // null = federal
-  org_types: string[];
-  url: string;
+  award_min: number;
+  award_max: number;
+  deadline: string | null;
+  is_rolling: boolean;
+  is_active: boolean;
+  apply_url: string;
+  states: string[] | null;
+  countries: string[] | null;
+  entity_types: string[] | null;
   created_at: string;
 }
