@@ -107,6 +107,11 @@ export default function Dashboard() {
     startTour();
   };
 
+  const handleRetakeQuestionnaire = () => {
+    setShowSettings(false);
+    setShowQuestionnaire(true);
+  };
+
   const handleQuestionnaireComplete = async () => {
     if (!user) return;
     
@@ -138,6 +143,7 @@ export default function Dashboard() {
       <Settings
         onBack={() => setShowSettings(false)}
         onRestartTour={handleRestartTour}
+        onRetakeQuestionnaire={handleRetakeQuestionnaire}
       />
     );
   }
