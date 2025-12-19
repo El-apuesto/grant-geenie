@@ -10,134 +10,159 @@ interface QuestionnaireProps {
 
 const QUESTIONS = [
   {
-    id: 'legal_status',
-    label: 'Your legal status is best described as:',
-    section: 'SECTION 1: ORGANIZATIONAL IDENTITY',
+    id: 'state',
+    label: 'What state/province are you located in?',
+    type: 'select',
+    options: US_STATES.map(s => s.name),
+  },
+  {
+    id: 'business_location',
+    label: 'Where does the majority of your work/business take place?',
+    type: 'single',
     options: [
-      'A registered 501(c)(3) nonprofit organization',
-      'A public entity (school, university, government agency)',
-      'A for-profit business or corporation',
-      'An individual artist, researcher, or entrepreneur',
-      'A religious or faith-based organization without 501(c)(3) status',
-      'A tribal entity or Native-led organization',
+      'In-person in my local community',
+      'In-person across my state/region',
+      'Primarily online/virtual',
+      'Mix of in-person and online',
     ],
   },
   {
-    id: 'headquarters_location',
-    label: 'The physical headquarters of your organization is located in:',
-    section: 'SECTION 2: GEOGRAPHIC SCOPE',
+    id: 'legal_entity',
+    label: 'What is your legal entity type?',
+    type: 'single',
     options: [
-      'A major metropolitan area (population 500,000+)',
-      'A suburban or mid-sized city',
-      'A rural area or small town',
-      'Multiple locations across different states',
+      'Individual',
+      'Unincorporated group',
+      '501(c)(3) or equivalent nonprofit',
+      'For-profit business',
+      'Other',
     ],
   },
   {
-    id: 'geographic_impact',
-    label: 'The primary geographic impact of your project will be:',
-    section: 'SECTION 2: GEOGRAPHIC SCOPE',
+    id: 'annual_revenue',
+    label: 'What was your annual revenue/budget last year?',
+    type: 'single',
     options: [
-      'Confined to our immediate city/county',
-      'Statewide within our home state',
-      'Regional (multiple specific states)',
-      'National or entirely virtual/online',
-      'International',
-    ],
-  },
-  {
-    id: 'primary_field',
-    label: "Your project's primary field aligns most closely with:",
-    section: 'SECTION 3: PROGRAMMATIC FOCUS',
-    options: [
-      'Arts, Culture, and Humanities',
-      'Education (K-12 or Higher Education)',
-      'Health, Medicine, or Mental Health Services',
-      'Environment, Conservation, or Animal Welfare',
-      'Human Services (housing, hunger, poverty alleviation)',
-      'Community Development or Economic Empowerment',
-      'Scientific Research or Technology Innovation',
-      'Youth Development or Sports',
-    ],
-  },
-  {
-    id: 'annual_budget',
-    label: "Your organization's approximate annual operating budget is:",
-    section: 'SECTION 4: FINANCIAL PARAMETERS',
-    options: [
-      'Under $100,000',
-      '$100,000 - $500,000',
-      '$500,000 - $1,000,000',
+      'Under $50,000',
+      '$50,000 - $250,000',
+      '$250,000 - $1,000,000',
       'Over $1,000,000',
-      'Not applicable (individual or new project)',
+      'Not founded yet',
     ],
   },
   {
     id: 'grant_amount',
-    label: 'The specific grant amount you are seeking is approximately:',
-    section: 'SECTION 4: FINANCIAL PARAMETERS',
+    label: 'How much funding are you seeking?',
+    type: 'single',
     options: [
       'Under $10,000',
       '$10,000 - $50,000',
-      '$50,000 - $250,000',
+      '$50,000 - $100,000',
+      '$100,000 - $250,000',
       'Over $250,000',
     ],
   },
   {
-    id: 'funding_use',
-    label: 'These funds will be used primarily for:',
-    section: 'SECTION 5: FUNDING TYPE',
+    id: 'primary_fields',
+    label: 'Select your primary field(s) (choose up to 3):',
+    type: 'multi',
+    maxSelections: 3,
     options: [
-      'General operating support (utilities, salaries, overhead)',
-      'A specific new program or project',
-      'Capacity building (staff training, technology, planning)',
-      'Capital expenses (building, renovation, equipment)',
-      'Research or pilot program development',
-      'Emergency or bridge funding',
+      'Arts & Culture',
+      'Environment',
+      'Health',
+      'Education',
+      'Housing',
+      'Technology',
+      'Social Justice',
+      'Other',
     ],
   },
   {
-    id: 'funding_start_date',
-    label: 'Your ideal funding start date is:',
-    section: 'SECTION 6: TIMELINE',
+    id: 'demographic_focus',
+    label: 'Select any that apply to your organization/leadership:',
+    type: 'multi',
     options: [
-      'Immediately (within 3 months - emergency/urgent needs)',
-      'Within the next 6-12 months (standard planning cycle)',
-      '12+ months from now (long-term strategic planning)',
-      "Flexible / dependent on funder's timeline",
+      'Women-led',
+      'BIPOC-led',
+      'LGBTQ+-led',
+      'Rural',
+      'Veterans',
+      'Disabled-led',
+      'Immigrant-led',
+      'Youth-led',
+      'None of these',
     ],
+  },
+  {
+    id: 'project_stage',
+    label: 'What stage is your project/organization?',
+    type: 'single',
+    options: [
+      'Idea phase',
+      'Prototype/pilot',
+      'Operating 1-3 years',
+      'Scaling/established',
+    ],
+  },
+  {
+    id: 'fiscal_sponsor',
+    label: 'Do you have (or can you get) a 501(c)(3) fiscal sponsor?',
+    type: 'single',
+    options: ['Yes', 'No', 'Maybe / Not sure'],
   },
 ];
 
 export default function Questionnaire({ onComplete }: QuestionnaireProps) {
   const { user } = useAuth();
   const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [answers, setAnswers] = useState<Record<string, string>>({
-    legal_status: '',
-    headquarters_location: '',
-    geographic_impact: '',
-    primary_field: '',
-    annual_budget: '',
-    grant_amount: '',
-    funding_use: '',
-    funding_start_date: '',
+  const [answers, setAnswers] = useState<Record<string, string | string[]>>({
     state: '',
+    business_location: '',
+    legal_entity: '',
+    annual_revenue: '',
+    grant_amount: '',
+    primary_fields: [],
+    demographic_focus: [],
+    project_stage: '',
+    fiscal_sponsor: '',
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const handleAnswer = (value: string) => {
-    const question = QUESTIONS[currentQuestion];
+  const question = QUESTIONS[currentQuestion];
+
+  const handleSingleAnswer = (value: string) => {
     setAnswers(prev => ({
       ...prev,
       [question.id]: value,
     }));
   };
 
-  const handleStateChange = (state: string) => {
+  const handleMultiAnswer = (value: string) => {
+    const current = answers[question.id] as string[];
+    const maxSelections = question.maxSelections || 99;
+
+    if (current.includes(value)) {
+      // Remove if already selected
+      setAnswers(prev => ({
+        ...prev,
+        [question.id]: current.filter(v => v !== value),
+      }));
+    } else if (current.length < maxSelections) {
+      // Add if under limit
+      setAnswers(prev => ({
+        ...prev,
+        [question.id]: [...current, value],
+      }));
+    }
+  };
+
+  const handleStateChange = (stateName: string) => {
+    const stateCode = US_STATES.find(s => s.name === stateName)?.code || '';
     setAnswers(prev => ({
       ...prev,
-      state,
+      state: stateCode,
     }));
   };
 
@@ -153,9 +178,17 @@ export default function Questionnaire({ onComplete }: QuestionnaireProps) {
     }
   };
 
+  const isQuestionAnswered = () => {
+    const answer = answers[question.id];
+    if (question.type === 'multi') {
+      return Array.isArray(answer) && answer.length > 0;
+    }
+    return !!answer;
+  };
+
   const handleComplete = async () => {
     if (!user || !answers.state) {
-      setError('Please select a state');
+      setError('Please complete all questions');
       return;
     }
 
@@ -163,21 +196,24 @@ export default function Questionnaire({ onComplete }: QuestionnaireProps) {
     setError('');
 
     try {
+      // Get first primary field for org_type compatibility
+      const primaryFields = answers.primary_fields as string[];
+      const orgType = primaryFields[0] || 'Other';
+
       // Save profile with all answers
       await supabase.from('profiles').upsert({
         id: user.id,
-        // Store primary field as org_type for backward compatibility
-        org_type: answers.primary_field,
         state: answers.state,
-        // Store all eligibility data
-        legal_status: answers.legal_status,
-        headquarters_location: answers.headquarters_location,
-        geographic_impact: answers.geographic_impact,
-        primary_field: answers.primary_field,
-        annual_budget: answers.annual_budget,
+        org_type: orgType, // For backward compatibility
+        // Store all eligibility data as JSON
+        business_location: answers.business_location,
+        legal_entity: answers.legal_entity,
+        annual_revenue: answers.annual_revenue,
         grant_amount: answers.grant_amount,
-        funding_use: answers.funding_use,
-        funding_start_date: answers.funding_start_date,
+        primary_fields: primaryFields,
+        demographic_focus: answers.demographic_focus,
+        project_stage: answers.project_stage,
+        fiscal_sponsor: answers.fiscal_sponsor,
         questionnaire_completed: true,
       });
 
@@ -194,7 +230,7 @@ export default function Questionnaire({ onComplete }: QuestionnaireProps) {
         .select('*', { count: 'exact', head: true })
         .or(`state.eq.${answers.state},state.is.null`);
 
-      // Send matches email with tour invitation
+      // Send matches email
       const firstName = profile?.first_name || 'there';
       const dashboardTourUrl = `${window.location.origin}/dashboard?tour=genie`;
 
@@ -206,11 +242,9 @@ export default function Questionnaire({ onComplete }: QuestionnaireProps) {
           dashboardTourUrl,
         });
       } catch (emailError) {
-        // Log email error but don't block completion
         console.error('Failed to send matches email:', emailError);
       }
 
-      // Complete questionnaire and navigate to dashboard
       onComplete();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save answers');
@@ -220,28 +254,25 @@ export default function Questionnaire({ onComplete }: QuestionnaireProps) {
   };
 
   const isLastQuestion = currentQuestion === QUESTIONS.length - 1;
-  const question = QUESTIONS[currentQuestion];
-  const progress = ((currentQuestion + 1) / (QUESTIONS.length + 1)) * 100;
-
-  // Show section header if it's different from previous question
-  const showSectionHeader = currentQuestion === 0 || 
-    question.section !== QUESTIONS[currentQuestion - 1]?.section;
+  const progress = ((currentQuestion + 1) / QUESTIONS.length) * 100;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 py-12 px-4">
       <div className="max-w-2xl mx-auto">
         {/* Header */}
         <div className="mb-8 text-center">
-          <h1 className="text-3xl font-bold text-white mb-2">Grant Eligibility Assessment</h1>
-          <p className="text-slate-400">Time: ~5 minutes</p>
-          <p className="text-slate-400 text-sm mt-1">Select ONE answer per question</p>
+          <h1 className="text-3xl font-bold text-white mb-2">Eligibility Questionnaire</h1>
+          <p className="text-slate-400">7 questions • One-time setup</p>
+          <p className="text-slate-400 text-sm mt-1">Your answers will be saved and used to match you with grants</p>
         </div>
 
         {/* Progress Bar */}
         <div className="mb-8">
           <div className="flex justify-between items-center mb-2">
             <span className="text-slate-400 text-sm">Progress</span>
-            <span className="text-slate-400 text-sm">{currentQuestion + 1} of {QUESTIONS.length + 1}</span>
+            <span className="text-slate-400 text-sm">
+              Question {currentQuestion + 1} of {QUESTIONS.length}
+            </span>
           </div>
           <div className="w-full bg-slate-700 rounded-full h-2">
             <div
@@ -257,52 +288,73 @@ export default function Questionnaire({ onComplete }: QuestionnaireProps) {
           </div>
         )}
 
-        {/* Question or State Selection */}
+        {/* Question */}
         <div className="bg-slate-800 border border-slate-700 rounded-lg p-8">
-          {isLastQuestion ? (
-            <div>
-              <div className="mb-4 p-3 bg-emerald-900/20 border border-emerald-500/30 rounded">
-                <p className="text-emerald-400 text-sm font-semibold">FINAL QUESTION</p>
-              </div>
-              <h2 className="text-2xl font-bold text-white mb-6">What state are you located in?</h2>
-              <select
-                value={answers.state}
-                onChange={(e) => handleStateChange(e.target.value)}
-                className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-emerald-500"
-              >
-                <option value="">Select your state...</option>
-                {US_STATES.map(state => (
-                  <option key={state.code} value={state.code}>
-                    {state.name}
-                  </option>
-                ))}
-              </select>
+          <h2 className="text-2xl font-bold text-white mb-6">{question.label}</h2>
+
+          {/* State dropdown */}
+          {question.type === 'select' && (
+            <select
+              value={US_STATES.find(s => s.code === answers.state)?.name || ''}
+              onChange={(e) => handleStateChange(e.target.value)}
+              className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-emerald-500"
+            >
+              <option value="">Select your state...</option>
+              {US_STATES.map(state => (
+                <option key={state.code} value={state.name}>
+                  {state.name}
+                </option>
+              ))}
+            </select>
+          )}
+
+          {/* Single choice */}
+          {question.type === 'single' && (
+            <div className="space-y-3">
+              {question.options.map((option) => (
+                <button
+                  key={option}
+                  onClick={() => handleSingleAnswer(option)}
+                  className={`w-full p-4 text-left rounded-lg border-2 transition ${
+                    answers[question.id] === option
+                      ? 'bg-emerald-600/20 border-emerald-500 text-white'
+                      : 'bg-slate-700/50 border-slate-600 text-slate-300 hover:border-slate-500'
+                  }`}
+                >
+                  {option}
+                </button>
+              ))}
             </div>
-          ) : (
-            <div>
-              {showSectionHeader && (
-                <div className="mb-4 p-3 bg-emerald-900/20 border border-emerald-500/30 rounded">
-                  <p className="text-emerald-400 text-sm font-semibold">{question.section}</p>
-                </div>
+          )}
+
+          {/* Multi-select */}
+          {question.type === 'multi' && (
+            <>
+              {question.maxSelections && (
+                <p className="text-slate-400 text-sm mb-4">
+                  Selected: {(answers[question.id] as string[]).length} / {question.maxSelections}
+                </p>
               )}
-              <h2 className="text-xl font-bold text-white mb-6">{question.label}</h2>
               <div className="space-y-3">
-                {question.options.map((option, index) => (
-                  <button
-                    key={option}
-                    onClick={() => handleAnswer(option)}
-                    className={`w-full p-4 text-left rounded-lg border-2 transition ${
-                      answers[question.id] === option
-                        ? 'bg-emerald-600/20 border-emerald-500 text-white'
-                        : 'bg-slate-700/50 border-slate-600 text-slate-300 hover:border-slate-500'
-                    }`}
-                  >
-                    <span className="font-mono text-emerald-400 mr-3">({String.fromCharCode(65 + index)})</span>
-                    {option}
-                  </button>
-                ))}
+                {question.options.map((option) => {
+                  const isSelected = (answers[question.id] as string[]).includes(option);
+                  return (
+                    <button
+                      key={option}
+                      onClick={() => handleMultiAnswer(option)}
+                      className={`w-full p-4 text-left rounded-lg border-2 transition ${
+                        isSelected
+                          ? 'bg-emerald-600/20 border-emerald-500 text-white'
+                          : 'bg-slate-700/50 border-slate-600 text-slate-300 hover:border-slate-500'
+                      }`}
+                    >
+                      <span className="mr-3">{isSelected ? '✓' : '○'}</span>
+                      {option}
+                    </button>
+                  );
+                })}
               </div>
-            </div>
+            </>
           )}
         </div>
 
@@ -318,15 +370,15 @@ export default function Questionnaire({ onComplete }: QuestionnaireProps) {
           {isLastQuestion ? (
             <button
               onClick={handleComplete}
-              disabled={!answers.state || loading}
+              disabled={!isQuestionAnswered() || loading}
               className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition"
             >
-              {loading ? 'Completing...' : 'Complete Assessment'}
+              {loading ? 'Saving...' : 'Complete & Find Grants'}
             </button>
           ) : (
             <button
               onClick={handleNext}
-              disabled={!answers[question.id]}
+              disabled={!isQuestionAnswered()}
               className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition"
             >
               Next Question
