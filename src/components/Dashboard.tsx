@@ -11,6 +11,7 @@ import Questionnaire from './Questionnaire';
 import LOIGenerator from './LOIGenerator';
 import FiscalSponsorsPage from './FiscalSponsorsPage';
 import ApplicationWizard from './ApplicationWizard';
+import CalendarPage from './CalendarPage';
 import { useTour } from '../hooks/useTour';
 
 interface ProfileWithQuestionnaire extends Profile {
@@ -31,6 +32,7 @@ export default function Dashboard() {
   const [showLOIGenerator, setShowLOIGenerator] = useState(false);
   const [showFiscalSponsors, setShowFiscalSponsors] = useState(false);
   const [showApplicationTemplates, setShowApplicationTemplates] = useState(false);
+  const [showCalendar, setShowCalendar] = useState(false);
 
   const { isTourActive, startTour, completeTour, skipTour } = useTour();
 
@@ -130,7 +132,6 @@ export default function Dashboard() {
     
     try {
       if (savedGrantIds.has(grantId)) {
-        // Unsave
         await supabase
           .from('saved_grants')
           .delete()
@@ -143,7 +144,6 @@ export default function Dashboard() {
           return newSet;
         });
       } else {
-        // Save
         await supabase
           .from('saved_grants')
           .insert({ user_id: user.id, grant_id: grantId });
@@ -286,6 +286,10 @@ export default function Dashboard() {
     );
   }
 
+  if (showCalendar) {
+    return <CalendarPage onBack={() => setShowCalendar(false)} />;
+  }
+
   if (loading || searchingGrants) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex flex-col items-center justify-center">
@@ -382,6 +386,7 @@ export default function Dashboard() {
                       <li>• 30+ Fiscal Sponsor database</li>
                       <li>• Application templates</li>
                       <li>• Track submissions & wins</li>
+                      <li>• Deadline calendar</li>
                     </ul>
                     <button
                       onClick={handleUpgrade}
@@ -522,7 +527,7 @@ export default function Dashboard() {
                 <Lock className="w-16 h-16 text-slate-600 mx-auto mb-4" />
                 <h3 className="text-2xl font-bold text-white mb-2">Pro Features Locked</h3>
                 <p className="text-slate-400 mb-6 max-w-2xl mx-auto">
-                  Fiscal Sponsors, LOI Generator, Application Templates, and more are available exclusively to Pro subscribers.
+                  Fiscal Sponsors, LOI Generator, Application Templates, Calendar, and more are available exclusively to Pro subscribers.
                 </p>
                 <button
                   onClick={handleUpgrade}
@@ -535,6 +540,28 @@ export default function Dashboard() {
 
             {isPro && (
               <>
+                <section id="calendar-section" className="mb-12">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-2xl font-bold text-white">Deadline Calendar</h2>
+                    <HelpButton
+                      sectionName="Calendar"
+                      content="Track all grant deadlines on an interactive calendar. See upcoming deadlines, monitor application status, and never miss a deadline again."
+                    />
+                  </div>
+                  <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-8">
+                    <div className="flex items-center justify-between mb-4">
+                      <p className="text-slate-400">Visualize your grant deadlines on a calendar. Track submissions, awards, and more.</p>
+                      <button
+                        onClick={() => setShowCalendar(true)}
+                        className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition font-semibold"
+                      >
+                        <Calendar className="w-4 h-4" />
+                        View Calendar
+                      </button>
+                    </div>
+                  </div>
+                </section>
+
                 <section id="fiscal-sponsors-section" className="mb-12">
                   <div className="flex items-center justify-between mb-4">
                     <h2 className="text-2xl font-bold text-white">Fiscal Sponsor Matcher</h2>
