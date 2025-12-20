@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
-import { Grant, Profile } from '../types';
+import { Grant, Profile, Application } from '../types';
 import { getStateName } from '../lib/states';
-import { ExternalLink, LogOut, Lamp, Settings as SettingsIcon, Crown, Lock, Search, Plus, Calendar, DollarSign, Building2, FileText, Bookmark, BookmarkCheck, Filter, X } from 'lucide-react';
+import { ExternalLink, LogOut, Lamp, Settings as SettingsIcon, Crown, Lock, Search, Plus, Calendar, DollarSign, Building2, FileText, Bookmark, BookmarkCheck, Filter, X, ClipboardList } from 'lucide-react';
 import ProductTour from './ProductTour';
 import HelpButton from './HelpButton';
 import Settings from './Settings';
@@ -12,6 +12,7 @@ import LOIGenerator from './LOIGenerator';
 import FiscalSponsorsPage from './FiscalSponsorsPage';
 import ApplicationWizard from './ApplicationWizard';
 import CalendarPage from './CalendarPage';
+import ApplicationTracker from './ApplicationTracker';
 import { useTour } from '../hooks/useTour';
 
 interface ProfileWithQuestionnaire extends Profile {
@@ -22,6 +23,7 @@ export default function Dashboard() {
   const { user, signOut } = useAuth();
   const [profile, setProfile] = useState<ProfileWithQuestionnaire | null>(null);
   const [grants, setGrants] = useState<Grant[]>([]);
+  const [applications, setApplications] = useState<Application[]>([]);
   const [savedGrantIds, setSavedGrantIds] = useState<Set<string>>(new Set());
   const [showSavedOnly, setShowSavedOnly] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -33,6 +35,7 @@ export default function Dashboard() {
   const [showFiscalSponsors, setShowFiscalSponsors] = useState(false);
   const [showApplicationTemplates, setShowApplicationTemplates] = useState(false);
   const [showCalendar, setShowCalendar] = useState(false);
+  const [showApplicationTracker, setShowApplicationTracker] = useState(false);
 
   // Search and filter state
   const [searchQuery, setSearchQuery] = useState('');
@@ -78,6 +81,7 @@ export default function Dashboard() {
   useEffect(() => {
     if (!user) return;
     loadSavedGrants();
+    loadApplications();
   }, [user]);
 
   useEffect(() => {
@@ -155,6 +159,21 @@ export default function Dashboard() {
       setSavedGrantIds(ids);
     } catch (err) {
       console.error('Error loading saved grants:', err);
+    }
+  };
+
+  const loadApplications = async () => {
+    if (!user) return;
+    try {
+      const { data, error } = await supabase
+        .from('applications')
+        .select('*')
+        .eq('user_id', user.id);
+      
+      if (error) throw error;
+      setApplications(data || []);
+    } catch (err) {
+      console.error('Error loading applications:', err);
     }
   };
 
@@ -329,6 +348,14 @@ export default function Dashboard() {
   const displayedGrants = getFilteredAndSortedGrants();
   const savedCount = grants.filter(g => savedGrantIds.has(g.id)).length;
 
+  // Calculate stats from applications
+  const stats = {
+    submitted: applications.filter(a => ['Submitted', 'Under Review', 'Awarded', 'Declined'].includes(a.status)).length,
+    awarded: applications.filter(a => a.status === 'Awarded').length,
+    declined: applications.filter(a => a.status === 'Declined').length,
+    totalAwarded: applications.reduce((sum, a) => sum + (a.amount_awarded || 0), 0),
+  };
+
   if (showQuestionnaire) {
     return <Questionnaire onComplete={handleQuestionnaireComplete} />;
   }
@@ -397,6 +424,27 @@ export default function Dashboard() {
 
   if (showCalendar) {
     return <CalendarPage onBack={() => setShowCalendar(false)} />;
+  }
+
+  if (showApplicationTracker) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+        <div className="border-b border-slate-700 bg-slate-900/50 backdrop-blur-sm sticky top-0 z-10">
+          <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+            <h1 className="text-2xl font-bold text-white">Application Tracker</h1>
+            <button
+              onClick={() => setShowApplicationTracker(false)}
+              className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition"
+            >
+              Back to Dashboard
+            </button>
+          </div>
+        </div>
+        <div className="max-w-7xl mx-auto px-4 py-8">
+          <ApplicationTracker isPro={isPro} />
+        </div>
+      </div>
+    );
   }
 
   if (loading || searchingGrants) {
@@ -491,10 +539,10 @@ export default function Dashboard() {
                     <ul className="text-slate-300 space-y-1 mb-4 ml-4">
                       <li>• <strong>Thousands more grants</strong> matched to your profile</li>
                       <li>• Direct application links</li>
+                      <li>• Application tracking & pipeline</li>
                       <li>• LOI Generator with auto-fill</li>
-                      <li>• 30+ Fiscal Sponsor database</li>
+                      <li>• 265+ Fiscal Sponsor database</li>
                       <li>• Application templates</li>
-                      <li>• Track submissions & wins</li>
                       <li>• Deadline calendar</li>
                     </ul>
                     <button
@@ -761,7 +809,7 @@ export default function Dashboard() {
                 <Lock className="w-16 h-16 text-slate-600 mx-auto mb-4" />
                 <h3 className="text-2xl font-bold text-white mb-2">Pro Features Locked</h3>
                 <p className="text-slate-400 mb-6 max-w-2xl mx-auto">
-                  Fiscal Sponsors, LOI Generator, Application Templates, Calendar, and more are available exclusively to Pro subscribers.
+                  Application Tracking, Fiscal Sponsors, LOI Generator, Templates, Calendar, and more are available exclusively to Pro subscribers.
                 </p>
                 <button
                   onClick={handleUpgrade}
@@ -820,45 +868,62 @@ export default function Dashboard() {
 
                 <section id="lois-applications-section" className="mb-12">
                   <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-2xl font-bold text-white">LOIs & Applications</h2>
+                    <h2 className="text-2xl font-bold text-white">Application Tracker</h2>
                     <HelpButton
-                      sectionName="LOIs & Applications"
-                      content="Track every LOI and full application with status, due dates, submitted dates, and linked documents all in one place."
+                      sectionName="Application Tracker"
+                      content="Track every LOI and full application with status, due dates, submitted dates, and amounts all in one Kanban-style pipeline."
                     />
                   </div>
                   <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-8">
                     <div className="flex items-center justify-between mb-4">
-                      <p className="text-slate-400">Generate professional Letters of Inquiry pre-filled with your organization details.</p>
+                      <div>
+                        <p className="text-slate-400 mb-3">Manage your entire grant pipeline from Draft to Awarded with visual Kanban tracking.</p>
+                        {applications.length > 0 && (
+                          <div className="flex items-center gap-4 text-sm">
+                            <span className="text-slate-300"><strong>{applications.length}</strong> total applications</span>
+                            <span className="text-purple-400"><strong>{stats.submitted}</strong> submitted</span>
+                            <span className="text-emerald-400"><strong>{stats.awarded}</strong> awarded</span>
+                          </div>
+                        )}
+                      </div>
                       <button
-                        onClick={() => setShowLOIGenerator(true)}
+                        onClick={() => setShowApplicationTracker(true)}
                         className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition font-semibold"
                       >
-                        <Plus className="w-4 h-4" />
-                        Generate LOI
+                        <ClipboardList className="w-4 h-4" />
+                        {applications.length > 0 ? 'View Tracker' : 'Start Tracking'}
                       </button>
                     </div>
-                    <p className="text-slate-500 text-sm">No applications in progress yet.</p>
                   </div>
                 </section>
 
                 <section id="templates-section" className="mb-12">
                   <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-2xl font-bold text-white">Application Templates</h2>
+                    <h2 className="text-2xl font-bold text-white">LOI Generator & Templates</h2>
                     <HelpButton
                       sectionName="Templates"
-                      content="Choose from 4 professional templates: Federal, Foundation, Corporate, and Arts grants. Each template auto-fills with your profile information."
+                      content="Generate LOIs and access 4 professional application templates: Federal, Foundation, Corporate, and Arts grants. Each auto-fills with your profile information."
                     />
                   </div>
                   <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-8">
                     <div className="flex items-center justify-between mb-4">
-                      <p className="text-slate-400">Access 4 grant application templates pre-filled with your organization information.</p>
-                      <button
-                        onClick={() => setShowApplicationTemplates(true)}
-                        className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition font-semibold"
-                      >
-                        <FileText className="w-4 h-4" />
-                        Browse Templates
-                      </button>
+                      <p className="text-slate-400">Create LOIs and access grant application templates pre-filled with your organization information.</p>
+                      <div className="flex gap-3">
+                        <button
+                          onClick={() => setShowLOIGenerator(true)}
+                          className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition font-semibold"
+                        >
+                          <Plus className="w-4 h-4" />
+                          Generate LOI
+                        </button>
+                        <button
+                          onClick={() => setShowApplicationTemplates(true)}
+                          className="flex items-center gap-2 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition font-semibold"
+                        >
+                          <FileText className="w-4 h-4" />
+                          Templates
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </section>
@@ -868,25 +933,25 @@ export default function Dashboard() {
                     <h2 className="text-2xl font-bold text-white">Wins & Records</h2>
                     <HelpButton
                       sectionName="Wins & Records"
-                      content="Track grants submitted, awarded, and declined, plus your success rate and total dollars requested and awarded over time."
+                      content="Track grants submitted, awarded, and declined, plus your total dollars awarded over time."
                     />
                   </div>
                   <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-8">
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
                       <div>
-                        <div className="text-3xl font-bold text-emerald-400">0</div>
+                        <div className="text-3xl font-bold text-purple-400">{stats.submitted}</div>
                         <div className="text-slate-400 text-sm">Submitted</div>
                       </div>
                       <div>
-                        <div className="text-3xl font-bold text-emerald-400">0</div>
+                        <div className="text-3xl font-bold text-emerald-400">{stats.awarded}</div>
                         <div className="text-slate-400 text-sm">Awarded</div>
                       </div>
                       <div>
-                        <div className="text-3xl font-bold text-slate-400">0</div>
+                        <div className="text-3xl font-bold text-slate-400">{stats.declined}</div>
                         <div className="text-slate-400 text-sm">Declined</div>
                       </div>
                       <div>
-                        <div className="text-3xl font-bold text-emerald-400">$0</div>
+                        <div className="text-3xl font-bold text-emerald-400">{formatCurrency(stats.totalAwarded)}</div>
                         <div className="text-slate-400 text-sm">Total Awarded</div>
                       </div>
                     </div>
