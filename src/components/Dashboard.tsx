@@ -3,7 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { Grant, Profile } from '../types';
 import { getStateName } from '../lib/states';
-import { ExternalLink, LogOut, Lamp, Settings as SettingsIcon, Crown, Lock, Search, Plus, Calendar, DollarSign, Building2, FileText, Bookmark, BookmarkCheck } from 'lucide-react';
+import { ExternalLink, LogOut, Lamp, Settings as SettingsIcon, Crown, Lock, Search, Plus, Calendar, DollarSign, Building2, FileText, Bookmark, BookmarkCheck, Filter, X } from 'lucide-react';
 import ProductTour from './ProductTour';
 import HelpButton from './HelpButton';
 import Settings from './Settings';
@@ -33,6 +33,15 @@ export default function Dashboard() {
   const [showFiscalSponsors, setShowFiscalSponsors] = useState(false);
   const [showApplicationTemplates, setShowApplicationTemplates] = useState(false);
   const [showCalendar, setShowCalendar] = useState(false);
+
+  // Search and filter state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedFunderType, setSelectedFunderType] = useState<string>('all');
+  const [selectedDeadline, setSelectedDeadline] = useState<string>('all');
+  const [minAmount, setMinAmount] = useState<string>('');
+  const [maxAmount, setMaxAmount] = useState<string>('');
+  const [sortBy, setSortBy] = useState<string>('deadline');
+  const [showFilters, setShowFilters] = useState(false);
 
   const { isTourActive, startTour, completeTour, skipTour } = useTour();
 
@@ -178,6 +187,87 @@ export default function Dashboard() {
     }
   };
 
+  // Apply search and filters
+  const getFilteredAndSortedGrants = () => {
+    let filtered = showSavedOnly 
+      ? grants.filter(g => savedGrantIds.has(g.id))
+      : grants;
+
+    // Search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(g => 
+        g.title.toLowerCase().includes(query) ||
+        g.funder_name.toLowerCase().includes(query) ||
+        g.description.toLowerCase().includes(query)
+      );
+    }
+
+    // Funder type filter
+    if (selectedFunderType !== 'all') {
+      filtered = filtered.filter(g => g.funder_type.toLowerCase() === selectedFunderType.toLowerCase());
+    }
+
+    // Deadline filter
+    if (selectedDeadline !== 'all') {
+      const today = new Date();
+      filtered = filtered.filter(g => {
+        if (selectedDeadline === 'rolling') return g.is_rolling;
+        if (!g.deadline || g.is_rolling) return false;
+        
+        const deadline = new Date(g.deadline);
+        const daysUntil = Math.ceil((deadline.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+        
+        if (selectedDeadline === '30') return daysUntil <= 30 && daysUntil >= 0;
+        if (selectedDeadline === '60') return daysUntil <= 60 && daysUntil >= 0;
+        if (selectedDeadline === '90') return daysUntil <= 90 && daysUntil >= 0;
+        return true;
+      });
+    }
+
+    // Amount filter
+    if (minAmount) {
+      const min = parseInt(minAmount);
+      if (!isNaN(min)) {
+        filtered = filtered.filter(g => g.award_max >= min);
+      }
+    }
+    if (maxAmount) {
+      const max = parseInt(maxAmount);
+      if (!isNaN(max)) {
+        filtered = filtered.filter(g => g.award_min <= max);
+      }
+    }
+
+    // Sort
+    if (sortBy === 'deadline') {
+      filtered.sort((a, b) => {
+        if (a.is_rolling && !b.is_rolling) return 1;
+        if (!a.is_rolling && b.is_rolling) return -1;
+        if (!a.deadline) return 1;
+        if (!b.deadline) return -1;
+        return new Date(a.deadline).getTime() - new Date(b.deadline).getTime();
+      });
+    } else if (sortBy === 'amount_high') {
+      filtered.sort((a, b) => b.award_max - a.award_max);
+    } else if (sortBy === 'amount_low') {
+      filtered.sort((a, b) => a.award_min - b.award_min);
+    }
+
+    return filtered;
+  };
+
+  const clearFilters = () => {
+    setSearchQuery('');
+    setSelectedFunderType('all');
+    setSelectedDeadline('all');
+    setMinAmount('');
+    setMaxAmount('');
+    setSortBy('deadline');
+  };
+
+  const hasActiveFilters = searchQuery || selectedFunderType !== 'all' || selectedDeadline !== 'all' || minAmount || maxAmount || sortBy !== 'deadline';
+
   const handleSignOut = async () => {
     try {
       await signOut();
@@ -236,10 +326,7 @@ export default function Dashboard() {
   const isPro = profile?.subscription_status === 'active';
   const hasCompletedQuestionnaire = profile?.state && profile?.org_type;
   
-  const displayedGrants = showSavedOnly 
-    ? grants.filter(g => savedGrantIds.has(g.id))
-    : grants;
-  
+  const displayedGrants = getFilteredAndSortedGrants();
   const savedCount = grants.filter(g => savedGrantIds.has(g.id)).length;
 
   if (showQuestionnaire) {
@@ -452,21 +539,146 @@ export default function Dashboard() {
                   {isPro && (
                     <HelpButton
                       sectionName="Grant Pool"
-                      content="These grants are automatically matched to your state, organization type, and funding needs. Click the bookmark icon to save your favorites."
+                      content="These grants are automatically matched to your state, organization type, and funding needs. Use search and filters to narrow results further."
                     />
                   )}
                 </div>
+              </div>
+
+              {/* Search and Filters */}
+              <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-4 mb-6">
+                {/* Search Bar */}
+                <div className="flex gap-3 mb-4">
+                  <div className="flex-1 relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
+                    <input
+                      type="text"
+                      placeholder="Search grants by keyword..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+                  <button
+                    onClick={() => setShowFilters(!showFilters)}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg font-semibold transition ${
+                      showFilters || hasActiveFilters
+                        ? 'bg-emerald-600 text-white'
+                        : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                    }`}
+                  >
+                    <Filter className="w-4 h-4" />
+                    Filters
+                    {hasActiveFilters && !showFilters && (
+                      <span className="ml-1 w-2 h-2 bg-white rounded-full" />
+                    )}
+                  </button>
+                </div>
+
+                {/* Filter Panel */}
+                {showFilters && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pt-4 border-t border-slate-600">
+                    {/* Funder Type */}
+                    <div>
+                      <label className="block text-sm font-medium text-slate-300 mb-2">Funder Type</label>
+                      <select
+                        value={selectedFunderType}
+                        onChange={(e) => setSelectedFunderType(e.target.value)}
+                        className="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-emerald-500"
+                      >
+                        <option value="all">All Types</option>
+                        <option value="government">Government</option>
+                        <option value="foundation">Foundation</option>
+                        <option value="corporate">Corporate</option>
+                      </select>
+                    </div>
+
+                    {/* Deadline */}
+                    <div>
+                      <label className="block text-sm font-medium text-slate-300 mb-2">Deadline</label>
+                      <select
+                        value={selectedDeadline}
+                        onChange={(e) => setSelectedDeadline(e.target.value)}
+                        className="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-emerald-500"
+                      >
+                        <option value="all">All Deadlines</option>
+                        <option value="30">Next 30 Days</option>
+                        <option value="60">Next 60 Days</option>
+                        <option value="90">Next 90 Days</option>
+                        <option value="rolling">Rolling</option>
+                      </select>
+                    </div>
+
+                    {/* Award Amount */}
+                    <div>
+                      <label className="block text-sm font-medium text-slate-300 mb-2">Min Award</label>
+                      <input
+                        type="number"
+                        placeholder="$10,000"
+                        value={minAmount}
+                        onChange={(e) => setMinAmount(e.target.value)}
+                        className="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-emerald-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-slate-300 mb-2">Max Award</label>
+                      <input
+                        type="number"
+                        placeholder="$50,000"
+                        value={maxAmount}
+                        onChange={(e) => setMaxAmount(e.target.value)}
+                        className="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-emerald-500"
+                      />
+                    </div>
+
+                    {/* Sort By */}
+                    <div>
+                      <label className="block text-sm font-medium text-slate-300 mb-2">Sort By</label>
+                      <select
+                        value={sortBy}
+                        onChange={(e) => setSortBy(e.target.value)}
+                        className="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-emerald-500"
+                      >
+                        <option value="deadline">Deadline (Soonest)</option>
+                        <option value="amount_high">Award (Highest)</option>
+                        <option value="amount_low">Award (Lowest)</option>
+                      </select>
+                    </div>
+
+                    {/* Clear Filters */}
+                    {hasActiveFilters && (
+                      <div className="flex items-end">
+                        <button
+                          onClick={clearFilters}
+                          className="flex items-center gap-2 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition w-full justify-center"
+                        >
+                          <X className="w-4 h-4" />
+                          Clear All
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               {displayedGrants.length === 0 ? (
                 <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-12 text-center">
                   <Search className="w-16 h-16 text-slate-600 mx-auto mb-4" />
                   <p className="text-slate-300 text-lg mb-2">
-                    {showSavedOnly ? 'No saved grants yet.' : 'No matching grants found for your profile.'}
+                    {showSavedOnly ? 'No saved grants yet.' : hasActiveFilters ? 'No grants match your filters.' : 'No matching grants found for your profile.'}
                   </p>
                   <p className="text-slate-400">
-                    {showSavedOnly ? 'Click the bookmark icon on grants to save them.' : "Try updating your profile settings or check back soon for new opportunities!"}
+                    {showSavedOnly ? 'Click the bookmark icon on grants to save them.' : hasActiveFilters ? 'Try adjusting your filters.' : "Try updating your profile settings or check back soon for new opportunities!"}
                   </p>
+                  {hasActiveFilters && (
+                    <button
+                      onClick={clearFilters}
+                      className="mt-4 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition"
+                    >
+                      Clear Filters
+                    </button>
+                  )}
                 </div>
               ) : (
                 <div className="space-y-4">
