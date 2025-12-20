@@ -15,6 +15,15 @@ export interface Profile {
   subscription_current_period_end: string | null;
   subscription_cancel_at_period_end: boolean | null;
   created_at: string;
+  // Questionnaire fields
+  business_location?: string;
+  legal_entity?: string;
+  annual_revenue?: string;
+  grant_amount?: string[];
+  primary_fields?: string[]; // Used for fiscal sponsor matching
+  demographic_focus?: string[];
+  project_stage?: string;
+  fiscal_sponsor?: string;
 }
 
 export interface Grant {
