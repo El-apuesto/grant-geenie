@@ -21,7 +21,7 @@ const TOUR_STEPS: TourStep[] = [
     id: 'grant-pool',
     title: 'Grant Pool',
     content:
-      'This is your Grant pool, where all your matched and saved grants live together. Use statuses like Researching, LOI, Application, Awarded, and Declined to see exactly where each opportunity stands.',
+      'This is your Grant pool, where all your matched and saved grants live together. Click the bookmark icon to save grants you want to track. Use the "Saved" button to view only your bookmarked opportunities.',
     targetId: 'grant-pool-section',
     position: 'bottom',
   },
@@ -29,7 +29,7 @@ const TOUR_STEPS: TourStep[] = [
     id: 'fiscal-sponsors',
     title: 'Fiscal Sponsor Partners',
     content:
-      "Fiscal sponsors are organizations that help you receive and manage grant funds if you don't have your own nonprofit status yet. In this section, you can see which sponsor is connected to which grant and keep those relationships up to date.",
+      "Fiscal sponsors are organizations that help you receive and manage grant funds if you don't have your own nonprofit status yet. Browse our database of 30+ trusted fiscal sponsors to find the right fit for your project.",
     targetId: 'fiscal-sponsors-section',
     position: 'bottom',
   },
@@ -37,7 +37,7 @@ const TOUR_STEPS: TourStep[] = [
     id: 'lois-applications',
     title: 'LOIs & Applications',
     content:
-      'Here is where you track every LOI and full application, including status, due dates, and submitted dates. You can also link your documents so everything you need to apply is just a click away.',
+      'Here is where you generate professional Letters of Inquiry pre-filled with your organization details. Each LOI can be customized for the specific grant you\'re applying to.',
     targetId: 'lois-applications-section',
     position: 'bottom',
   },
@@ -45,7 +45,7 @@ const TOUR_STEPS: TourStep[] = [
     id: 'templates',
     title: 'Templates Library',
     content:
-      "This Templates library gives you best‑practice examples for LOIs, full proposals, budgets, and simple reports. Start from a template, customize it for your project, and attach it to the grant you're working on.",
+      "This Templates library gives you 4 professional grant application templates: Federal, Foundation, Corporate, and Arts grants. Each template auto-fills with your profile information to save you time.",
     targetId: 'templates-section',
     position: 'bottom',
   },
@@ -55,14 +55,6 @@ const TOUR_STEPS: TourStep[] = [
     content:
       "Your Wins & records area shows how many grants you've submitted, awarded, and declined, plus your overall success rate. You'll also see total dollars requested and awarded so you can track your funding progress over time.",
     targetId: 'wins-records-section',
-    position: 'bottom',
-  },
-  {
-    id: 'calendar',
-    title: 'Calendar',
-    content:
-      'This Calendar fills in LOI, application, and reporting deadlines automatically as you save and update your grants. Use it to plan your workload and avoid last‑minute rushes on important submissions.',
-    targetId: 'calendar-section',
     position: 'bottom',
   },
   {
@@ -132,6 +124,15 @@ export default function ProductTour({
 
         // Scroll target into view
         target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      } else {
+        // If target doesn't exist, skip to next step
+        console.warn(`Tour target #${step.targetId} not found, skipping step`);
+        if (!isLastStep) {
+          setTimeout(() => setCurrentStep(currentStep + 1), 100);
+        } else {
+          onComplete();
+        }
+        return;
       }
     } else {
       // Center position for welcome screen
@@ -140,7 +141,7 @@ export default function ProductTour({
         left: window.innerWidth / 2,
       });
     }
-  }, [currentStep, step, isActive]);
+  }, [currentStep, step, isActive, isLastStep, onComplete]);
 
   const handleNext = () => {
     if (isLastStep) {
