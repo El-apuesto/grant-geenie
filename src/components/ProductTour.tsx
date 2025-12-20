@@ -176,10 +176,21 @@ export default function ProductTour({
         style={{ top: `${position.top}px`, left: `${position.left}px` }}
       >
         <div className="bg-slate-800 border-2 border-emerald-500 rounded-lg shadow-2xl max-w-md w-screen mx-4 p-6 animate-in fade-in zoom-in duration-200">
-          {/* Genie icon */}
+          {/* Genie animation */}
           <div className="flex items-start gap-4 mb-4">
-            <div className="w-12 h-12 bg-emerald-600 rounded-full flex items-center justify-center flex-shrink-0">
-              <span className="text-2xl">🧞</span>
+            <div className="w-12 h-12 bg-emerald-600 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
+              <video
+                autoPlay
+                loop
+                muted
+                playsInline
+                className="w-full h-full object-cover"
+                style={{ mixBlendMode: 'normal' }}
+              >
+                <source src="/copy_5652D782-A5FB-43F0-A6C6-DCB56BB35546 2.webm" type="video/webm" />
+                {/* Fallback emoji if video doesn't load */}
+                <span className="text-2xl">🧞</span>
+              </video>
             </div>
             <div className="flex-1">
               <h3 className="text-xl font-bold text-white mb-2">{step.title}</h3>
