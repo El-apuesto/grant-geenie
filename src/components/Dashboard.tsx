@@ -497,11 +497,11 @@ export default function Dashboard() {
                 id="genie-lamp-icon"
                 onClick={startTour}
                 className="p-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors group relative"
-                title="Summon The Grant Genie for help"
+                title="Start Product Tour"
               >
                 <Lamp className="w-5 h-5" />
                 <span className="absolute -top-8 right-0 bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                  Need help?
+                  Product Tour
                 </span>
               </button>
             )}
@@ -538,7 +538,7 @@ export default function Dashboard() {
                     </p>
                     <ul className="text-slate-300 space-y-1 mb-4 ml-4">
                       <li>• <strong>Thousands more grants</strong> matched to your profile</li>
-                      <li>• Direct application links</li>
+                      <li>• Save grants & direct application links</li>
                       <li>• Application tracking & pipeline</li>
                       <li>• LOI Generator with auto-fill</li>
                       <li>• 265+ Fiscal Sponsor database</li>
@@ -587,7 +587,7 @@ export default function Dashboard() {
                   {isPro && (
                     <HelpButton
                       sectionName="Grant Pool"
-                      content="These grants are automatically matched to your state, organization type, and funding needs. Use search and filters to narrow results further."
+                      content="These grants are automatically matched to your state, organization type, and funding needs. Click the bookmark icon to save grants. Use search and filters to narrow results further."
                     />
                   )}
                 </div>
@@ -735,7 +735,7 @@ export default function Dashboard() {
                     return (
                       <div
                         key={grant.id}
-                        className="bg-slate-800/50 border border-slate-700 rounded-lg p-6 hover:border-emerald-500/30 transition"
+                        className="bg-slate-800/50 border border-slate-700 rounded-lg p-6 hover:border-emerald-500/30 transition group"
                       >
                         <div className="flex justify-between items-start mb-4">
                           <div className="flex-1">
@@ -743,15 +743,16 @@ export default function Dashboard() {
                               <h3 className="text-xl font-semibold text-white flex-1">
                                 {grant.title}
                               </h3>
+                              {/* BOOKMARK BUTTON - ALWAYS VISIBLE */}
                               <button
                                 onClick={() => toggleSaveGrant(grant.id)}
-                                className="p-2 rounded-lg transition hover:bg-slate-700"
-                                title={isSaved ? 'Unsave grant' : 'Save grant'}
+                                className="p-2 rounded-lg transition bg-slate-700 hover:bg-emerald-600 shrink-0"
+                                title={isSaved ? 'Remove from saved grants' : 'Save this grant'}
                               >
                                 {isSaved ? (
-                                  <BookmarkCheck className="w-5 h-5 text-emerald-500" />
+                                  <BookmarkCheck className="w-6 h-6 text-emerald-400" />
                                 ) : (
-                                  <Bookmark className="w-5 h-5 text-slate-400" />
+                                  <Bookmark className="w-6 h-6 text-slate-300" />
                                 )}
                               </button>
                             </div>
@@ -963,7 +964,7 @@ export default function Dashboard() {
         )}
       </div>
 
-      {isPro && (
+      {isPro && isTourActive && (
         <ProductTour
           isActive={isTourActive}
           onComplete={completeTour}
