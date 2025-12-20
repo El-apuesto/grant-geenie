@@ -196,8 +196,7 @@ export default function Questionnaire({ onComplete }: QuestionnaireProps) {
       const primaryFields = answers.primary_fields as string[];
       const orgType = primaryFields[0] || 'Other';
 
-      // Save profile data
-      const { error: upsertError } = await supabase.from('profiles').upsert({
+      console.log('Saving profile with data:', {
         id: user.id,
         state: answers.state,
         org_type: orgType,
@@ -212,16 +211,36 @@ export default function Questionnaire({ onComplete }: QuestionnaireProps) {
         questionnaire_completed: true,
       });
 
-      if (upsertError) throw upsertError;
+      // Save profile data
+      const { data, error: upsertError } = await supabase.from('profiles').upsert({
+        id: user.id,
+        state: answers.state,
+        org_type: orgType,
+        business_location: answers.business_location,
+        legal_entity: answers.legal_entity,
+        annual_revenue: answers.annual_revenue,
+        grant_amount: answers.grant_amount,
+        primary_fields: primaryFields,
+        demographic_focus: answers.demographic_focus,
+        project_stage: answers.project_stage,
+        fiscal_sponsor: answers.fiscal_sponsor,
+        questionnaire_completed: true,
+      });
 
-      // Email sending is optional - don't let it block completion
-      console.log('Questionnaire saved successfully, proceeding to dashboard...');
+      if (upsertError) {
+        console.error('Supabase upsert error:', upsertError);
+        throw upsertError;
+      }
+
+      console.log('Profile saved successfully:', data);
+      console.log('Questionnaire completed, redirecting to dashboard...');
       
       // Complete the questionnaire flow
       onComplete();
     } catch (err) {
       console.error('Error saving questionnaire:', err);
-      setError(err instanceof Error ? err.message : 'Failed to save answers');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to save answers';
+      setError(`Error: ${errorMessage}. Please check the browser console for details.`);
     } finally {
       setLoading(false);
     }
