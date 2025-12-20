@@ -26,6 +26,14 @@ const TOUR_STEPS: TourStep[] = [
     position: 'bottom',
   },
   {
+    id: 'calendar',
+    title: 'Deadline Calendar',
+    content:
+      'Your Deadline Calendar shows all upcoming grant deadlines in one place. Use it to plan your workload, avoid last-minute scrambles, and make sure you never miss a due date.',
+    targetId: 'calendar-section',
+    position: 'bottom',
+  },
+  {
     id: 'fiscal-sponsors',
     title: 'Fiscal Sponsor Partners',
     content:
