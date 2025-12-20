@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
-import { Grant, Profile } from '../types';
+import { Grant } from '../types';
 import { getStateName } from '../lib/states';
 import { ExternalLink, LogOut, Lamp, Settings as SettingsIcon, Crown, Lock, Search, Plus, Calendar, DollarSign, Building2, FileText } from 'lucide-react';
 import ProductTour from './ProductTour';
@@ -12,6 +12,14 @@ import LOIGenerator from './LOIGenerator';
 import FiscalSponsorMatcher from './FiscalSponsorMatcher';
 import ApplicationWizard from './ApplicationWizard';
 import { useTour } from '../hooks/useTour';
+
+interface Profile {
+  id: string;
+  state: string;
+  organization_type: string;
+  questionnaire_completed: boolean;
+  subscription_status: string | null;
+}
 
 export default function Dashboard() {
   const { user, signOut } = useAuth();
@@ -42,7 +50,7 @@ export default function Dashboard() {
         if (err) throw err;
         if (data) {
           setProfile(data);
-          if (!data.state || !data.org_type) {
+          if (!data.state || !data.organization_type) {
             setShowQuestionnaire(true);
             setLoading(false);
           }
@@ -59,7 +67,7 @@ export default function Dashboard() {
   }, [user]);
 
   useEffect(() => {
-    if (!profile?.state || !profile?.org_type) {
+    if (!profile?.state || !profile?.organization_type) {
       setLoading(false);
       return;
     }
@@ -96,7 +104,7 @@ export default function Dashboard() {
     };
 
     loadGrants();
-  }, [profile?.state, profile?.org_type, profile?.subscription_status]);
+  }, [profile?.state, profile?.organization_type, profile?.subscription_status]);
 
   const handleSignOut = async () => {
     try {
@@ -155,7 +163,7 @@ export default function Dashboard() {
   };
 
   const isPro = profile?.subscription_status === 'active';
-  const hasCompletedQuestionnaire = profile?.state && profile?.org_type;
+  const hasCompletedQuestionnaire = profile?.state && profile?.organization_type;
 
   if (showQuestionnaire) {
     return <Questionnaire onComplete={handleQuestionnaireComplete} />;
@@ -269,7 +277,7 @@ export default function Dashboard() {
             </div>
             {hasCompletedQuestionnaire && (
               <p className="text-slate-400 text-sm">
-                {profile && `${getStateName(profile.state)} • ${profile.org_type}`}
+                {profile && `${getStateName(profile.state)} • ${profile.organization_type}`}
               </p>
             )}
           </div>
