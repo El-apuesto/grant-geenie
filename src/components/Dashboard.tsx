@@ -84,16 +84,38 @@ export default function Dashboard() {
         
         const isPro = profile.subscription_status === 'active';
         
-        const query = supabase
+        // SMART FILTERING - Use questionnaire data!
+        let query = supabase
           .from('grants')
           .select('*')
-          .eq('is_active', true)
-          .order('deadline', { ascending: true });
+          .eq('is_active', true);
+        
+        // Filter by state (if grant has states array, check if user's state is in it)
+        // If grant.states is null or empty, it means it's open to all states
+        query = query.or(`states.cs.{${profile.state}},states.is.null`);
+        
+        // Filter by organization type (if grant has entity_types, check if user's org_type is in it)
+        // If grant.entity_types is null, it means it's open to all entity types
+        if (profile.org_type) {
+          query = query.or(`entity_types.cs.{${profile.org_type}},entity_types.is.null`);
+        }
+        
+        // Filter by award amount - show grants where max award is at least what user wants
+        // Parse grant_amount from profile (format: "$10,000 - $50,000")
+        if (profile.grant_amount && profile.grant_amount.length > 0) {
+          const amountStr = profile.grant_amount[0];
+          const minAmount = parseInt(amountStr.replace(/[^0-9]/g, '').split('-')[0]);
+          if (!isNaN(minAmount)) {
+            query = query.gte('award_max', minAmount);
+          }
+        }
+        
+        query = query.order('deadline', { ascending: true });
         
         if (!isPro) {
-          query.limit(5);
+          query = query.limit(5);
         } else {
-          query.limit(10000);
+          query = query.limit(10000);
         }
         
         const { data, error: err } = await query;
@@ -109,7 +131,7 @@ export default function Dashboard() {
     };
 
     loadGrants();
-  }, [profile?.state, profile?.org_type, profile?.subscription_status]);
+  }, [profile?.state, profile?.org_type, profile?.subscription_status, profile?.grant_amount]);
 
   const loadSavedGrants = async () => {
     if (!user) return;
@@ -294,8 +316,8 @@ export default function Dashboard() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex flex-col items-center justify-center">
         <Search className="w-16 h-16 text-emerald-500 animate-pulse mb-4" />
-        <div className="text-white text-2xl font-semibold mb-2">Searching for grants...</div>
-        <div className="text-slate-400 text-sm">This may take a few moments</div>
+        <div className="text-white text-2xl font-semibold mb-2">Finding grants matched to your profile...</div>
+        <div className="text-slate-400 text-sm">Filtering by state, organization type, and funding needs</div>
       </div>
     );
   }
@@ -377,10 +399,10 @@ export default function Dashboard() {
                       <h3 className="text-xl font-bold text-white">Unlock Full Access with Pro</h3>
                     </div>
                     <p className="text-slate-300 mb-3">
-                      You're viewing 5 grants with limited information. Upgrade to Pro to unlock:
+                      You're viewing 5 matched grants. Upgrade to Pro to unlock:
                     </p>
                     <ul className="text-slate-300 space-y-1 mb-4 ml-4">
-                      <li>• <strong>8,000+ grants</strong> with full details</li>
+                      <li>• <strong>Thousands more grants</strong> matched to your profile</li>
                       <li>• Direct application links</li>
                       <li>• LOI Generator with auto-fill</li>
                       <li>• 30+ Fiscal Sponsor database</li>
@@ -403,13 +425,13 @@ export default function Dashboard() {
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <h2 className="text-3xl font-bold text-white mb-2">
-                    {isPro ? 'Grant Pool' : 'Grant Search Results'}
+                    {isPro ? 'Your Matched Grants' : 'Grant Matches'}
                   </h2>
                   <p className="text-slate-400">
                     {isPro ? (
-                      `Showing ${displayedGrants.length.toLocaleString()} ${showSavedOnly ? 'saved' : 'active'} grant opportunities`
+                      `Showing ${displayedGrants.length.toLocaleString()} ${showSavedOnly ? 'saved' : ''} grants matched to your profile`
                     ) : (
-                      `Showing ${displayedGrants.length} of your 5 monthly free searches`
+                      `Showing ${displayedGrants.length} of your 5 monthly free matches`
                     )}
                   </p>
                 </div>
@@ -430,7 +452,7 @@ export default function Dashboard() {
                   {isPro && (
                     <HelpButton
                       sectionName="Grant Pool"
-                      content="Click the bookmark icon to save grants. Use the 'Saved' button to view only your bookmarked grants."
+                      content="These grants are automatically matched to your state, organization type, and funding needs. Click the bookmark icon to save your favorites."
                     />
                   )}
                 </div>
@@ -440,10 +462,10 @@ export default function Dashboard() {
                 <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-12 text-center">
                   <Search className="w-16 h-16 text-slate-600 mx-auto mb-4" />
                   <p className="text-slate-300 text-lg mb-2">
-                    {showSavedOnly ? 'No saved grants yet.' : 'No matching grants found at this time.'}
+                    {showSavedOnly ? 'No saved grants yet.' : 'No matching grants found for your profile.'}
                   </p>
                   <p className="text-slate-400">
-                    {showSavedOnly ? 'Click the bookmark icon on grants to save them.' : "We're constantly adding new opportunities. Check back soon!"}
+                    {showSavedOnly ? 'Click the bookmark icon on grants to save them.' : "Try updating your profile settings or check back soon for new opportunities!"}
                   </p>
                 </div>
               ) : (
