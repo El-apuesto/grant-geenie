@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
-import { Grant } from '../types';
+import { Grant, Profile } from '../types';
 import { getStateName } from '../lib/states';
 import { ExternalLink, LogOut, Lamp, Settings as SettingsIcon, Crown, Lock, Search, Plus, Calendar, DollarSign, Building2, FileText, Bookmark, BookmarkCheck } from 'lucide-react';
 import ProductTour from './ProductTour';
@@ -9,21 +9,17 @@ import HelpButton from './HelpButton';
 import Settings from './Settings';
 import Questionnaire from './Questionnaire';
 import LOIGenerator from './LOIGenerator';
-import FiscalSponsorMatcher from './FiscalSponsorMatcher';
+import FiscalSponsorsPage from './FiscalSponsorsPage';
 import ApplicationWizard from './ApplicationWizard';
 import { useTour } from '../hooks/useTour';
 
-interface Profile {
-  id: string;
-  state: string;
-  organization_type: string;
-  questionnaire_completed: boolean;
-  subscription_status: string | null;
+interface ProfileWithQuestionnaire extends Profile {
+  primary_fields?: string[];
 }
 
 export default function Dashboard() {
   const { user, signOut } = useAuth();
-  const [profile, setProfile] = useState<Profile | null>(null);
+  const [profile, setProfile] = useState<ProfileWithQuestionnaire | null>(null);
   const [grants, setGrants] = useState<Grant[]>([]);
   const [savedGrantIds, setSavedGrantIds] = useState<Set<string>>(new Set());
   const [showSavedOnly, setShowSavedOnly] = useState(false);
@@ -51,8 +47,8 @@ export default function Dashboard() {
 
         if (err) throw err;
         if (data) {
-          setProfile(data);
-          if (!data.state || !data.organization_type) {
+          setProfile(data as ProfileWithQuestionnaire);
+          if (!data.state || !data.org_type) {
             setShowQuestionnaire(true);
             setLoading(false);
           }
@@ -74,7 +70,7 @@ export default function Dashboard() {
   }, [user]);
 
   useEffect(() => {
-    if (!profile?.state || !profile?.organization_type) {
+    if (!profile?.state || !profile?.org_type) {
       setLoading(false);
       return;
     }
@@ -111,7 +107,7 @@ export default function Dashboard() {
     };
 
     loadGrants();
-  }, [profile?.state, profile?.organization_type, profile?.subscription_status]);
+  }, [profile?.state, profile?.org_type, profile?.subscription_status]);
 
   const loadSavedGrants = async () => {
     if (!user) return;
@@ -192,7 +188,7 @@ export default function Dashboard() {
       .single();
     
     if (data) {
-      setProfile(data);
+      setProfile(data as ProfileWithQuestionnaire);
       setShowQuestionnaire(false);
     }
   };
@@ -216,7 +212,7 @@ export default function Dashboard() {
   };
 
   const isPro = profile?.subscription_status === 'active';
-  const hasCompletedQuestionnaire = profile?.state && profile?.organization_type;
+  const hasCompletedQuestionnaire = profile?.state && profile?.org_type;
   
   const displayedGrants = showSavedOnly 
     ? grants.filter(g => savedGrantIds.has(g.id))
@@ -265,22 +261,7 @@ export default function Dashboard() {
 
   if (showFiscalSponsors) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-        <div className="border-b border-slate-700 bg-slate-900/50 backdrop-blur-sm sticky top-0 z-10">
-          <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-            <h1 className="text-2xl font-bold text-white">Fiscal Sponsor Matcher</h1>
-            <button
-              onClick={() => setShowFiscalSponsors(false)}
-              className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition"
-            >
-              Back to Dashboard
-            </button>
-          </div>
-        </div>
-        <div className="max-w-7xl mx-auto px-4 py-8">
-          <FiscalSponsorMatcher isPro={isPro} />
-        </div>
-      </div>
+      <FiscalSponsorsPage onBack={() => setShowFiscalSponsors(false)} />
     );
   }
 
@@ -336,7 +317,7 @@ export default function Dashboard() {
             </div>
             {hasCompletedQuestionnaire && (
               <p className="text-slate-400 text-sm">
-                {profile && `${getStateName(profile.state)} • ${profile.organization_type}`}
+                {profile && `${getStateName(profile.state)} • ${profile.org_type}`}
               </p>
             )}
           </div>
@@ -559,12 +540,12 @@ export default function Dashboard() {
                     <h2 className="text-2xl font-bold text-white">Fiscal Sponsor Matcher</h2>
                     <HelpButton
                       sectionName="Fiscal Sponsors"
-                      content="Browse 30+ trusted fiscal sponsors. Filter by focus area, location, and fee range to find the right fit for your project."
+                      content="Browse 265+ trusted fiscal sponsors. Filter by focus area, location, and fee range to find the right fit for your project."
                     />
                   </div>
                   <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-8">
                     <div className="flex items-center justify-between mb-4">
-                      <p className="text-slate-400">Access our curated database of 30+ fiscal sponsors with detailed information.</p>
+                      <p className="text-slate-400">Access our curated database of 265+ fiscal sponsors with smart matching based on your profile.</p>
                       <button
                         onClick={() => setShowFiscalSponsors(true)}
                         className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition font-semibold"
