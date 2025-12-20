@@ -1,7 +1,17 @@
 import { useState, useEffect } from 'react';
-import { Download, FileText } from 'lucide-react';
+import { Download, FileText, Bookmark } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+
+interface SavedGrant {
+  id: string;
+  opportunity_id: string;
+  opportunity_title: string;
+  agency_name: string;
+  close_date: string | null;
+  award_ceiling: number | null;
+  description: string | null;
+}
 
 interface LOIGeneratorProps {
   isPro: boolean;
@@ -10,6 +20,8 @@ interface LOIGeneratorProps {
 export default function LOIGenerator({ isPro }: LOIGeneratorProps) {
   const { user } = useAuth();
   const [profile, setProfile] = useState<any>(null);
+  const [savedGrants, setSavedGrants] = useState<SavedGrant[]>([]);
+  const [selectedGrantId, setSelectedGrantId] = useState<string>('');
   const [formData, setFormData] = useState({
     funderName: '',
     funderContact: '',
@@ -33,8 +45,35 @@ export default function LOIGenerator({ isPro }: LOIGeneratorProps) {
       if (data) setProfile(data);
     };
 
+    const loadSavedGrants = async () => {
+      const { data } = await supabase
+        .from('saved_grants')
+        .select('id, opportunity_id, opportunity_title, agency_name, close_date, award_ceiling, description')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (data) setSavedGrants(data);
+    };
+
     loadProfile();
+    loadSavedGrants();
   }, [user]);
+
+  const handleGrantSelect = (grantId: string) => {
+    setSelectedGrantId(grantId);
+    
+    if (!grantId) return;
+
+    const grant = savedGrants.find(g => g.opportunity_id === grantId);
+    if (grant) {
+      setFormData(prev => ({
+        ...prev,
+        funderName: grant.agency_name,
+        requestedAmount: grant.award_ceiling ? `$${grant.award_ceiling.toLocaleString()}` : '',
+        projectTitle: grant.opportunity_title,
+      }));
+    }
+  };
 
   const generateLOI = () => {
     if (!profile) return '';
@@ -72,6 +111,19 @@ Sincerely,
 ${user?.email || '[email]'}`;
   };
 
+  const downloadLOI = () => {
+    const loiText = generateLOI();
+    const blob = new Blob([loiText], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `LOI_${formData.funderName.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   if (!isPro) {
     return (
       <div className="bg-slate-800 border border-slate-700 rounded-lg p-12 text-center">
@@ -99,6 +151,35 @@ ${user?.email || '[email]'}`;
           Generate a professional LOI pre-filled with your info.
         </p>
       </div>
+
+      {/* Saved Grants Selector */}
+      {savedGrants.length > 0 && (
+        <div className="bg-emerald-900/20 border border-emerald-700 rounded-lg p-4 mb-6">
+          <div className="flex items-start gap-3">
+            <Bookmark className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" />
+            <div className="flex-1">
+              <label className="block text-emerald-400 font-semibold mb-2">
+                Quick Fill from Saved Grants
+              </label>
+              <select
+                value={selectedGrantId}
+                onChange={(e) => handleGrantSelect(e.target.value)}
+                className="w-full bg-slate-700 border border-slate-600 rounded px-4 py-3 text-white"
+              >
+                <option value="">-- Select a saved grant to auto-fill --</option>
+                {savedGrants.map(grant => (
+                  <option key={grant.id} value={grant.opportunity_id}>
+                    {grant.opportunity_title} - {grant.agency_name}
+                  </option>
+                ))}
+              </select>
+              <p className="text-slate-400 text-sm mt-2">
+                This will auto-fill the funder name, grant amount, and project title below.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="bg-slate-800 border border-slate-700 rounded-lg p-6 mb-6">
         <div className="space-y-4">
@@ -210,8 +291,8 @@ ${user?.email || '[email]'}`;
       </div>
 
       <button
-        onClick={() => {/* Download functionality */}}
-        className="flex items-center gap-2 px-6 py-3 bg-emerald-600 text-white rounded font-semibold hover:bg-emerald-700"
+        onClick={downloadLOI}
+        className="flex items-center gap-2 px-6 py-3 bg-emerald-600 text-white rounded font-semibold hover:bg-emerald-700 transition"
       >
         <Download className="w-4 h-4" />
         Download as Text
