@@ -3,7 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { Grant } from '../types';
 import { getStateName } from '../lib/states';
-import { ExternalLink, LogOut, Lamp, Settings as SettingsIcon, Crown, Lock, Search, Plus, Calendar, DollarSign, Building2, FileText } from 'lucide-react';
+import { ExternalLink, LogOut, Lamp, Settings as SettingsIcon, Crown, Lock, Search, Plus, Calendar, DollarSign, Building2, FileText, Bookmark, BookmarkCheck } from 'lucide-react';
 import ProductTour from './ProductTour';
 import HelpButton from './HelpButton';
 import Settings from './Settings';
@@ -25,6 +25,8 @@ export default function Dashboard() {
   const { user, signOut } = useAuth();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [grants, setGrants] = useState<Grant[]>([]);
+  const [savedGrantIds, setSavedGrantIds] = useState<Set<string>>(new Set());
+  const [showSavedOnly, setShowSavedOnly] = useState(false);
   const [loading, setLoading] = useState(true);
   const [searchingGrants, setSearchingGrants] = useState(false);
   const [error, setError] = useState('');
@@ -67,6 +69,11 @@ export default function Dashboard() {
   }, [user]);
 
   useEffect(() => {
+    if (!user) return;
+    loadSavedGrants();
+  }, [user]);
+
+  useEffect(() => {
     if (!profile?.state || !profile?.organization_type) {
       setLoading(false);
       return;
@@ -106,6 +113,53 @@ export default function Dashboard() {
     loadGrants();
   }, [profile?.state, profile?.organization_type, profile?.subscription_status]);
 
+  const loadSavedGrants = async () => {
+    if (!user) return;
+    try {
+      const { data, error } = await supabase
+        .from('saved_grants')
+        .select('grant_id')
+        .eq('user_id', user.id);
+      
+      if (error) throw error;
+      const ids = new Set(data?.map(sg => sg.grant_id) || []);
+      setSavedGrantIds(ids);
+    } catch (err) {
+      console.error('Error loading saved grants:', err);
+    }
+  };
+
+  const toggleSaveGrant = async (grantId: string) => {
+    if (!user) return;
+    
+    try {
+      if (savedGrantIds.has(grantId)) {
+        // Unsave
+        await supabase
+          .from('saved_grants')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('grant_id', grantId);
+        
+        setSavedGrantIds(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(grantId);
+          return newSet;
+        });
+      } else {
+        // Save
+        await supabase
+          .from('saved_grants')
+          .insert({ user_id: user.id, grant_id: grantId });
+        
+        setSavedGrantIds(prev => new Set([...prev, grantId]));
+      }
+    } catch (err) {
+      console.error('Error toggling save grant:', err);
+      setError('Failed to save grant');
+    }
+  };
+
   const handleSignOut = async () => {
     try {
       await signOut();
@@ -114,7 +168,6 @@ export default function Dashboard() {
     }
   };
 
-  // NO STRIPE CODE - just opens link
   const handleUpgrade = () => {
     window.open('https://buy.stripe.com/test_4gw5lmdQa3S42NW4gi', '_blank');
   };
@@ -164,6 +217,12 @@ export default function Dashboard() {
 
   const isPro = profile?.subscription_status === 'active';
   const hasCompletedQuestionnaire = profile?.state && profile?.organization_type;
+  
+  const displayedGrants = showSavedOnly 
+    ? grants.filter(g => savedGrantIds.has(g.id))
+    : grants;
+  
+  const savedCount = grants.filter(g => savedGrantIds.has(g.id)).length;
 
   if (showQuestionnaire) {
     return <Questionnaire onComplete={handleQuestionnaireComplete} />;
@@ -362,86 +421,117 @@ export default function Dashboard() {
                   </h2>
                   <p className="text-slate-400">
                     {isPro ? (
-                      `Showing ${grants.length.toLocaleString()} active grant opportunities`
+                      `Showing ${displayedGrants.length.toLocaleString()} ${showSavedOnly ? 'saved' : 'active'} grant opportunities`
                     ) : (
-                      `Showing ${grants.length} of your 5 monthly free searches`
+                      `Showing ${displayedGrants.length} of your 5 monthly free searches`
                     )}
                   </p>
                 </div>
-                {isPro && (
-                  <HelpButton
-                    sectionName="Grant Pool"
-                    content="All your matched and saved grants live here. Use statuses like Researching, LOI, Application, Awarded, and Declined to track where each opportunity stands."
-                  />
-                )}
+                <div className="flex items-center gap-3">
+                  {savedCount > 0 && (
+                    <button
+                      onClick={() => setShowSavedOnly(!showSavedOnly)}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-lg font-semibold transition ${
+                        showSavedOnly
+                          ? 'bg-emerald-600 text-white'
+                          : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                      }`}
+                    >
+                      <BookmarkCheck className="w-4 h-4" />
+                      Saved ({savedCount})
+                    </button>
+                  )}
+                  {isPro && (
+                    <HelpButton
+                      sectionName="Grant Pool"
+                      content="Click the bookmark icon to save grants. Use the 'Saved' button to view only your bookmarked grants."
+                    />
+                  )}
+                </div>
               </div>
 
-              {grants.length === 0 ? (
+              {displayedGrants.length === 0 ? (
                 <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-12 text-center">
                   <Search className="w-16 h-16 text-slate-600 mx-auto mb-4" />
-                  <p className="text-slate-300 text-lg mb-2">No matching grants found at this time.</p>
+                  <p className="text-slate-300 text-lg mb-2">
+                    {showSavedOnly ? 'No saved grants yet.' : 'No matching grants found at this time.'}
+                  </p>
                   <p className="text-slate-400">
-                    We're constantly adding new opportunities. Check back soon!
+                    {showSavedOnly ? 'Click the bookmark icon on grants to save them.' : "We're constantly adding new opportunities. Check back soon!"}
                   </p>
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {grants.map((grant) => (
-                    <div
-                      key={grant.id}
-                      className="bg-slate-800/50 border border-slate-700 rounded-lg p-6 hover:border-emerald-500/30 transition"
-                    >
-                      <div className="flex justify-between items-start mb-4">
-                        <div className="flex-1">
-                          <div className="flex items-start gap-3 mb-2">
-                            <h3 className="text-xl font-semibold text-white flex-1">
-                              {grant.title}
-                            </h3>
+                  {displayedGrants.map((grant) => {
+                    const isSaved = savedGrantIds.has(grant.id);
+                    return (
+                      <div
+                        key={grant.id}
+                        className="bg-slate-800/50 border border-slate-700 rounded-lg p-6 hover:border-emerald-500/30 transition"
+                      >
+                        <div className="flex justify-between items-start mb-4">
+                          <div className="flex-1">
+                            <div className="flex items-start gap-3 mb-2">
+                              <h3 className="text-xl font-semibold text-white flex-1">
+                                {grant.title}
+                              </h3>
+                              <button
+                                onClick={() => toggleSaveGrant(grant.id)}
+                                className="p-2 rounded-lg transition hover:bg-slate-700"
+                                title={isSaved ? 'Unsave grant' : 'Save grant'}
+                              >
+                                {isSaved ? (
+                                  <BookmarkCheck className="w-5 h-5 text-emerald-500" />
+                                ) : (
+                                  <Bookmark className="w-5 h-5 text-slate-400" />
+                                )}
+                              </button>
+                            </div>
+                            <div className="flex items-center gap-4 text-sm text-slate-400 mb-3">
+                              <span className="font-medium">{grant.funder_name}</span>
+                              <span className="px-2 py-1 bg-slate-700 rounded text-xs capitalize">
+                                {grant.funder_type}
+                              </span>
+                            </div>
                           </div>
-                          <div className="flex items-center gap-4 text-sm text-slate-400 mb-3">
-                            <span className="font-medium">{grant.funder_name}</span>
-                            <span className="px-2 py-1 bg-slate-700 rounded text-xs capitalize">
-                              {grant.funder_type}
+                        </div>
+
+                        <p className="text-slate-300 mb-4 line-clamp-2">
+                          {grant.description}
+                        </p>
+
+                        <div className="flex flex-wrap gap-4 mb-4">
+                          <div className="flex items-center gap-2 text-slate-300">
+                            <DollarSign className="w-4 h-4 text-emerald-500" />
+                            <span>
+                              {formatCurrency(grant.award_min)} - {formatCurrency(grant.award_max)}
                             </span>
                           </div>
+                          <div className="flex items-center gap-2 text-slate-300">
+                            <Calendar className="w-4 h-4 text-emerald-500" />
+                            <span>{formatDeadline(grant.deadline, grant.is_rolling)}</span>
+                          </div>
                         </div>
+
+                        {isPro ? (
+                          <a
+                            href={grant.apply_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded font-semibold hover:bg-emerald-700 transition-colors"
+                          >
+                            View Grant
+                            <ExternalLink className="w-4 h-4" />
+                          </a>
+                        ) : (
+                          <div className="flex items-center gap-2 text-slate-500">
+                            <Lock className="w-4 h-4" />
+                            <span className="text-sm italic">Upgrade to Pro to view application details</span>
+                          </div>
+                        )}
                       </div>
-
-                      <p className="text-slate-300 mb-4 line-clamp-2">
-                        {grant.description}
-                      </p>
-
-                      <div className="flex flex-wrap gap-4 mb-4">
-                        <div className="flex items-center gap-2 text-slate-300">
-                          <DollarSign className="w-4 h-4 text-emerald-500" />
-                          <span>
-                            {formatCurrency(grant.award_min)} - {formatCurrency(grant.award_max)}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2 text-slate-300">
-                          <Calendar className="w-4 h-4 text-emerald-500" />
-                          <span>{formatDeadline(grant.deadline, grant.is_rolling)}</span>
-                        </div>
-                      </div>
-
-                      {isPro ? (
-                        <a
-                          href={grant.apply_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded font-semibold hover:bg-emerald-700 transition-colors"
-                        >
-                          View Grant
-                          <ExternalLink className="w-4 h-4" />
-                        </a>
-                      ) : (
-                        <div className="flex items-center gap-2 text-slate-500">
-                          <Lock className="w-4 h-4" />
-                          <span className="text-sm italic">Upgrade to Pro to view application details</span>
-                        </div>
-                      )}
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </section>
