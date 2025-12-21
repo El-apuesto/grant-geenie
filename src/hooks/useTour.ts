@@ -11,11 +11,8 @@ export function useTour() {
     const completed = localStorage.getItem(TOUR_STORAGE_KEY);
     setHasCompletedTour(completed === 'true');
 
-    // Check URL for tour query parameter
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('tour') === 'genie') {
-      setIsTourActive(true);
-    }
+    // DISABLED: Do NOT auto-start tour, only manual via lamp icon
+    // Users need to see dashboard first, not tour
   }, []);
 
   const startTour = () => {

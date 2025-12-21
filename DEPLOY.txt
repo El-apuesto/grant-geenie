@@ -1,0 +1,7 @@
+Deployment triggered: December 21, 2025 12:31 PM CST
+
+New features:
+- Sidebar navigation
+- Saved grants functionality
+- Aladdin lamp icon
+- Genie animation intro for product tour

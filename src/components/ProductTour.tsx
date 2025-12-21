@@ -26,6 +26,14 @@ const TOUR_STEPS: TourStep[] = [
     position: 'bottom',
   },
   {
+    id: 'calendar',
+    title: 'Deadline Calendar',
+    content:
+      'Your Deadline Calendar shows all upcoming grant deadlines in one place. Use it to plan your workload, avoid last-minute scrambles, and make sure you never miss a due date.',
+    targetId: 'calendar-section',
+    position: 'bottom',
+  },
+  {
     id: 'fiscal-sponsors',
     title: 'Fiscal Sponsor Partners',
     content:
@@ -80,12 +88,23 @@ export default function ProductTour({
 }: ProductTourProps) {
   const [currentStep, setCurrentStep] = useState(0);
   const [position, setPosition] = useState({ top: 0, left: 0 });
+  const [showIntro, setShowIntro] = useState(true);
 
   const step = TOUR_STEPS[currentStep];
   const isLastStep = currentStep === TOUR_STEPS.length - 1;
 
+  // Hide intro animation after 6.5 seconds
   useEffect(() => {
-    if (!isActive) return;
+    if (showIntro && isActive) {
+      const timer = setTimeout(() => {
+        setShowIntro(false);
+      }, 6500);
+      return () => clearTimeout(timer);
+    }
+  }, [showIntro, isActive]);
+
+  useEffect(() => {
+    if (!isActive || showIntro) return;
 
     // Calculate position based on target element
     if (step.targetId) {
@@ -141,7 +160,7 @@ export default function ProductTour({
         left: window.innerWidth / 2,
       });
     }
-  }, [currentStep, step, isActive, isLastStep, onComplete]);
+  }, [currentStep, step, isActive, showIntro, isLastStep, onComplete]);
 
   const handleNext = () => {
     if (isLastStep) {
@@ -157,6 +176,32 @@ export default function ProductTour({
 
   if (!isActive) return null;
 
+  // Show intro animation
+  if (showIntro) {
+    return (
+      <div className="fixed inset-0 bg-gradient-to-br from-slate-900 via-emerald-900/20 to-slate-900 z-50 flex items-center justify-center animate-in fade-in duration-500">
+        <div className="text-center">
+          <div className="mb-6 flex justify-center">
+            <video
+              autoPlay
+              muted
+              playsInline
+              className="w-64 h-64 object-contain"
+            >
+              <source src="/copy_5652D782-A5FB-43F0-A6C6-DCB56BB35546 2.webm" type="video/webm" />
+            </video>
+          </div>
+          <h1 className="text-4xl font-bold text-white mb-3 animate-in slide-in-from-bottom duration-700">
+            Welcome to Grant Geenie
+          </h1>
+          <p className="text-xl text-emerald-300 animate-in slide-in-from-bottom duration-700 delay-150">
+            Let me show you around...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <>
       {/* Backdrop overlay */}
@@ -168,10 +213,21 @@ export default function ProductTour({
         style={{ top: `${position.top}px`, left: `${position.left}px` }}
       >
         <div className="bg-slate-800 border-2 border-emerald-500 rounded-lg shadow-2xl max-w-md w-screen mx-4 p-6 animate-in fade-in zoom-in duration-200">
-          {/* Genie icon */}
+          {/* Genie animation */}
           <div className="flex items-start gap-4 mb-4">
-            <div className="w-12 h-12 bg-emerald-600 rounded-full flex items-center justify-center flex-shrink-0">
-              <span className="text-2xl">🧞</span>
+            <div className="w-12 h-12 bg-emerald-600 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
+              <video
+                autoPlay
+                loop
+                muted
+                playsInline
+                className="w-full h-full object-cover"
+                style={{ mixBlendMode: 'normal' }}
+              >
+                <source src="/copy_5652D782-A5FB-43F0-A6C6-DCB56BB35546 2.webm" type="video/webm" />
+                {/* Fallback emoji if video doesn't load */}
+                <span className="text-2xl">🧞</span>
+              </video>
             </div>
             <div className="flex-1">
               <h3 className="text-xl font-bold text-white mb-2">{step.title}</h3>
