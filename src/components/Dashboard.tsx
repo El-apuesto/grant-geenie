@@ -3,7 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { Grant, Profile, Application } from '../types';
 import { getStateName } from '../lib/states';
-import { ExternalLink, LogOut, Lamp, Settings as SettingsIcon, Crown, Lock, Search, Plus, Calendar, DollarSign, Building2, FileText, Bookmark, BookmarkCheck, Filter, X, ClipboardList, BarChart3 } from 'lucide-react';
+import { Search, Plus, Crown, Lock, Filter, X, Bookmark, BookmarkCheck } from 'lucide-react';
 import ProductTour from './ProductTour';
 import HelpButton from './HelpButton';
 import Settings from './Settings';
@@ -14,6 +14,7 @@ import ApplicationWizard from './ApplicationWizard';
 import CalendarPage from './CalendarPage';
 import ApplicationTracker from './ApplicationTracker';
 import AnalyticsDashboard from './AnalyticsDashboard';
+import Sidebar from './Sidebar';
 import { useTour } from '../hooks/useTour';
 
 interface ProfileWithQuestionnaire extends Profile {
@@ -364,20 +365,29 @@ export default function Dashboard() {
 
   if (showLOIGenerator) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-        <div className="border-b border-slate-700 bg-slate-900/50 backdrop-blur-sm sticky top-0 z-10">
-          <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-            <h1 className="text-2xl font-bold text-white">LOI Generator</h1>
-            <button
-              onClick={() => setShowLOIGenerator(false)}
-              className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition"
-            >
-              Back to Dashboard
-            </button>
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex">
+        <Sidebar
+          isPro={isPro}
+          onNavigate={(view) => {
+            setShowLOIGenerator(false);
+            if (view === 'dashboard') return;
+            if (view === 'tracker') setShowApplicationTracker(true);
+            if (view === 'calendar') setShowCalendar(true);
+            if (view === 'loi') setShowLOIGenerator(true);
+            if (view === 'templates') setShowApplicationTemplates(true);
+            if (view === 'fiscalSponsors') setShowFiscalSponsors(true);
+            if (view === 'analytics') setShowAnalytics(true);
+            if (view === 'settings') setShowSettings(true);
+          }}
+          onSignOut={handleSignOut}
+          onStartTour={startTour}
+          profile={profile}
+          currentView="loi"
+        />
+        <div className="flex-1 ml-64">
+          <div className="max-w-7xl mx-auto px-4 py-8">
+            <LOIGenerator isPro={isPro} />
           </div>
-        </div>
-        <div className="max-w-7xl mx-auto px-4 py-8">
-          <LOIGenerator isPro={isPro} />
         </div>
       </div>
     );
@@ -385,51 +395,115 @@ export default function Dashboard() {
 
   if (showFiscalSponsors) {
     return (
-      <FiscalSponsorsPage onBack={() => setShowFiscalSponsors(false)} />
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex">
+        <Sidebar
+          isPro={isPro}
+          onNavigate={(view) => {
+            setShowFiscalSponsors(false);
+            if (view === 'dashboard') return;
+            if (view === 'tracker') setShowApplicationTracker(true);
+            if (view === 'calendar') setShowCalendar(true);
+            if (view === 'loi') setShowLOIGenerator(true);
+            if (view === 'templates') setShowApplicationTemplates(true);
+            if (view === 'fiscalSponsors') setShowFiscalSponsors(true);
+            if (view === 'analytics') setShowAnalytics(true);
+            if (view === 'settings') setShowSettings(true);
+          }}
+          onSignOut={handleSignOut}
+          onStartTour={startTour}
+          profile={profile}
+          currentView="fiscalSponsors"
+        />
+        <div className="flex-1 ml-64">
+          <FiscalSponsorsPage onBack={() => setShowFiscalSponsors(false)} />
+        </div>
+      </div>
     );
   }
 
   if (showApplicationTemplates) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-        <div className="border-b border-slate-700 bg-slate-900/50 backdrop-blur-sm sticky top-0 z-10">
-          <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-            <h1 className="text-2xl font-bold text-white">Application Templates</h1>
-            <button
-              onClick={() => setShowApplicationTemplates(false)}
-              className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition"
-            >
-              Back to Dashboard
-            </button>
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex">
+        <Sidebar
+          isPro={isPro}
+          onNavigate={(view) => {
+            setShowApplicationTemplates(false);
+            if (view === 'dashboard') return;
+            if (view === 'tracker') setShowApplicationTracker(true);
+            if (view === 'calendar') setShowCalendar(true);
+            if (view === 'loi') setShowLOIGenerator(true);
+            if (view === 'templates') setShowApplicationTemplates(true);
+            if (view === 'fiscalSponsors') setShowFiscalSponsors(true);
+            if (view === 'analytics') setShowAnalytics(true);
+            if (view === 'settings') setShowSettings(true);
+          }}
+          onSignOut={handleSignOut}
+          onStartTour={startTour}
+          profile={profile}
+          currentView="templates"
+        />
+        <div className="flex-1 ml-64">
+          <div className="max-w-7xl mx-auto px-4 py-8">
+            <ApplicationWizard isPro={isPro} />
           </div>
-        </div>
-        <div className="max-w-7xl mx-auto px-4 py-8">
-          <ApplicationWizard isPro={isPro} />
         </div>
       </div>
     );
   }
 
   if (showCalendar) {
-    return <CalendarPage onBack={() => setShowCalendar(false)} />;
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex">
+        <Sidebar
+          isPro={isPro}
+          onNavigate={(view) => {
+            setShowCalendar(false);
+            if (view === 'dashboard') return;
+            if (view === 'tracker') setShowApplicationTracker(true);
+            if (view === 'calendar') setShowCalendar(true);
+            if (view === 'loi') setShowLOIGenerator(true);
+            if (view === 'templates') setShowApplicationTemplates(true);
+            if (view === 'fiscalSponsors') setShowFiscalSponsors(true);
+            if (view === 'analytics') setShowAnalytics(true);
+            if (view === 'settings') setShowSettings(true);
+          }}
+          onSignOut={handleSignOut}
+          onStartTour={startTour}
+          profile={profile}
+          currentView="calendar"
+        />
+        <div className="flex-1 ml-64">
+          <CalendarPage onBack={() => setShowCalendar(false)} />
+        </div>
+      </div>
+    );
   }
 
   if (showApplicationTracker) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-        <div className="border-b border-slate-700 bg-slate-900/50 backdrop-blur-sm sticky top-0 z-10">
-          <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-            <h1 className="text-2xl font-bold text-white">Application Tracker</h1>
-            <button
-              onClick={() => setShowApplicationTracker(false)}
-              className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition"
-            >
-              Back to Dashboard
-            </button>
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex">
+        <Sidebar
+          isPro={isPro}
+          onNavigate={(view) => {
+            setShowApplicationTracker(false);
+            if (view === 'dashboard') return;
+            if (view === 'tracker') setShowApplicationTracker(true);
+            if (view === 'calendar') setShowCalendar(true);
+            if (view === 'loi') setShowLOIGenerator(true);
+            if (view === 'templates') setShowApplicationTemplates(true);
+            if (view === 'fiscalSponsors') setShowFiscalSponsors(true);
+            if (view === 'analytics') setShowAnalytics(true);
+            if (view === 'settings') setShowSettings(true);
+          }}
+          onSignOut={handleSignOut}
+          onStartTour={startTour}
+          profile={profile}
+          currentView="tracker"
+        />
+        <div className="flex-1 ml-64">
+          <div className="max-w-7xl mx-auto px-4 py-8">
+            <ApplicationTracker isPro={isPro} />
           </div>
-        </div>
-        <div className="max-w-7xl mx-auto px-4 py-8">
-          <ApplicationTracker isPro={isPro} />
         </div>
       </div>
     );
@@ -437,20 +511,29 @@ export default function Dashboard() {
 
   if (showAnalytics) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-        <div className="border-b border-slate-700 bg-slate-900/50 backdrop-blur-sm sticky top-0 z-10">
-          <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-            <h1 className="text-2xl font-bold text-white">Analytics Dashboard</h1>
-            <button
-              onClick={() => setShowAnalytics(false)}
-              className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition"
-            >
-              Back to Dashboard
-            </button>
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex">
+        <Sidebar
+          isPro={isPro}
+          onNavigate={(view) => {
+            setShowAnalytics(false);
+            if (view === 'dashboard') return;
+            if (view === 'tracker') setShowApplicationTracker(true);
+            if (view === 'calendar') setShowCalendar(true);
+            if (view === 'loi') setShowLOIGenerator(true);
+            if (view === 'templates') setShowApplicationTemplates(true);
+            if (view === 'fiscalSponsors') setShowFiscalSponsors(true);
+            if (view === 'analytics') setShowAnalytics(true);
+            if (view === 'settings') setShowSettings(true);
+          }}
+          onSignOut={handleSignOut}
+          onStartTour={startTour}
+          profile={profile}
+          currentView="analytics"
+        />
+        <div className="flex-1 ml-64">
+          <div className="max-w-7xl mx-auto px-4 py-8">
+            <AnalyticsDashboard />
           </div>
-        </div>
-        <div className="max-w-7xl mx-auto px-4 py-8">
-          <AnalyticsDashboard />
         </div>
       </div>
     );
@@ -467,194 +550,312 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-      <div className="border-b border-slate-700 bg-slate-900/50 backdrop-blur-sm sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-          <div>
-            <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-bold text-white">Grant Geenie</h1>
-              {!isPro && (
-                <span className="text-xs bg-slate-700 text-slate-300 px-2 py-1 rounded">
-                  Free Tier
-                </span>
-              )}
-              {isPro && (
-                <span className="flex items-center gap-1 text-xs bg-emerald-600/20 border border-emerald-500/30 text-emerald-400 px-2 py-1 rounded">
-                  <Crown className="w-3 h-3" />
-                  Pro
-                </span>
-              )}
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex">
+      <Sidebar
+        isPro={isPro}
+        onNavigate={(view) => {
+          if (view === 'dashboard') return;
+          if (view === 'tracker') setShowApplicationTracker(true);
+          if (view === 'calendar') setShowCalendar(true);
+          if (view === 'loi') setShowLOIGenerator(true);
+          if (view === 'templates') setShowApplicationTemplates(true);
+          if (view === 'fiscalSponsors') setShowFiscalSponsors(true);
+          if (view === 'analytics') setShowAnalytics(true);
+          if (view === 'settings') setShowSettings(true);
+        }}
+        onSignOut={handleSignOut}
+        onStartTour={startTour}
+        profile={profile}
+        currentView="dashboard"
+      />
+
+      <div className="flex-1 ml-64">
+        <div className="max-w-7xl mx-auto px-4 py-8">
+          {error && (
+            <div className="mb-6 p-4 bg-red-900/20 border border-red-500/50 rounded-lg text-red-200">
+              {error}
             </div>
-            {hasCompletedQuestionnaire && (
-              <p className="text-slate-400 text-sm">
-                {profile && `${getStateName(profile.state)} • ${profile.org_type}`}
-              </p>
-            )}
-          </div>
-          <div className="flex items-center gap-3">
-            {isPro && (
-              <button
-                onClick={() => setShowSettings(true)}
-                className="p-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors"
-                title="Settings"
-              >
-                <SettingsIcon className="w-5 h-5" />
-              </button>
-            )}
-            {isPro && (
-              <button
-                id="genie-lamp-icon"
-                onClick={startTour}
-                className="p-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors group relative"
-                title="Start Product Tour"
-              >
-                <Lamp className="w-5 h-5" />
-                <span className="absolute -top-8 right-0 bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                  Product Tour
-                </span>
-              </button>
-            )}
-            <button
-              onClick={handleSignOut}
-              className="flex items-center gap-2 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition"
-            >
-              <LogOut className="w-4 h-4" />
-              Sign Out
-            </button>
-          </div>
-        </div>
-      </div>
+          )}
 
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        {error && (
-          <div className="mb-6 p-4 bg-red-900/20 border border-red-500/50 rounded-lg text-red-200">
-            {error}
-          </div>
-        )}
-
-        {hasCompletedQuestionnaire && (
-          <>
-            {!isPro && (
-              <div className="mb-6 bg-gradient-to-r from-emerald-900/20 to-blue-900/20 border border-emerald-500/30 rounded-lg p-6">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Crown className="w-5 h-5 text-emerald-400" />
-                      <h3 className="text-xl font-bold text-white">Unlock Full Access with Pro</h3>
-                    </div>
-                    <p className="text-slate-300 mb-3">
-                      You're viewing 5 matched grants. Upgrade to Pro to unlock:
-                    </p>
-                    <ul className="text-slate-300 space-y-1 mb-4 ml-4">
-                      <li>• <strong>Thousands more grants</strong> matched to your profile</li>
-                      <li>• Save grants & direct application links</li>
-                      <li>• Application tracking & pipeline</li>
-                      <li>• LOI Generator with auto-fill</li>
-                      <li>• 265+ Fiscal Sponsor database</li>
-                      <li>• Application templates</li>
-                      <li>• Deadline calendar</li>
-                    </ul>
-                    <button
-                      onClick={handleUpgrade}
-                      className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg transition"
-                    >
-                      Upgrade to Pro Now
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* GRANT POOL SECTION - keeping original code for brevity, same as before */}
-            {/* ... rest of grant pool section ... */}
-
-            {!isPro && (
-              <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-12 text-center">
-                <Lock className="w-16 h-16 text-slate-600 mx-auto mb-4" />
-                <h3 className="text-2xl font-bold text-white mb-2">Pro Features Locked</h3>
-                <p className="text-slate-400 mb-6 max-w-2xl mx-auto">
-                  Application Tracking, Fiscal Sponsors, LOI Generator, Templates, Calendar, and more are available exclusively to Pro subscribers.
-                </p>
-                <button
-                  onClick={handleUpgrade}
-                  className="px-8 py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg transition text-lg"
-                >
-                  Upgrade to Pro to Unlock All Features
-                </button>
-              </div>
-            )}
-
-            {isPro && (
-              <>
-                {/* Calendar, Fiscal Sponsors, Application Tracker, Templates sections - same as before */}
-
-                <section id="wins-records-section" className="mb-12">
-                  <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-2xl font-bold text-white">Wins & Records</h2>
-                    <HelpButton
-                      sectionName="Wins & Records"
-                      content="Track grants submitted, awarded, and declined, plus your total dollars awarded over time."
-                    />
-                  </div>
-                  <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-8">
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-                      <div>
-                        <div className="text-3xl font-bold text-purple-400">{stats.submitted}</div>
-                        <div className="text-slate-400 text-sm">Submitted</div>
+          {hasCompletedQuestionnaire && (
+            <>
+              {!isPro && (
+                <div className="mb-6 bg-gradient-to-r from-emerald-900/20 to-blue-900/20 border border-emerald-500/30 rounded-lg p-6">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Crown className="w-5 h-5 text-emerald-400" />
+                        <h3 className="text-xl font-bold text-white">Unlock Full Access with Pro</h3>
                       </div>
-                      <div>
-                        <div className="text-3xl font-bold text-emerald-400">{stats.awarded}</div>
-                        <div className="text-slate-400 text-sm">Awarded</div>
-                      </div>
-                      <div>
-                        <div className="text-3xl font-bold text-slate-400">{stats.declined}</div>
-                        <div className="text-slate-400 text-sm">Declined</div>
-                      </div>
-                      <div>
-                        <div className="text-3xl font-bold text-emerald-400">{formatCurrency(stats.totalAwarded)}</div>
-                        <div className="text-slate-400 text-sm">Total Awarded</div>
-                      </div>
-                    </div>
-                  </div>
-                </section>
-
-                <section id="analytics-section" className="mb-12">
-                  <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-2xl font-bold text-white">Analytics & Insights</h2>
-                    <HelpButton
-                      sectionName="Analytics"
-                      content="Visualize your grant success with win rate tracking, funding trends, and success metrics. See which application types work best and identify patterns."
-                    />
-                  </div>
-                  <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-8">
-                    <div className="flex items-center justify-between mb-4">
-                      <div>
-                        <p className="text-slate-400 mb-3">Track your win rate, funding trends, and success patterns with visual analytics.</p>
-                        {stats.submitted > 0 && (
-                          <div className="flex items-center gap-4 text-sm">
-                            <span className="text-slate-300">Win Rate: <strong className="text-emerald-400">
-                              {stats.submitted > 0 ? ((stats.awarded / stats.submitted) * 100).toFixed(1) : '0'}%
-                            </strong></span>
-                            <span className="text-slate-300">Total Awarded: <strong className="text-emerald-400">
-                              {formatCurrency(stats.totalAwarded)}
-                            </strong></span>
-                          </div>
-                        )}
-                      </div>
+                      <p className="text-slate-300 mb-3">
+                        You're viewing 5 matched grants. Upgrade to Pro to unlock:
+                      </p>
+                      <ul className="text-slate-300 space-y-1 mb-4 ml-4">
+                        <li>• <strong>Thousands more grants</strong> matched to your profile</li>
+                        <li>• Save grants & direct application links</li>
+                        <li>• Application tracking & pipeline</li>
+                        <li>• LOI Generator with auto-fill</li>
+                        <li>• 265+ Fiscal Sponsor database</li>
+                        <li>• Application templates</li>
+                        <li>• Deadline calendar</li>
+                      </ul>
                       <button
-                        onClick={() => setShowAnalytics(true)}
-                        className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition font-semibold"
+                        onClick={handleUpgrade}
+                        className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg transition"
                       >
-                        <BarChart3 className="w-4 h-4" />
-                        View Analytics
+                        Upgrade to Pro Now
                       </button>
                     </div>
                   </div>
-                </section>
-              </>
-            )}
-          </>
-        )}
+                </div>
+              )}
+
+              <section id="grant-pool-section" className="mb-12">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <h2 className="text-2xl font-bold text-white">Grant Pool</h2>
+                    {isPro && savedCount > 0 && (
+                      <button
+                        onClick={() => setShowSavedOnly(!showSavedOnly)}
+                        className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition ${
+                          showSavedOnly
+                            ? 'bg-emerald-600 text-white'
+                            : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                        }`}
+                      >
+                        {showSavedOnly ? <BookmarkCheck className="w-4 h-4" /> : <Bookmark className="w-4 h-4" />}
+                        Saved ({savedCount})
+                      </button>
+                    )}
+                  </div>
+                  <HelpButton
+                    sectionName="Grant Pool"
+                    content="These grants are matched to your profile based on location, organization type, and funding needs. Use filters to narrow results."
+                  />
+                </div>
+
+                <div className="mb-4 space-y-3">
+                  <div className="flex gap-3">
+                    <div className="flex-1 relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
+                      <input
+                        type="text"
+                        placeholder="Search grants..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="w-full pl-10 pr-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-emerald-500"
+                      />
+                    </div>
+                    <button
+                      onClick={() => setShowFilters(!showFilters)}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition ${
+                        showFilters || hasActiveFilters
+                          ? 'bg-emerald-600 text-white'
+                          : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                      }`}
+                    >
+                      <Filter className="w-4 h-4" />
+                      Filters
+                      {hasActiveFilters && <span className="w-2 h-2 bg-white rounded-full"></span>}
+                    </button>
+                  </div>
+
+                  {showFilters && (
+                    <div className="bg-slate-800 border border-slate-700 rounded-lg p-4 space-y-3">
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                        <div>
+                          <label className="block text-sm font-medium text-slate-300 mb-1">Funder Type</label>
+                          <select
+                            value={selectedFunderType}
+                            onChange={(e) => setSelectedFunderType(e.target.value)}
+                            className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded text-white focus:outline-none focus:border-emerald-500"
+                          >
+                            <option value="all">All Types</option>
+                            <option value="foundation">Foundation</option>
+                            <option value="government">Government</option>
+                            <option value="corporate">Corporate</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-slate-300 mb-1">Deadline</label>
+                          <select
+                            value={selectedDeadline}
+                            onChange={(e) => setSelectedDeadline(e.target.value)}
+                            className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded text-white focus:outline-none focus:border-emerald-500"
+                          >
+                            <option value="all">All Deadlines</option>
+                            <option value="30">Next 30 Days</option>
+                            <option value="60">Next 60 Days</option>
+                            <option value="90">Next 90 Days</option>
+                            <option value="rolling">Rolling</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-slate-300 mb-1">Min Amount</label>
+                          <input
+                            type="number"
+                            placeholder="$0"
+                            value={minAmount}
+                            onChange={(e) => setMinAmount(e.target.value)}
+                            className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded text-white focus:outline-none focus:border-emerald-500"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-slate-300 mb-1">Max Amount</label>
+                          <input
+                            type="number"
+                            placeholder="No limit"
+                            value={maxAmount}
+                            onChange={(e) => setMaxAmount(e.target.value)}
+                            className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded text-white focus:outline-none focus:border-emerald-500"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between pt-2 border-t border-slate-700">
+                        <div className="flex items-center gap-2">
+                          <label className="text-sm font-medium text-slate-300">Sort by:</label>
+                          <select
+                            value={sortBy}
+                            onChange={(e) => setSortBy(e.target.value)}
+                            className="px-3 py-1 bg-slate-900 border border-slate-700 rounded text-white text-sm focus:outline-none focus:border-emerald-500"
+                          >
+                            <option value="deadline">Deadline</option>
+                            <option value="amount_high">Amount (High to Low)</option>
+                            <option value="amount_low">Amount (Low to High)</option>
+                          </select>
+                        </div>
+                        {hasActiveFilters && (
+                          <button
+                            onClick={clearFilters}
+                            className="flex items-center gap-1 px-3 py-1 text-sm text-slate-400 hover:text-white transition"
+                          >
+                            <X className="w-4 h-4" />
+                            Clear Filters
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-4">
+                  {displayedGrants.length === 0 ? (
+                    <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-8 text-center">
+                      <p className="text-slate-400">
+                        {showSavedOnly ? 'No saved grants yet. Click the bookmark icon on grants to save them.' : 'No grants match your current filters.'}
+                      </p>
+                    </div>
+                  ) : (
+                    displayedGrants.map((grant) => (
+                      <div
+                        key={grant.id}
+                        className="bg-slate-800/50 border border-slate-700 rounded-lg p-6 hover:border-emerald-500/50 transition"
+                      >
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <h3 className="text-xl font-semibold text-white">{grant.title}</h3>
+                              {isPro && (
+                                <button
+                                  onClick={() => toggleSaveGrant(grant.id)}
+                                  className="p-1 hover:bg-slate-700 rounded transition"
+                                  title={savedGrantIds.has(grant.id) ? 'Remove from saved' : 'Save grant'}
+                                >
+                                  {savedGrantIds.has(grant.id) ? (
+                                    <BookmarkCheck className="w-5 h-5 text-emerald-400" />
+                                  ) : (
+                                    <Bookmark className="w-5 h-5 text-slate-400" />
+                                  )}
+                                </button>
+                              )}
+                            </div>
+                            <p className="text-slate-300 font-medium mb-2">{grant.funder_name}</p>
+                            <p className="text-slate-400 text-sm mb-3 line-clamp-2">{grant.description}</p>
+                            <div className="flex flex-wrap gap-2 text-sm">
+                              <span className="px-2 py-1 bg-slate-700 text-slate-300 rounded">
+                                {grant.funder_type}
+                              </span>
+                              <span className="px-2 py-1 bg-emerald-900/30 text-emerald-300 rounded">
+                                {formatCurrency(grant.award_min)} - {formatCurrency(grant.award_max)}
+                              </span>
+                              <span className="px-2 py-1 bg-blue-900/30 text-blue-300 rounded">
+                                Due: {formatDeadline(grant.deadline, grant.is_rolling)}
+                              </span>
+                            </div>
+                          </div>
+                          {isPro && grant.application_link && (
+                            <a
+                              href={grant.application_link}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="ml-4 flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition font-medium"
+                            >
+                              Apply <ExternalLink className="w-4 h-4" />
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </section>
+
+              {!isPro && (
+                <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-12 text-center">
+                  <Lock className="w-16 h-16 text-slate-600 mx-auto mb-4" />
+                  <h3 className="text-2xl font-bold text-white mb-2">Pro Features Locked</h3>
+                  <p className="text-slate-400 mb-6 max-w-2xl mx-auto">
+                    Application Tracking, Fiscal Sponsors, LOI Generator, Templates, Calendar, and more are available exclusively to Pro subscribers.
+                  </p>
+                  <button
+                    onClick={handleUpgrade}
+                    className="px-8 py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg transition text-lg"
+                  >
+                    Upgrade to Pro to Unlock All Features
+                  </button>
+                </div>
+              )}
+
+              {isPro && (
+                <>
+                  <section id="wins-records-section" className="mb-12">
+                    <div className="flex items-center justify-between mb-4">
+                      <h2 className="text-2xl font-bold text-white">Wins & Records</h2>
+                      <HelpButton
+                        sectionName="Wins & Records"
+                        content="Track grants submitted, awarded, and declined, plus your total dollars awarded over time."
+                      />
+                    </div>
+                    <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-8">
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                        <div>
+                          <div className="text-3xl font-bold text-purple-400">{stats.submitted}</div>
+                          <div className="text-slate-400 text-sm">Submitted</div>
+                        </div>
+                        <div>
+                          <div className="text-3xl font-bold text-emerald-400">{stats.awarded}</div>
+                          <div className="text-slate-400 text-sm">Awarded</div>
+                        </div>
+                        <div>
+                          <div className="text-3xl font-bold text-slate-400">{stats.declined}</div>
+                          <div className="text-slate-400 text-sm">Declined</div>
+                        </div>
+                        <div>
+                          <div className="text-3xl font-bold text-emerald-400">{formatCurrency(stats.totalAwarded)}</div>
+                          <div className="text-slate-400 text-sm">Total Awarded</div>
+                        </div>
+                      </div>
+                    </div>
+                  </section>
+                </>
+              )}
+            </>
+          )}
+        </div>
       </div>
 
       {isPro && isTourActive && (
