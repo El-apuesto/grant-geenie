@@ -88,12 +88,23 @@ export default function ProductTour({
 }: ProductTourProps) {
   const [currentStep, setCurrentStep] = useState(0);
   const [position, setPosition] = useState({ top: 0, left: 0 });
+  const [showIntro, setShowIntro] = useState(true);
 
   const step = TOUR_STEPS[currentStep];
   const isLastStep = currentStep === TOUR_STEPS.length - 1;
 
+  // Hide intro animation after 3 seconds
   useEffect(() => {
-    if (!isActive) return;
+    if (showIntro && isActive) {
+      const timer = setTimeout(() => {
+        setShowIntro(false);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [showIntro, isActive]);
+
+  useEffect(() => {
+    if (!isActive || showIntro) return;
 
     // Calculate position based on target element
     if (step.targetId) {
@@ -149,7 +160,7 @@ export default function ProductTour({
         left: window.innerWidth / 2,
       });
     }
-  }, [currentStep, step, isActive, isLastStep, onComplete]);
+  }, [currentStep, step, isActive, showIntro, isLastStep, onComplete]);
 
   const handleNext = () => {
     if (isLastStep) {
@@ -164,6 +175,32 @@ export default function ProductTour({
   };
 
   if (!isActive) return null;
+
+  // Show intro animation
+  if (showIntro) {
+    return (
+      <div className="fixed inset-0 bg-gradient-to-br from-slate-900 via-emerald-900/20 to-slate-900 z-50 flex items-center justify-center animate-in fade-in duration-500">
+        <div className="text-center">
+          <div className="mb-6 flex justify-center">
+            <video
+              autoPlay
+              muted
+              playsInline
+              className="w-64 h-64 object-contain"
+            >
+              <source src="/copy_5652D782-A5FB-43F0-A6C6-DCB56BB35546 2.webm" type="video/webm" />
+            </video>
+          </div>
+          <h1 className="text-4xl font-bold text-white mb-3 animate-in slide-in-from-bottom duration-700">
+            Welcome to Grant Geenie
+          </h1>
+          <p className="text-xl text-emerald-300 animate-in slide-in-from-bottom duration-700 delay-150">
+            Let me show you around...
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
