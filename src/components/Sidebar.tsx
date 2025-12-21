@@ -1,168 +1,162 @@
+import { Home, Search, ClipboardList, Calendar, FileText, Building2, BarChart3, Settings, LogOut, Menu, X, Sparkles } from 'lucide-react';
 import { useState } from 'react';
-import { Menu, X, Home, ClipboardList, Calendar, FileText, Building2, Settings as SettingsIcon, LogOut, BarChart3 } from 'lucide-react';
-import { Profile } from '../types';
-import { getStateName } from '../lib/states';
 
 interface SidebarProps {
-  isPro: boolean;
+  currentView: 'dashboard' | 'grants' | 'tracker' | 'calendar' | 'loi' | 'templates' | 'fiscalSponsors' | 'analytics' | 'settings';
   onNavigate: (view: string) => void;
   onSignOut: () => void;
-  onStartTour: () => void;
-  profile: Profile | null;
-  currentView: string;
+  isPro: boolean;
+  isMobile?: boolean;
 }
 
-export default function Sidebar({ isPro, onNavigate, onSignOut, onStartTour, profile, currentView }: SidebarProps) {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+export default function Sidebar({ currentView, onNavigate, onSignOut, isPro, isMobile = false }: SidebarProps) {
+  const [isExpanded, setIsExpanded] = useState(false);
 
-  const navigation = [
-    { name: 'Dashboard', view: 'dashboard', icon: Home, prOnly: false },
-    { name: 'Application Tracker', view: 'tracker', icon: ClipboardList, prOnly: true },
-    { name: 'Calendar', view: 'calendar', icon: Calendar, prOnly: true },
-    { name: 'LOI Generator', view: 'loi', icon: FileText, prOnly: true },
-    { name: 'Templates', view: 'templates', icon: FileText, prOnly: true },
-    { name: 'Fiscal Sponsors', view: 'fiscalSponsors', icon: Building2, prOnly: true },
-    { name: 'Analytics', view: 'analytics', icon: BarChart3, prOnly: true },
+  const menuItems = [
+    { id: 'dashboard', icon: Home, label: 'Dashboard', color: 'text-blue-400' },
+    { id: 'grants', icon: Search, label: 'Find Grants', color: 'text-emerald-400' },
+    { id: 'tracker', icon: ClipboardList, label: 'Application Tracker', color: 'text-purple-400', proOnly: true },
+    { id: 'calendar', icon: Calendar, label: 'Calendar', color: 'text-orange-400', proOnly: true },
+    { id: 'loi', icon: FileText, label: 'LOI Generator', color: 'text-cyan-400', proOnly: true },
+    { id: 'templates', icon: FileText, label: 'Templates', color: 'text-pink-400', proOnly: true },
+    { id: 'fiscalSponsors', icon: Building2, label: 'Fiscal Sponsors', color: 'text-yellow-400', proOnly: true },
+    { id: 'analytics', icon: BarChart3, label: 'Analytics', color: 'text-indigo-400', proOnly: true },
   ];
 
-  const handleNavigate = (view: string) => {
-    onNavigate(view);
-    setMobileMenuOpen(false);
+  const handleItemClick = (itemId: string) => {
+    onNavigate(itemId);
+    if (isMobile) {
+      setIsExpanded(false);
+    }
   };
 
-  const isActive = (view: string) => currentView === view;
+  // Mobile collapsed sidebar (icons only)
+  if (isMobile && !isExpanded) {
+    return (
+      <>
+        {/* Mobile hamburger button */}
+        <button
+          onClick={() => setIsExpanded(true)}
+          className="fixed top-4 left-4 z-50 p-3 bg-slate-800 border border-slate-700 rounded-lg text-white hover:bg-slate-700 transition md:hidden"
+        >
+          <Menu className="w-6 h-6" />
+        </button>
+      </>
+    );
+  }
 
+  // Mobile expanded OR Desktop sidebar
   return (
     <>
-      {/* Mobile hamburger button */}
-      <button
-        onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-        className="lg:hidden fixed top-4 left-4 z-50 p-2 rounded-lg bg-slate-800 shadow-lg border border-slate-700"
-      >
-        {mobileMenuOpen ? <X size={24} className="text-white" /> : <Menu size={24} className="text-white" />}
-      </button>
-
-      {/* Mobile overlay */}
-      {mobileMenuOpen && (
+      {/* Backdrop for mobile */}
+      {isMobile && isExpanded && (
         <div
-          className="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-40"
-          onClick={() => setMobileMenuOpen(false)}
+          className="fixed inset-0 bg-black/50 z-40 md:hidden"
+          onClick={() => setIsExpanded(false)}
         />
       )}
 
       {/* Sidebar */}
       <div
         className={`
-          fixed top-0 left-0 h-full bg-slate-900 shadow-xl z-40 border-r border-slate-700
-          w-64 transform transition-transform duration-300 ease-in-out
-          lg:translate-x-0
-          ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+          fixed top-0 left-0 h-full bg-slate-900 border-r border-slate-700 z-50
+          flex flex-col
+          ${isMobile ? 'w-64' : 'w-64'}
+          ${isMobile && !isExpanded ? '-translate-x-full' : 'translate-x-0'}
+          transition-transform duration-300
         `}
       >
-        {/* Logo Section */}
+        {/* Header */}
         <div className="p-6 border-b border-slate-700">
-          <div className="flex items-center gap-3 mb-2">
-            <video
-              src="/copy_5652D782-A5FB-43F0-A6C6-DCB56BB35546 2.webm"
-              autoPlay
-              loop
-              muted
-              playsInline
-              className="w-10 h-10 object-contain"
-            />
-            <div>
-              <h2 className="text-xl font-bold text-white">Grant Geenie</h2>
-              {!isPro && (
-                <span className="text-xs bg-slate-700 text-slate-300 px-2 py-0.5 rounded">Free Tier</span>
-              )}
-              {isPro && (
-                <span className="text-xs bg-emerald-600/20 border border-emerald-500/30 text-emerald-400 px-2 py-0.5 rounded">Pro</span>
-              )}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <img 
+                src="/genie.png.PNG" 
+                alt="Grant Geenie" 
+                className="w-10 h-10 rounded-full object-cover"
+                onError={(e) => {
+                  // Fallback to sparkles icon if image fails
+                  e.currentTarget.style.display = 'none';
+                  e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                }}
+              />
+              <Sparkles className="w-10 h-10 text-emerald-500 hidden" />
+              <div>
+                <h2 className="text-white font-bold text-lg">Grant Geenie</h2>
+                {isPro && (
+                  <span className="text-xs text-emerald-400 font-semibold">PRO</span>
+                )}
+              </div>
             </div>
+            {isMobile && (
+              <button
+                onClick={() => setIsExpanded(false)}
+                className="p-2 text-slate-400 hover:text-white transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            )}
           </div>
-          {profile && profile.state && profile.org_type && (
-            <p className="text-slate-400 text-xs">
-              {getStateName(profile.state)} • {profile.org_type}
-            </p>
-          )}
         </div>
 
-        {/* Navigation */}
-        <nav className="px-3 py-4 space-y-1 flex-1 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 200px)' }}>
-          {navigation.map((item) => {
+        {/* Navigation Items */}
+        <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
+          {menuItems.map((item) => {
             const Icon = item.icon;
-            const active = isActive(item.view);
-            const locked = item.prOnly && !isPro;
-            
+            const isActive = currentView === item.id;
+            const isLocked = item.proOnly && !isPro;
+
             return (
               <button
-                key={item.name}
-                onClick={() => !locked && handleNavigate(item.view)}
-                disabled={locked}
+                key={item.id}
+                onClick={() => !isLocked && handleItemClick(item.id)}
+                disabled={isLocked}
                 className={`
-                  w-full flex items-center gap-3 px-3 py-2.5 rounded-lg
-                  transition-colors duration-200 text-left text-sm
-                  ${active
-                    ? 'bg-emerald-600 text-white'
-                    : locked
-                    ? 'text-slate-500 cursor-not-allowed opacity-50'
-                    : 'text-slate-300 hover:bg-slate-800'
+                  w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors
+                  ${isActive 
+                    ? 'bg-slate-800 text-white border border-slate-600' 
+                    : 'text-slate-400 hover:bg-slate-800 hover:text-white'
                   }
+                  ${isLocked ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
                 `}
+                title={isLocked ? 'Upgrade to Pro to unlock' : item.label}
               >
-                <Icon size={18} />
-                <span className="font-medium">{item.name}</span>
-                {locked && (
-                  <span className="ml-auto text-xs bg-slate-700 px-1.5 py-0.5 rounded">Pro</span>
+                <Icon className={`w-5 h-5 ${isActive ? item.color : ''}`} />
+                <span className="font-medium">{item.label}</span>
+                {isLocked && (
+                  <span className="ml-auto text-xs text-slate-500">PRO</span>
                 )}
               </button>
             );
           })}
         </nav>
 
-        {/* Bottom Actions */}
-        <div className="absolute bottom-0 left-0 right-0 border-t border-slate-700 bg-slate-900">
+        {/* Footer */}
+        <div className="p-4 border-t border-slate-700 space-y-2">
           {isPro && (
             <button
-              onClick={onStartTour}
-              className="w-full flex items-center gap-3 px-6 py-3 text-slate-300 hover:bg-slate-800 transition-colors text-sm"
-              title="Product Tour"
+              onClick={() => handleItemClick('settings')}
+              className={`
+                w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors
+                ${currentView === 'settings'
+                  ? 'bg-slate-800 text-white border border-slate-600'
+                  : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+                }
+              `}
             >
-              <span className="text-2xl">🪔</span>
-              <span className="font-medium">Product Tour</span>
-            </button>
-          )}
-          {isPro && (
-            <button
-              onClick={() => handleNavigate('settings')}
-              className="w-full flex items-center gap-3 px-6 py-3 text-slate-300 hover:bg-slate-800 transition-colors text-sm border-t border-slate-700"
-            >
-              <SettingsIcon size={18} />
+              <Settings className="w-5 h-5" />
               <span className="font-medium">Settings</span>
             </button>
           )}
           <button
             onClick={onSignOut}
-            className="w-full flex items-center gap-3 px-6 py-3 text-slate-300 hover:bg-slate-800 transition-colors text-sm border-t border-slate-700"
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-red-400 hover:bg-red-900/20 transition-colors"
           >
-            <LogOut size={18} />
+            <LogOut className="w-5 h-5" />
             <span className="font-medium">Sign Out</span>
           </button>
-          {!isPro && (
-            <div className="p-4 bg-slate-800/50">
-              <button
-                onClick={() => window.open('https://buy.stripe.com/test_4gw5lmdQa3S42NW4gi', '_blank')}
-                className="w-full px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition font-semibold text-sm"
-              >
-                Upgrade to Pro
-              </button>
-            </div>
-          )}
         </div>
       </div>
-
-      {/* Spacer for desktop sidebar */}
-      <div className="hidden lg:block w-64 flex-shrink-0" />
     </>
   );
 }
