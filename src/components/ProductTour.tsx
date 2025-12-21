@@ -93,12 +93,12 @@ export default function ProductTour({
   const step = TOUR_STEPS[currentStep];
   const isLastStep = currentStep === TOUR_STEPS.length - 1;
 
-  // Hide intro animation after 3 seconds
+  // Hide intro animation after 6.5 seconds
   useEffect(() => {
     if (showIntro && isActive) {
       const timer = setTimeout(() => {
         setShowIntro(false);
-      }, 3000);
+      }, 6500);
       return () => clearTimeout(timer);
     }
   }, [showIntro, isActive]);
