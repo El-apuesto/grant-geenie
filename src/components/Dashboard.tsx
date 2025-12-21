@@ -3,7 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { Grant } from '../types';
 import { getStateName } from '../lib/states';
-import { ExternalLink, LogOut, Lamp, Settings as SettingsIcon, Crown, Lock, Search, Plus, Calendar, DollarSign, Building2, FileText, Bookmark, BookmarkCheck } from 'lucide-react';
+import { ExternalLink, LogOut, Lamp, Settings as SettingsIcon, Crown, Lock, Search, Plus, Calendar, DollarSign, Building2, FileText, Bookmark } from 'lucide-react';
 import ProductTour from './ProductTour';
 import HelpButton from './HelpButton';
 import Settings from './Settings';
@@ -437,7 +437,7 @@ export default function Dashboard() {
                           : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
                       }`}
                     >
-                      <BookmarkCheck className="w-4 h-4" />
+                      <Bookmark className="w-4 h-4" fill="currentColor" />
                       Saved ({savedCount})
                     </button>
                   )}
@@ -480,11 +480,12 @@ export default function Dashboard() {
                                 className="p-2 rounded-lg transition hover:bg-slate-700"
                                 title={isSaved ? 'Unsave grant' : 'Save grant'}
                               >
-                                {isSaved ? (
-                                  <BookmarkCheck className="w-5 h-5 text-emerald-500" />
-                                ) : (
-                                  <Bookmark className="w-5 h-5 text-slate-400" />
-                                )}
+                                <Bookmark 
+                                  className={`w-5 h-5 ${
+                                    isSaved ? 'text-emerald-500' : 'text-slate-400'
+                                  }`}
+                                  fill={isSaved ? 'currentColor' : 'none'}
+                                />
                               </button>
                             </div>
                             <div className="flex items-center gap-4 text-sm text-slate-400 mb-3">
