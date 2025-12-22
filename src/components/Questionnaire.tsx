@@ -199,7 +199,7 @@ export default function Questionnaire({ onComplete }: QuestionnaireProps) {
       console.log('Saving profile with data:', {
         id: user.id,
         state: answers.state,
-        org_type: orgType,
+        organization_type: orgType,
         business_location: answers.business_location,
         legal_entity: answers.legal_entity,
         annual_revenue: answers.annual_revenue,
@@ -211,11 +211,11 @@ export default function Questionnaire({ onComplete }: QuestionnaireProps) {
         questionnaire_completed: true,
       });
 
-      // Save profile data
+      // Save profile data - FIXED: using organization_type instead of org_type
       const { data, error: upsertError } = await supabase.from('profiles').upsert({
         id: user.id,
         state: answers.state,
-        org_type: orgType,
+        organization_type: orgType,
         business_location: answers.business_location,
         legal_entity: answers.legal_entity,
         annual_revenue: answers.annual_revenue,
