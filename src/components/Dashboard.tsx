@@ -12,6 +12,7 @@ import ApplicationWizard from './ApplicationWizard';
 import AnalyticsPage from './AnalyticsPage';
 import Settings from './Settings';
 import Questionnaire from './Questionnaire';
+import PricingPage from './PricingPage';
 import ProductTour from './ProductTour';
 import { useTour } from '../hooks/useTour';
 import { getStateName } from '../lib/states';
@@ -24,7 +25,7 @@ interface Profile {
   subscription_status: string | null;
 }
 
-type ViewType = 'home' | 'grants' | 'tracker' | 'calendar' | 'loi' | 'fiscal' | 'templates' | 'analytics' | 'settings';
+type ViewType = 'home' | 'grants' | 'tracker' | 'calendar' | 'loi' | 'fiscal' | 'templates' | 'analytics' | 'settings' | 'pricing';
 
 export default function Dashboard() {
   const { user, signOut } = useAuth();
@@ -87,7 +88,13 @@ export default function Dashboard() {
   };
 
   const handleUpgrade = () => {
-    window.open('https://buy.stripe.com/test_4gw5lmdQa3S42NW4gi', '_blank');
+    setCurrentView('pricing');
+    setSidebarOpen(false);
+  };
+
+  const handleSelectPlan = (plan: 'free' | 'intro' | 'season' | 'annual') => {
+    // After plan selection, return to dashboard
+    setCurrentView('home');
   };
 
   const handleRestartTour = () => {
@@ -127,6 +134,10 @@ export default function Dashboard() {
   ];
 
   const renderView = () => {
+    if (currentView === 'pricing') {
+      return <PricingPage onSelectPlan={handleSelectPlan} />;
+    }
+
     if (currentView === 'settings') {
       return (
         <Settings
@@ -180,7 +191,7 @@ export default function Dashboard() {
               onClick={handleUpgrade}
               className="px-8 py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg transition text-lg"
             >
-              Upgrade to Pro
+              View Pricing Plans
             </button>
           </div>
         </div>
