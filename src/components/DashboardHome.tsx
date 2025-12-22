@@ -1,113 +1,113 @@
-import { useEffect, useState } from 'react';
-import { useAuth } from '../contexts/AuthContext';
-import { supabase } from '../lib/supabase';
-import { Calendar as CalendarIcon, TrendingUp, Award, Clock, DollarSign } from 'lucide-react';
-import Calendar from './Calendar';
-
-interface Stats {
-  pending: number;
-  submitted: number;
-  awarded: number;
-  declined: number;
-  totalAwarded: number;
-  winRate: number;
-}
+import { Search, ClipboardList, Calendar as CalendarIcon, FileText, Building2, BarChart3, Settings as SettingsIcon, Crown, ArrowRight } from 'lucide-react';
 
 interface DashboardHomeProps {
   isPro: boolean;
+  onNavigate: (view: string) => void;
 }
 
-export default function DashboardHome({ isPro }: DashboardHomeProps) {
-  const { user } = useAuth();
-  const [stats, setStats] = useState<Stats>({
-    pending: 0,
-    submitted: 0,
-    awarded: 0,
-    declined: 0,
-    totalAwarded: 0,
-    winRate: 0
-  });
-  const [loading, setLoading] = useState(true);
+export default function DashboardHome({ isPro, onNavigate }: DashboardHomeProps) {
+  const features = [
+    {
+      id: 'grants',
+      title: 'Find Grants',
+      description: 'Search and discover grant opportunities',
+      icon: Search,
+      color: 'emerald',
+      prOnly: false,
+    },
+    {
+      id: 'tracker',
+      title: 'Application Tracker',
+      description: 'Manage your grant applications',
+      icon: ClipboardList,
+      color: 'blue',
+      prOnly: true,
+    },
+    {
+      id: 'calendar',
+      title: 'Deadline Calendar',
+      description: 'View all upcoming deadlines',
+      icon: CalendarIcon,
+      color: 'purple',
+      prOnly: true,
+    },
+    {
+      id: 'loi',
+      title: 'LOI Generator',
+      description: 'Create letters of inquiry',
+      icon: FileText,
+      color: 'orange',
+      prOnly: true,
+    },
+    {
+      id: 'templates',
+      title: 'Application Templates',
+      description: 'Professional grant templates',
+      icon: FileText,
+      color: 'pink',
+      prOnly: true,
+    },
+    {
+      id: 'fiscal',
+      title: 'Fiscal Sponsors',
+      description: 'Find 265+ fiscal sponsor partners',
+      icon: Building2,
+      color: 'yellow',
+      prOnly: true,
+    },
+    {
+      id: 'analytics',
+      title: 'Analytics',
+      description: 'Track your success metrics',
+      icon: BarChart3,
+      color: 'cyan',
+      prOnly: true,
+    },
+    {
+      id: 'settings',
+      title: 'Settings',
+      description: 'Update your profile',
+      icon: SettingsIcon,
+      color: 'slate',
+      prOnly: true,
+    },
+  ];
 
-  useEffect(() => {
-    if (user && isPro) {
-      loadStats();
-    } else {
-      setLoading(false);
+  const getColorClasses = (color: string, isLocked: boolean) => {
+    if (isLocked) {
+      return 'bg-slate-800/50 border-slate-700 text-slate-500';
     }
-  }, [user, isPro]);
-
-  const loadStats = async () => {
-    if (!user) return;
     
-    try {
-      const { data: applications, error } = await supabase
-        .from('applications')
-        .select('*')
-        .eq('user_id', user.id);
-
-      if (error) throw error;
-
-      if (applications) {
-        const pending = applications.filter(a => a.status === 'Draft' || a.status === 'In Progress').length;
-        const submitted = applications.filter(a => ['Submitted', 'Under Review'].includes(a.status)).length;
-        const awarded = applications.filter(a => a.status === 'Awarded').length;
-        const declined = applications.filter(a => a.status === 'Declined').length;
-        const totalAwarded = applications
-          .filter(a => a.status === 'Awarded')
-          .reduce((sum, a) => sum + (a.amount_awarded || 0), 0);
-        
-        const totalSubmitted = submitted + awarded + declined;
-        const winRate = totalSubmitted > 0 ? (awarded / totalSubmitted) * 100 : 0;
-
-        setStats({
-          pending,
-          submitted,
-          awarded,
-          declined,
-          totalAwarded,
-          winRate
-        });
-      }
-    } catch (err) {
-      console.error('Error loading stats:', err);
-    } finally {
-      setLoading(false);
-    }
+    const colors: Record<string, string> = {
+      emerald: 'bg-emerald-600/10 border-emerald-500/30 hover:bg-emerald-600/20 hover:border-emerald-500',
+      blue: 'bg-blue-600/10 border-blue-500/30 hover:bg-blue-600/20 hover:border-blue-500',
+      purple: 'bg-purple-600/10 border-purple-500/30 hover:bg-purple-600/20 hover:border-purple-500',
+      orange: 'bg-orange-600/10 border-orange-500/30 hover:bg-orange-600/20 hover:border-orange-500',
+      pink: 'bg-pink-600/10 border-pink-500/30 hover:bg-pink-600/20 hover:border-pink-500',
+      yellow: 'bg-yellow-600/10 border-yellow-500/30 hover:bg-yellow-600/20 hover:border-yellow-500',
+      cyan: 'bg-cyan-600/10 border-cyan-500/30 hover:bg-cyan-600/20 hover:border-cyan-500',
+      slate: 'bg-slate-600/10 border-slate-500/30 hover:bg-slate-600/20 hover:border-slate-500',
+    };
+    
+    return colors[color] || colors.emerald;
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      maximumFractionDigits: 0,
-    }).format(amount);
+  const getIconColor = (color: string, isLocked: boolean) => {
+    if (isLocked) return 'text-slate-600';
+    
+    const colors: Record<string, string> = {
+      emerald: 'text-emerald-500',
+      blue: 'text-blue-500',
+      purple: 'text-purple-500',
+      orange: 'text-orange-500',
+      pink: 'text-pink-500',
+      yellow: 'text-yellow-500',
+      cyan: 'text-cyan-500',
+      slate: 'text-slate-400',
+    };
+    
+    return colors[color] || colors.emerald;
   };
-
-  if (!isPro) {
-    return (
-      <div className="p-8">
-        <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-12 text-center">
-          <CalendarIcon className="w-16 h-16 text-slate-600 mx-auto mb-4" />
-          <h3 className="text-2xl font-bold text-white mb-2">Dashboard Home</h3>
-          <p className="text-slate-400 mb-6">
-            Track your applications, view upcoming deadlines, and monitor your success rate.
-          </p>
-          <p className="text-slate-500">
-            Available with Pro subscription
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  if (loading) {
-    return (
-      <div className="p-8">
-        <div className="text-slate-400">Loading dashboard...</div>
-      </div>
-    );
-  }
 
   return (
     <div className="relative min-h-screen p-8">
@@ -123,50 +123,90 @@ export default function DashboardHome({ isPro }: DashboardHomeProps) {
       />
 
       {/* Content */}
-      <div className="relative z-10 max-w-6xl mx-auto">
-        {/* Calendar FIRST - The Star */}
-        <div className="bg-slate-800/40 border border-slate-700/50 rounded-lg p-8 backdrop-blur-sm mb-6">
-          <div className="flex items-center gap-3 mb-6">
-            <CalendarIcon className="w-7 h-7 text-emerald-500" />
-            <h2 className="text-3xl font-bold text-white">Upcoming Deadlines</h2>
-          </div>
-          <Calendar />
+      <div className="relative z-10 max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold text-white mb-2">Dashboard</h1>
+          <p className="text-slate-400 text-lg">
+            Quick access to all features
+          </p>
         </div>
 
-        {/* Tiny Stats Bar - Half size, all in one row */}
-        <div className="flex items-center justify-center gap-8 bg-slate-800/20 border border-slate-700/30 rounded-lg py-3 px-6 backdrop-blur-sm">
-          <div className="flex items-center gap-2">
-            <Clock className="w-3.5 h-3.5 text-yellow-500" />
-            <span className="text-xs text-slate-400">Pending:</span>
-            <span className="text-sm font-semibold text-white">{stats.pending}</span>
-          </div>
+        {/* Feature Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {features.map((feature) => {
+            const Icon = feature.icon;
+            const isLocked = feature.prOnly && !isPro;
+            
+            return (
+              <button
+                key={feature.id}
+                onClick={() => !isLocked && onNavigate(feature.id)}
+                disabled={isLocked}
+                className={`
+                  relative p-6 rounded-xl border-2 transition-all duration-200
+                  ${getColorClasses(feature.color, isLocked)}
+                  ${isLocked ? 'cursor-not-allowed' : 'cursor-pointer transform hover:scale-105'}
+                  group
+                `}
+              >
+                {/* Lock Badge */}
+                {isLocked && (
+                  <div className="absolute top-3 right-3">
+                    <Crown className="w-5 h-5 text-slate-600" />
+                  </div>
+                )}
 
-          <div className="h-4 w-px bg-slate-700/50" />
+                {/* Icon */}
+                <div className="mb-4">
+                  <Icon className={`w-10 h-10 ${getIconColor(feature.color, isLocked)}`} />
+                </div>
 
-          <div className="flex items-center gap-2">
-            <TrendingUp className="w-3.5 h-3.5 text-blue-500" />
-            <span className="text-xs text-slate-400">Submitted:</span>
-            <span className="text-sm font-semibold text-white">{stats.submitted}</span>
-          </div>
+                {/* Title */}
+                <h3 className={`text-xl font-bold mb-2 ${
+                  isLocked ? 'text-slate-500' : 'text-white'
+                }`}>
+                  {feature.title}
+                </h3>
 
-          <div className="h-4 w-px bg-slate-700/50" />
+                {/* Description */}
+                <p className={`text-sm mb-4 ${
+                  isLocked ? 'text-slate-600' : 'text-slate-400'
+                }`}>
+                  {feature.description}
+                </p>
 
-          <div className="flex items-center gap-2">
-            <Award className="w-3.5 h-3.5 text-emerald-500" />
-            <span className="text-xs text-slate-400">Awarded:</span>
-            <span className="text-sm font-semibold text-emerald-400">{stats.awarded}</span>
-          </div>
-
-          <div className="h-4 w-px bg-slate-700/50" />
-
-          <div className="flex items-center gap-2">
-            <DollarSign className="w-3.5 h-3.5 text-emerald-500" />
-            <span className="text-xs text-slate-400">Total:</span>
-            <span className="text-sm font-semibold text-emerald-400">
-              {stats.totalAwarded > 0 ? formatCurrency(stats.totalAwarded).replace('.00', '') : '$0'}
-            </span>
-          </div>
+                {/* Arrow or Pro Badge */}
+                <div className="flex items-center justify-between">
+                  {isLocked ? (
+                    <span className="text-xs bg-slate-700 text-slate-400 px-2 py-1 rounded">
+                      Pro Only
+                    </span>
+                  ) : (
+                    <ArrowRight className={`w-5 h-5 ${getIconColor(feature.color, false)} group-hover:translate-x-1 transition-transform`} />
+                  )}
+                </div>
+              </button>
+            );
+          })}
         </div>
+
+        {/* Upgrade CTA */}
+        {!isPro && (
+          <div className="mt-12 bg-gradient-to-r from-emerald-600/20 to-blue-600/20 border border-emerald-500/30 rounded-xl p-8 text-center">
+            <Crown className="w-12 h-12 text-emerald-500 mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-white mb-2">Unlock All Features</h2>
+            <p className="text-slate-300 mb-6 max-w-2xl mx-auto">
+              Get unlimited access to Application Tracker, LOI Generator, Templates, Calendar, Analytics, and 265+ Fiscal Sponsors.
+            </p>
+            <button
+              onClick={() => window.open('https://buy.stripe.com/test_4gw5lmdQa3S42NW4gi', '_blank')}
+              className="px-8 py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg transition text-lg"
+            >
+              Upgrade to Pro - $29.99/month
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
