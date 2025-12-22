@@ -215,8 +215,12 @@ export default function Dashboard() {
       <aside className="hidden lg:flex lg:flex-col lg:w-64 bg-slate-900/50 border-r border-slate-700">
         {/* Logo/Header */}
         <div className="p-6 border-b border-slate-700">
-          <div className="flex items-center gap-3 mb-2">
-            <h1 className="text-2xl font-bold text-white">Grant Geenie</h1>
+          <div className="flex items-center gap-3 mb-3">
+            <img 
+              src="/Logo.png.PNG" 
+              alt="Grant Geenie Logo" 
+              className="h-10 w-auto"
+            />
           </div>
           {isPro ? (
             <span className="flex items-center gap-1 text-xs bg-emerald-600/20 border border-emerald-500/30 text-emerald-400 px-2 py-1 rounded w-fit">
@@ -277,6 +281,16 @@ export default function Dashboard() {
               <span>Settings</span>
             </button>
           )}
+          {isPro && (
+            <button
+              onClick={startTour}
+              className="w-full flex items-center gap-3 px-4 py-3 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 rounded-lg transition"
+              title="Summon the Genie for help"
+            >
+              <img src="/genie.png.PNG" alt="Genie" className="w-5 h-5 object-contain" />
+              <span>Help Tour</span>
+            </button>
+          )}
           {!isPro && (
             <button
               onClick={handleUpgrade}
@@ -306,14 +320,18 @@ export default function Dashboard() {
             {/* Mobile Header */}
             <div className="p-6 border-b border-slate-700 flex items-center justify-between">
               <div>
-                <h1 className="text-2xl font-bold text-white">Grant Geenie</h1>
+                <img 
+                  src="/Logo.png.PNG" 
+                  alt="Grant Geenie Logo" 
+                  className="h-8 w-auto mb-2"
+                />
                 {isPro ? (
-                  <span className="flex items-center gap-1 text-xs bg-emerald-600/20 border border-emerald-500/30 text-emerald-400 px-2 py-1 rounded w-fit mt-2">
+                  <span className="flex items-center gap-1 text-xs bg-emerald-600/20 border border-emerald-500/30 text-emerald-400 px-2 py-1 rounded w-fit">
                     <Crown className="w-3 h-3" />
                     Pro
                   </span>
                 ) : (
-                  <span className="text-xs bg-slate-700 text-slate-300 px-2 py-1 rounded w-fit mt-2">
+                  <span className="text-xs bg-slate-700 text-slate-300 px-2 py-1 rounded w-fit">
                     Free Tier
                   </span>
                 )}
@@ -371,6 +389,18 @@ export default function Dashboard() {
                   <span>Settings</span>
                 </button>
               )}
+              {isPro && (
+                <button
+                  onClick={() => {
+                    startTour();
+                    setSidebarOpen(false);
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-3 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 rounded-lg transition"
+                >
+                  <img src="/genie.png.PNG" alt="Genie" className="w-5 h-5 object-contain" />
+                  <span>Help Tour</span>
+                </button>
+              )}
               {!isPro && (
                 <button
                   onClick={handleUpgrade}
@@ -403,8 +433,20 @@ export default function Dashboard() {
             >
               <Menu className="w-6 h-6" />
             </button>
-            <h1 className="text-xl font-bold text-white">Grant Geenie</h1>
-            <div className="w-10" /> {/* Spacer for centering */}
+            <img 
+              src="/Logo.png.PNG" 
+              alt="Grant Geenie" 
+              className="h-8 w-auto"
+            />
+            {isPro && (
+              <button
+                onClick={startTour}
+                className="p-2 text-emerald-400 hover:text-emerald-300"
+              >
+                <img src="/genie.png.PNG" alt="Genie" className="w-6 h-6 object-contain" />
+              </button>
+            )}
+            {!isPro && <div className="w-10" />}
           </div>
         </header>
 
