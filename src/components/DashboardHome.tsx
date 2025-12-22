@@ -356,10 +356,10 @@ export default function DashboardHome({ isPro, onNavigate }: DashboardHomeProps)
               Get unlimited access to Application Tracker, LOI Generator, Templates, Calendar, Analytics, and 265+ Fiscal Sponsors.
             </p>
             <button
-              onClick={() => window.open('https://buy.stripe.com/test_4gw5lmdQa3S42NW4gi', '_blank')}
+              onClick={() => onNavigate('pricing')}
               className="px-8 py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg transition text-lg"
             >
-              Upgrade to Pro - $29.99/month
+              View Pricing Plans
             </button>
           </div>
         )}
