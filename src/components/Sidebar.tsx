@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Menu, X, Home, ClipboardList, Calendar, FileText, Building2, Settings as SettingsIcon, LogOut, BarChart3 } from 'lucide-react';
+import { Menu, X, Home, ClipboardList, Calendar, FileText, Building2, Settings as SettingsIcon, LogOut, BarChart3, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Profile } from '../types';
 import { getStateName } from '../lib/states';
 
@@ -14,6 +14,7 @@ interface SidebarProps {
 
 export default function Sidebar({ isPro, onNavigate, onSignOut, onStartTour, profile, currentView }: SidebarProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false); // Desktop collapse state
 
   const navigation = [
     { name: 'Dashboard', view: 'dashboard', icon: Home, prOnly: false },
@@ -50,37 +51,50 @@ export default function Sidebar({ isPro, onNavigate, onSignOut, onStartTour, pro
         />
       )}
 
-      {/* Sidebar */}
+      {/* Sidebar - Always visible on desktop, collapsible */}
       <div
         className={`
           fixed top-0 left-0 h-full bg-slate-900 shadow-xl z-40 border-r border-slate-700
-          w-64 transform transition-transform duration-300 ease-in-out
+          transform transition-all duration-300 ease-in-out
           lg:translate-x-0
           ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+          ${collapsed ? 'lg:w-16' : 'lg:w-64'}
+          w-64
         `}
       >
+        {/* Desktop Collapse Toggle Button */}
+        <button
+          onClick={() => setCollapsed(!collapsed)}
+          className="hidden lg:flex absolute -right-3 top-6 w-6 h-6 items-center justify-center bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-full text-slate-300 hover:text-white transition-colors z-50"
+          title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+        >
+          {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
+        </button>
+
         {/* Logo Section */}
-        <div className="p-6 border-b border-slate-700">
-          <div className="flex items-center gap-3 mb-2">
+        <div className={`p-6 border-b border-slate-700 ${collapsed ? 'lg:p-3' : ''}`}>
+          <div className={`flex items-center gap-3 mb-2 ${collapsed ? 'lg:flex-col lg:gap-1' : ''}`}>
             <video
               src="/copy_5652D782-A5FB-43F0-A6C6-DCB56BB35546 2.webm"
               autoPlay
               loop
               muted
               playsInline
-              className="w-10 h-10 object-contain"
+              className={`object-contain ${collapsed ? 'lg:w-8 lg:h-8' : 'w-10 h-10'}`}
             />
-            <div>
-              <h2 className="text-xl font-bold text-white">Grant Geenie</h2>
-              {!isPro && (
-                <span className="text-xs bg-slate-700 text-slate-300 px-2 py-0.5 rounded">Free Tier</span>
-              )}
-              {isPro && (
-                <span className="text-xs bg-emerald-600/20 border border-emerald-500/30 text-emerald-400 px-2 py-0.5 rounded">Pro</span>
-              )}
-            </div>
+            {!collapsed && (
+              <div>
+                <h2 className="text-xl font-bold text-white">Grant Geenie</h2>
+                {!isPro && (
+                  <span className="text-xs bg-slate-700 text-slate-300 px-2 py-0.5 rounded">Free Tier</span>
+                )}
+                {isPro && (
+                  <span className="text-xs bg-emerald-600/20 border border-emerald-500/30 text-emerald-400 px-2 py-0.5 rounded">Pro</span>
+                )}
+              </div>
+            )}
           </div>
-          {profile && profile.state && profile.org_type && (
+          {!collapsed && profile && profile.state && profile.org_type && (
             <p className="text-slate-400 text-xs">
               {getStateName(profile.state)} • {profile.org_type}
             </p>
@@ -99,9 +113,11 @@ export default function Sidebar({ isPro, onNavigate, onSignOut, onStartTour, pro
                 key={item.name}
                 onClick={() => !locked && handleNavigate(item.view)}
                 disabled={locked}
+                title={collapsed ? item.name : ''}
                 className={`
                   w-full flex items-center gap-3 px-3 py-2.5 rounded-lg
                   transition-colors duration-200 text-left text-sm
+                  ${collapsed ? 'lg:justify-center lg:px-2' : ''}
                   ${active
                     ? 'bg-emerald-600 text-white'
                     : locked
@@ -111,9 +127,13 @@ export default function Sidebar({ isPro, onNavigate, onSignOut, onStartTour, pro
                 `}
               >
                 <Icon size={18} />
-                <span className="font-medium">{item.name}</span>
-                {locked && (
-                  <span className="ml-auto text-xs bg-slate-700 px-1.5 py-0.5 rounded">Pro</span>
+                {!collapsed && (
+                  <>
+                    <span className="font-medium">{item.name}</span>
+                    {locked && (
+                      <span className="ml-auto text-xs bg-slate-700 px-1.5 py-0.5 rounded">Pro</span>
+                    )}
+                  </>
                 )}
               </button>
             );
@@ -125,30 +145,32 @@ export default function Sidebar({ isPro, onNavigate, onSignOut, onStartTour, pro
           {isPro && (
             <button
               onClick={onStartTour}
-              className="w-full flex items-center gap-3 px-6 py-3 text-slate-300 hover:bg-slate-800 transition-colors text-sm"
-              title="Product Tour"
+              title={collapsed ? 'Product Tour' : ''}
+              className={`w-full flex items-center gap-3 px-6 py-3 text-slate-300 hover:bg-slate-800 transition-colors text-sm ${collapsed ? 'lg:justify-center lg:px-2' : ''}`}
             >
               <span className="text-2xl">🪔</span>
-              <span className="font-medium">Product Tour</span>
+              {!collapsed && <span className="font-medium">Product Tour</span>}
             </button>
           )}
           {isPro && (
             <button
               onClick={() => handleNavigate('settings')}
-              className="w-full flex items-center gap-3 px-6 py-3 text-slate-300 hover:bg-slate-800 transition-colors text-sm border-t border-slate-700"
+              title={collapsed ? 'Settings' : ''}
+              className={`w-full flex items-center gap-3 px-6 py-3 text-slate-300 hover:bg-slate-800 transition-colors text-sm border-t border-slate-700 ${collapsed ? 'lg:justify-center lg:px-2' : ''}`}
             >
               <SettingsIcon size={18} />
-              <span className="font-medium">Settings</span>
+              {!collapsed && <span className="font-medium">Settings</span>}
             </button>
           )}
           <button
             onClick={onSignOut}
-            className="w-full flex items-center gap-3 px-6 py-3 text-slate-300 hover:bg-slate-800 transition-colors text-sm border-t border-slate-700"
+            title={collapsed ? 'Sign Out' : ''}
+            className={`w-full flex items-center gap-3 px-6 py-3 text-slate-300 hover:bg-slate-800 transition-colors text-sm border-t border-slate-700 ${collapsed ? 'lg:justify-center lg:px-2' : ''}`}
           >
             <LogOut size={18} />
-            <span className="font-medium">Sign Out</span>
+            {!collapsed && <span className="font-medium">Sign Out</span>}
           </button>
-          {!isPro && (
+          {!isPro && !collapsed && (
             <div className="p-4 bg-slate-800/50">
               <button
                 onClick={() => window.open('https://buy.stripe.com/test_4gw5lmdQa3S42NW4gi', '_blank')}
@@ -161,8 +183,8 @@ export default function Sidebar({ isPro, onNavigate, onSignOut, onStartTour, pro
         </div>
       </div>
 
-      {/* Spacer for desktop sidebar */}
-      <div className="hidden lg:block w-64 flex-shrink-0" />
+      {/* Spacer for desktop sidebar - adjusts based on collapsed state */}
+      <div className={`hidden lg:block flex-shrink-0 transition-all duration-300 ${collapsed ? 'w-16' : 'w-64'}`} />
     </>
   );
 }
