@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
-import { Calendar as CalendarIcon, TrendingUp, Award, XCircle, Clock, DollarSign } from 'lucide-react';
+import { Calendar as CalendarIcon, TrendingUp, Award, Clock, DollarSign } from 'lucide-react';
 import Calendar from './Calendar';
 
 interface Stats {
@@ -109,98 +109,73 @@ export default function DashboardHome({ isPro }: DashboardHomeProps) {
     );
   }
 
-  const hasActivity = stats.pending + stats.submitted + stats.awarded + stats.declined > 0;
-
   return (
-    <div className="p-8">
-      {/* Compact Stats Cards - Less vertical space */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="text-xs text-slate-400 mb-1">Pending</div>
-              <div className="text-2xl font-bold text-white">{stats.pending}</div>
-            </div>
-            <Clock className="w-5 h-5 text-yellow-500" />
-          </div>
-        </div>
+    <div className="relative min-h-screen p-8">
+      {/* Faded Logo Background */}
+      <div 
+        className="fixed inset-0 flex items-center justify-center pointer-events-none opacity-5"
+        style={{ 
+          backgroundImage: 'url(/Logo.png.PNG)',
+          backgroundSize: '600px',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat'
+        }}
+      />
 
-        <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-4">
-          <div className="flex items-center justify-between">
+      {/* Content */}
+      <div className="relative z-10">
+        {/* Compact Stats Bar - All 4 across */}
+        <div className="flex items-center gap-6 mb-8 bg-slate-800/30 border border-slate-700/50 rounded-lg p-4 backdrop-blur-sm">
+          <div className="flex items-center gap-2 flex-1">
+            <Clock className="w-4 h-4 text-yellow-500" />
             <div>
-              <div className="text-xs text-slate-400 mb-1">Submitted</div>
-              <div className="text-2xl font-bold text-white">{stats.submitted}</div>
+              <div className="text-xs text-slate-500">Pending</div>
+              <div className="text-lg font-bold text-white">{stats.pending}</div>
             </div>
-            <TrendingUp className="w-5 h-5 text-blue-500" />
           </div>
-        </div>
 
-        <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-4">
-          <div className="flex items-center justify-between">
+          <div className="h-8 w-px bg-slate-700" />
+
+          <div className="flex items-center gap-2 flex-1">
+            <TrendingUp className="w-4 h-4 text-blue-500" />
             <div>
-              <div className="text-xs text-slate-400 mb-1">Awarded</div>
-              <div className="text-2xl font-bold text-emerald-400">{stats.awarded}</div>
+              <div className="text-xs text-slate-500">Submitted</div>
+              <div className="text-lg font-bold text-white">{stats.submitted}</div>
             </div>
-            <Award className="w-5 h-5 text-emerald-500" />
           </div>
-        </div>
 
-        <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-4">
-          <div className="flex items-center justify-between">
+          <div className="h-8 w-px bg-slate-700" />
+
+          <div className="flex items-center gap-2 flex-1">
+            <Award className="w-4 h-4 text-emerald-500" />
             <div>
-              <div className="text-xs text-slate-400 mb-1">Total</div>
-              <div className="text-2xl font-bold text-emerald-400">
+              <div className="text-xs text-slate-500">Awarded</div>
+              <div className="text-lg font-bold text-emerald-400">{stats.awarded}</div>
+            </div>
+          </div>
+
+          <div className="h-8 w-px bg-slate-700" />
+
+          <div className="flex items-center gap-2 flex-1">
+            <DollarSign className="w-4 h-4 text-emerald-500" />
+            <div>
+              <div className="text-xs text-slate-500">Total Awarded</div>
+              <div className="text-lg font-bold text-emerald-400">
                 {stats.totalAwarded > 0 ? formatCurrency(stats.totalAwarded).replace('.00', '') : '$0'}
               </div>
             </div>
-            <DollarSign className="w-5 h-5 text-emerald-500" />
           </div>
         </div>
-      </div>
 
-      {/* Calendar Section - BIGGER, more prominent */}
-      <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-6 mb-6">
-        <div className="flex items-center gap-2 mb-6">
-          <CalendarIcon className="w-6 h-6 text-emerald-500" />
-          <h2 className="text-2xl font-bold text-white">Upcoming Deadlines</h2>
-        </div>
-        <Calendar />
-      </div>
-
-      {/* Recent Activity - More compact */}
-      {hasActivity ? (
-        <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-5">
-          <h3 className="text-lg font-bold text-white mb-3">Quick Stats</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
-            {stats.submitted > 0 && (
-              <div className="flex items-center gap-2 text-slate-300">
-                <TrendingUp className="w-4 h-4 text-blue-500" />
-                <span>{stats.submitted} under review</span>
-              </div>
-            )}
-            {stats.pending > 0 && (
-              <div className="flex items-center gap-2 text-slate-300">
-                <Clock className="w-4 h-4 text-yellow-500" />
-                <span>{stats.pending} in progress</span>
-              </div>
-            )}
-            {stats.awarded > 0 && (
-              <div className="flex items-center gap-2 text-slate-300">
-                <Award className="w-4 h-4 text-emerald-500" />
-                <span>{stats.winRate.toFixed(0)}% win rate</span>
-              </div>
-            )}
+        {/* Calendar - Clean and Spacious */}
+        <div className="bg-slate-800/40 border border-slate-700/50 rounded-lg p-8 backdrop-blur-sm">
+          <div className="flex items-center gap-3 mb-6">
+            <CalendarIcon className="w-7 h-7 text-emerald-500" />
+            <h2 className="text-3xl font-bold text-white">Upcoming Deadlines</h2>
           </div>
+          <Calendar />
         </div>
-      ) : (
-        <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-8 text-center">
-          <TrendingUp className="w-12 h-12 text-slate-600 mx-auto mb-3" />
-          <h3 className="text-lg font-bold text-white mb-2">No Activity Yet</h3>
-          <p className="text-slate-400 text-sm">
-            Start by finding grants, creating applications, or generating LOIs.
-          </p>
-        </div>
-      )}
+      </div>
     </div>
   );
 }
