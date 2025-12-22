@@ -123,57 +123,49 @@ export default function DashboardHome({ isPro }: DashboardHomeProps) {
       />
 
       {/* Content */}
-      <div className="relative z-10">
-        {/* Compact Stats Bar - All 4 across */}
-        <div className="flex items-center gap-6 mb-8 bg-slate-800/30 border border-slate-700/50 rounded-lg p-4 backdrop-blur-sm">
-          <div className="flex items-center gap-2 flex-1">
-            <Clock className="w-4 h-4 text-yellow-500" />
-            <div>
-              <div className="text-xs text-slate-500">Pending</div>
-              <div className="text-lg font-bold text-white">{stats.pending}</div>
-            </div>
-          </div>
-
-          <div className="h-8 w-px bg-slate-700" />
-
-          <div className="flex items-center gap-2 flex-1">
-            <TrendingUp className="w-4 h-4 text-blue-500" />
-            <div>
-              <div className="text-xs text-slate-500">Submitted</div>
-              <div className="text-lg font-bold text-white">{stats.submitted}</div>
-            </div>
-          </div>
-
-          <div className="h-8 w-px bg-slate-700" />
-
-          <div className="flex items-center gap-2 flex-1">
-            <Award className="w-4 h-4 text-emerald-500" />
-            <div>
-              <div className="text-xs text-slate-500">Awarded</div>
-              <div className="text-lg font-bold text-emerald-400">{stats.awarded}</div>
-            </div>
-          </div>
-
-          <div className="h-8 w-px bg-slate-700" />
-
-          <div className="flex items-center gap-2 flex-1">
-            <DollarSign className="w-4 h-4 text-emerald-500" />
-            <div>
-              <div className="text-xs text-slate-500">Total Awarded</div>
-              <div className="text-lg font-bold text-emerald-400">
-                {stats.totalAwarded > 0 ? formatCurrency(stats.totalAwarded).replace('.00', '') : '$0'}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Calendar - Clean and Spacious */}
-        <div className="bg-slate-800/40 border border-slate-700/50 rounded-lg p-8 backdrop-blur-sm">
+      <div className="relative z-10 max-w-6xl mx-auto">
+        {/* Calendar FIRST - The Star */}
+        <div className="bg-slate-800/40 border border-slate-700/50 rounded-lg p-8 backdrop-blur-sm mb-6">
           <div className="flex items-center gap-3 mb-6">
             <CalendarIcon className="w-7 h-7 text-emerald-500" />
             <h2 className="text-3xl font-bold text-white">Upcoming Deadlines</h2>
           </div>
           <Calendar />
+        </div>
+
+        {/* Tiny Stats Bar - Half size, all in one row */}
+        <div className="flex items-center justify-center gap-8 bg-slate-800/20 border border-slate-700/30 rounded-lg py-3 px-6 backdrop-blur-sm">
+          <div className="flex items-center gap-2">
+            <Clock className="w-3.5 h-3.5 text-yellow-500" />
+            <span className="text-xs text-slate-400">Pending:</span>
+            <span className="text-sm font-semibold text-white">{stats.pending}</span>
+          </div>
+
+          <div className="h-4 w-px bg-slate-700/50" />
+
+          <div className="flex items-center gap-2">
+            <TrendingUp className="w-3.5 h-3.5 text-blue-500" />
+            <span className="text-xs text-slate-400">Submitted:</span>
+            <span className="text-sm font-semibold text-white">{stats.submitted}</span>
+          </div>
+
+          <div className="h-4 w-px bg-slate-700/50" />
+
+          <div className="flex items-center gap-2">
+            <Award className="w-3.5 h-3.5 text-emerald-500" />
+            <span className="text-xs text-slate-400">Awarded:</span>
+            <span className="text-sm font-semibold text-emerald-400">{stats.awarded}</span>
+          </div>
+
+          <div className="h-4 w-px bg-slate-700/50" />
+
+          <div className="flex items-center gap-2">
+            <DollarSign className="w-3.5 h-3.5 text-emerald-500" />
+            <span className="text-xs text-slate-400">Total:</span>
+            <span className="text-sm font-semibold text-emerald-400">
+              {stats.totalAwarded > 0 ? formatCurrency(stats.totalAwarded).replace('.00', '') : '$0'}
+            </span>
+          </div>
         </div>
       </div>
     </div>
