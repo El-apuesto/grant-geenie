@@ -196,8 +196,9 @@ export default function Questionnaire({ onComplete }: QuestionnaireProps) {
       const primaryFields = answers.primary_fields as string[];
       const orgType = primaryFields[0] || 'Other';
 
-      console.log('Saving profile with data:', {
+      const profileData = {
         id: user.id,
+        email: user.email,
         state: answers.state,
         organization_type: orgType,
         business_location: answers.business_location,
@@ -209,23 +210,11 @@ export default function Questionnaire({ onComplete }: QuestionnaireProps) {
         project_stage: answers.project_stage,
         fiscal_sponsor: answers.fiscal_sponsor,
         questionnaire_completed: true,
-      });
+      };
 
-      // Save profile data - FIXED: using organization_type instead of org_type
-      const { data, error: upsertError } = await supabase.from('profiles').upsert({
-        id: user.id,
-        state: answers.state,
-        organization_type: orgType,
-        business_location: answers.business_location,
-        legal_entity: answers.legal_entity,
-        annual_revenue: answers.annual_revenue,
-        grant_amount: answers.grant_amount,
-        primary_fields: primaryFields,
-        demographic_focus: answers.demographic_focus,
-        project_stage: answers.project_stage,
-        fiscal_sponsor: answers.fiscal_sponsor,
-        questionnaire_completed: true,
-      });
+      console.log('Saving profile with data:', profileData);
+
+      const { data, error: upsertError } = await supabase.from('profiles').upsert(profileData);
 
       if (upsertError) {
         console.error('Supabase upsert error:', upsertError);
@@ -233,14 +222,11 @@ export default function Questionnaire({ onComplete }: QuestionnaireProps) {
       }
 
       console.log('Profile saved successfully:', data);
-      console.log('Questionnaire completed, redirecting to dashboard...');
-      
-      // Complete the questionnaire flow
       onComplete();
     } catch (err) {
       console.error('Error saving questionnaire:', err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to save answers';
-      setError(`Error: ${errorMessage}. Please check the browser console for details.`);
+      setError(`Error: ${errorMessage}`);
     } finally {
       setLoading(false);
     }
@@ -345,7 +331,6 @@ export default function Questionnaire({ onComplete }: QuestionnaireProps) {
           )}
         </div>
 
-        {/* Info box on last question */}
         {isLastQuestion && (
           <div className="mt-6 p-4 bg-blue-900/20 border border-blue-500/30 rounded-lg">
             <p className="text-blue-300 text-sm">
