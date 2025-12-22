@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
-import { Calendar, TrendingUp, Award, XCircle, Clock, DollarSign } from 'lucide-react';
+import { Calendar as CalendarIcon, TrendingUp, Award, XCircle, Clock, DollarSign } from 'lucide-react';
 import Calendar from './Calendar';
 
 interface Stats {
@@ -88,7 +88,7 @@ export default function DashboardHome({ isPro }: DashboardHomeProps) {
     return (
       <div className="p-8">
         <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-12 text-center">
-          <Calendar className="w-16 h-16 text-slate-600 mx-auto mb-4" />
+          <CalendarIcon className="w-16 h-16 text-slate-600 mx-auto mb-4" />
           <h3 className="text-2xl font-bold text-white mb-2">Dashboard Home</h3>
           <p className="text-slate-400 mb-6">
             Track your applications, view upcoming deadlines, and monitor your success rate.
@@ -160,7 +160,7 @@ export default function DashboardHome({ isPro }: DashboardHomeProps) {
       <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-6 mb-8">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-            <Calendar className="w-6 h-6 text-emerald-500" />
+            <CalendarIcon className="w-6 h-6 text-emerald-500" />
             Upcoming Deadlines
           </h2>
         </div>
