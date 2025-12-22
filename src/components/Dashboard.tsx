@@ -189,7 +189,7 @@ export default function Dashboard() {
 
     switch (currentView) {
       case 'home':
-        return <DashboardHome isPro={isPro} />;
+        return <DashboardHome isPro={isPro} onNavigate={(view) => setCurrentView(view as ViewType)} />;
       case 'grants':
         return <GrantPool isPro={isPro} profile={profile} />;
       case 'tracker':
@@ -205,7 +205,7 @@ export default function Dashboard() {
       case 'analytics':
         return <AnalyticsPage />;
       default:
-        return <DashboardHome isPro={isPro} />;
+        return <DashboardHome isPro={isPro} onNavigate={(view) => setCurrentView(view as ViewType)} />;
     }
   };
 
