@@ -17,11 +17,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase.auth.onAuthStateChange((event, session) => {
+    supabase.auth.onAuthStateChange(async (event, session) => {
       if (session?.user) {
+        // First try to get email from session
+        let email = session.user.email || '';
+        
+        // If email is missing from session, fetch from auth.users
+        if (!email) {
+          const { data: userData } = await supabase.auth.getUser();
+          email = userData?.user?.email || '';
+        }
+        
         setUser({
           id: session.user.id,
-          email: session.user.email || '',
+          email: email,
           created_at: session.user.created_at,
         });
       } else {
