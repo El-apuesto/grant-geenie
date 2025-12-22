@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { DollarSign, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 interface LandingProps {
@@ -53,9 +53,12 @@ export default function Landing({ onGetStarted, onPricing }: LandingProps) {
       {/* NAVIGATION */}
       <nav className="border-b border-slate-700 bg-slate-900/50 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-          <div className="flex items-center gap-2">
-            <DollarSign className="w-8 h-8 text-emerald-500" />
-            <span className="text-2xl font-bold text-white">Grant Geenie</span>
+          <div className="flex items-center gap-3">
+            <img 
+              src="/Logo.png.PNG" 
+              alt="Grant Geenie Logo" 
+              className="h-10 w-auto"
+            />
           </div>
           <button
             onClick={onGetStarted}
@@ -68,6 +71,15 @@ export default function Landing({ onGetStarted, onPricing }: LandingProps) {
 
       {/* HERO SECTION */}
       <div className="max-w-6xl mx-auto px-4 py-20 text-center">
+        {/* Genie Image */}
+        <div className="flex justify-center mb-8">
+          <img 
+            src="/genie.png.PNG" 
+            alt="Grant Genie" 
+            className="w-32 h-32 object-contain animate-pulse"
+          />
+        </div>
+
         <h1 className="text-5xl md:text-6xl font-bold text-white mb-6 leading-tight">
           Find Grants That Want<br />
           <span className="text-emerald-500">to Give You Money</span>
@@ -117,6 +129,13 @@ export default function Landing({ onGetStarted, onPricing }: LandingProps) {
       {/* FOOTER */}
       <footer className="border-t border-slate-700 bg-slate-900/50 mt-32">
         <div className="max-w-7xl mx-auto px-4 py-8 text-center text-slate-400 text-sm">
+          <div className="flex justify-center mb-4">
+            <img 
+              src="/Logo.png.PNG" 
+              alt="Grant Geenie" 
+              className="h-8 w-auto opacity-50"
+            />
+          </div>
           <p className="mb-2">Grant Geenie - Find the grants you deserve.</p>
           <p>No nonsense, no spam, just real opportunities.</p>
         </div>
