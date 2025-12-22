@@ -12,13 +12,8 @@ export default function Landing({ onGetStarted, onPricing }: LandingProps) {
   const [showLoginModal, setShowLoginModal] = useState(false);
 
   const handleUpgradeClick = () => {
-    if (user) {
-      // User is logged in, go to pricing
-      onPricing();
-    } else {
-      // User not logged in, show modal
-      setShowLoginModal(true);
-    }
+    // Go directly to Stripe checkout - no login required
+    window.open('https://buy.stripe.com/eVqeVd2Jh9mf82o7Uf7AI04', '_blank');
   };
 
   return (
