@@ -11,40 +11,8 @@ export default function Landing({ onGetStarted, onPricing }: LandingProps) {
   const { user } = useAuth();
   const [showLoginModal, setShowLoginModal] = useState(false);
 
-  const handleUpgradeClick = () => {
-    // Go directly to Stripe checkout - no login required
-    window.open('https://buy.stripe.com/eVqeVd2Jh9mf82o7Uf7AI04', '_blank');
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-      {/* LOGIN MODAL */}
-      {showLoginModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-800 border border-slate-700 rounded-lg p-8 max-w-md w-full relative">
-            <button
-              onClick={() => setShowLoginModal(false)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-white transition"
-            >
-              <X className="w-6 h-6" />
-            </button>
-            <h2 className="text-2xl font-bold text-white mb-4">Sign In to Upgrade</h2>
-            <p className="text-slate-300 mb-6">
-              Create a free account to access Pro features and start finding grants.
-            </p>
-            <button
-              onClick={() => {
-                setShowLoginModal(false);
-                onGetStarted();
-              }}
-              className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg transition"
-            >
-              Sign In / Create Account
-            </button>
-          </div>
-        </div>
-      )}
-
       {/* NAVIGATION */}
       <nav className="border-b border-slate-700 bg-slate-900/50 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
@@ -55,16 +23,24 @@ export default function Landing({ onGetStarted, onPricing }: LandingProps) {
               className="h-10 w-auto"
             />
           </div>
-          <button
-            onClick={onGetStarted}
-            className="px-6 py-2 bg-emerald-600 text-white rounded-lg font-semibold hover:bg-emerald-700 transition-colors"
-          >
-            Get Started
-          </button>
+          <div className="flex gap-3">
+            <button
+              onClick={onGetStarted}
+              className="px-6 py-2 text-slate-300 hover:text-white transition-colors"
+            >
+              Sign In
+            </button>
+            <button
+              onClick={onGetStarted}
+              className="px-6 py-2 bg-emerald-600 text-white rounded-lg font-semibold hover:bg-emerald-700 transition-colors"
+            >
+              Get Started Free
+            </button>
+          </div>
         </div>
       </nav>
 
-      {/* HERO SECTION - CLEAN, NO GENIE CHARACTER */}
+      {/* HERO SECTION */}
       <div className="max-w-6xl mx-auto px-4 py-20 text-center">
         <h1 className="text-5xl md:text-6xl font-bold text-white mb-6 leading-tight">
           Find Grants That Want<br />
@@ -74,25 +50,17 @@ export default function Landing({ onGetStarted, onPricing }: LandingProps) {
           Stop searching grant databases forever. We match you with real opportunities for your nonprofit, business, or creative project.
         </p>
 
-        {/* FREE TIER BUTTON */}
+        {/* MAIN CTA BUTTON */}
         <button
           onClick={onGetStarted}
-          className="px-10 py-5 bg-white text-emerald-700 text-2xl rounded-xl font-bold hover:bg-gray-100 transition mb-6"
+          className="px-12 py-6 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-2xl rounded-2xl shadow-2xl transition transform hover:scale-105 mb-4"
         >
-          Find My Grants (Free)
+          Start Finding Grants (Free)
         </button>
 
-        {/* SUBSCRIBE BUTTON */}
-        <button
-          onClick={handleUpgradeClick}
-          className="block mx-auto px-12 py-6 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-2xl rounded-2xl shadow-2xl transition transform hover:scale-105 mb-4"
-        >
-          Upgrade Now – $9.99 first month<br />
-          <span className="text-lg">then $27.99/month (cancel anytime)</span>
-        </button>
-
-        <p className="text-slate-400 mt-8 text-lg">
-          Free tier: 5 matches/month · No credit card required
+        <p className="text-slate-400 mt-6 text-lg">
+          Free tier: 5 matches/month · No credit card required<br />
+          <span className="text-sm">Upgrade anytime: $9.99 first month, then $27.99/month</span>
         </p>
       </div>
 
