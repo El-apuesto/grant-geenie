@@ -69,17 +69,8 @@ export default function Landing({ onGetStarted, onPricing }: LandingProps) {
         </div>
       </nav>
 
-      {/* HERO SECTION */}
+      {/* HERO SECTION - CLEAN, NO GENIE CHARACTER */}
       <div className="max-w-6xl mx-auto px-4 py-20 text-center">
-        {/* Genie Image */}
-        <div className="flex justify-center mb-8">
-          <img 
-            src="/genie.png.PNG" 
-            alt="Grant Genie" 
-            className="w-32 h-32 object-contain animate-pulse"
-          />
-        </div>
-
         <h1 className="text-5xl md:text-6xl font-bold text-white mb-6 leading-tight">
           Find Grants That Want<br />
           <span className="text-emerald-500">to Give You Money</span>
