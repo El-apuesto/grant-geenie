@@ -6,11 +6,11 @@ interface PricingPageProps {
 
 export default function PricingPage({ onSelectPlan }: PricingPageProps) {
   const handleUpgrade = (plan: 'intro' | 'season' | 'annual') => {
-    // TEST MODE PAYMENT LINK - Replace with your actual links for each plan
+    // PRODUCTION STRIPE PAYMENT LINKS
     const links = {
-      intro: 'https://buy.stripe.com/test_fZu8wP3Nl0PJ4Qc2zV7AI00', // Your test link
-      season: 'https://buy.stripe.com/test_fZu8wP3Nl0PJ4Qc2zV7AI00', // Replace when you create seasonal plan
-      annual: 'https://buy.stripe.com/test_fZu8wP3Nl0PJ4Qc2zV7AI00'  // Replace when you create annual plan
+      intro: 'https://buy.stripe.com/3cI5kD5VteGzciEdez7AI0b',    // $9.99 intro first month
+      season: 'https://buy.stripe.com/aFa28rbfNcyr5Ug4I37AI09',   // $79.99 seasonal (3 months)
+      annual: 'https://buy.stripe.com/28E14nabJ1TN2I45M77AI08'    // $149.99 annual
     };
     window.open(links[plan], '_blank');
   };
