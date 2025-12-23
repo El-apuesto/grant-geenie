@@ -6,10 +6,11 @@ interface PricingPageProps {
 
 export default function PricingPage({ onSelectPlan }: PricingPageProps) {
   const handleUpgrade = (plan: 'intro' | 'season' | 'annual') => {
+    // TEST MODE PAYMENT LINK - Replace with your actual links for each plan
     const links = {
-      intro: 'https://buy.stripe.com/3cI5kD5VteGzciEdez7AI0b',
-      season: 'https://buy.stripe.com/aFa28rbfNcyr5Ug4I37AI09',
-      annual: 'https://buy.stripe.com/28E14nabJ1TN2I45M77AI08'
+      intro: 'https://buy.stripe.com/test_fZu8wP3Nl0PJ4Qc2zV7AI00', // Your test link
+      season: 'https://buy.stripe.com/test_fZu8wP3Nl0PJ4Qc2zV7AI00', // Replace when you create seasonal plan
+      annual: 'https://buy.stripe.com/test_fZu8wP3Nl0PJ4Qc2zV7AI00'  // Replace when you create annual plan
     };
     window.open(links[plan], '_blank');
   };
