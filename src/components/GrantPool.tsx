@@ -176,7 +176,7 @@ export default function GrantPool({ isPro, profile }: GrantPoolProps) {
                 <li>• Advanced search and filtering</li>
               </ul>
               <button
-                onClick={() => window.open('https://buy.stripe.com/test_4gw5lmdQa3S42NW4gi', '_blank')}
+                onClick={() => window.open('https://buy.stripe.com/3cI5kD5VteGzciEdez7AI0b', '_blank')}
                 className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg transition"
               >
                 Upgrade to Pro Now
