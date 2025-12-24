@@ -54,8 +54,8 @@ serve(async (req) => {
         },
       ],
       mode: 'subscription',
-      success_url: `${Deno.env.get('APP_URL')}/dashboard?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${Deno.env.get('APP_URL')}/dashboard`,
+      success_url: `${Deno.env.get('APP_URL')}/dashboard?success=true`,
+      cancel_url: `${Deno.env.get('APP_URL')}/pricing?canceled=true`,
       customer_email: profile?.email,
       metadata: {
         user_id: userId,
