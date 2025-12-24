@@ -41,14 +41,31 @@ Deno.serve(async (req: Request): Promise<Response> => {
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
         console.log("Checkout session completed:", session.id);
+        console.log("Payment status:", session.payment_status);
 
-        // If this session has scheduled pricing metadata, create a subscription schedule
-        if (session.metadata?.pricing_type === "scheduled" && session.subscription) {
-          await createSubscriptionSchedule(session.subscription as string);
+        // CRITICAL: Only fulfill order if payment was successful
+        if (session.payment_status !== "paid") {
+          console.log(`Payment not completed yet. Status: ${session.payment_status}`);
+          break;
         }
 
-        // Update user subscription status in database
+        // Check for duplicate processing using idempotency
         if (session.metadata?.user_id) {
+          const alreadyProcessed = await checkIfSessionProcessed(session.id);
+          if (alreadyProcessed) {
+            console.log(`Session ${session.id} already processed. Skipping.`);
+            break;
+          }
+
+          // Mark session as processed
+          await markSessionAsProcessed(session.id, session.metadata.user_id);
+
+          // If this session has scheduled pricing metadata, create a subscription schedule
+          if (session.metadata?.pricing_type === "scheduled" && session.subscription) {
+            await createSubscriptionSchedule(session.subscription as string);
+          }
+
+          // Update user subscription status in database
           await updateUserSubscription(session.metadata.user_id, session);
         }
         break;
@@ -100,6 +117,43 @@ Deno.serve(async (req: Request): Promise<Response> => {
   }
 });
 
+async function checkIfSessionProcessed(sessionId: string): Promise<boolean> {
+  try {
+    const { data, error } = await supabaseAdmin
+      .from("processed_checkout_sessions")
+      .select("session_id")
+      .eq("session_id", sessionId)
+      .single();
+
+    if (error && error.code !== "PGRST116") {
+      console.error("Error checking session:", error);
+    }
+
+    return !!data;
+  } catch (error) {
+    console.error("Error in checkIfSessionProcessed:", error);
+    return false;
+  }
+}
+
+async function markSessionAsProcessed(sessionId: string, userId: string) {
+  try {
+    const { error } = await supabaseAdmin
+      .from("processed_checkout_sessions")
+      .insert({
+        session_id: sessionId,
+        user_id: userId,
+        processed_at: new Date().toISOString(),
+      });
+
+    if (error) {
+      console.error("Error marking session as processed:", error);
+    }
+  } catch (error) {
+    console.error("Error in markSessionAsProcessed:", error);
+  }
+}
+
 async function createSubscriptionSchedule(subscriptionId: string) {
   try {
     // Retrieve the subscription
@@ -150,15 +204,20 @@ async function updateUserSubscription(userId: string, session: Stripe.Checkout.S
         stripe_customer_id: session.customer,
         stripe_subscription_id: session.subscription,
         subscription_status: "active",
+        subscription_tier: "pro",
         updated_at: new Date().toISOString(),
       })
       .eq("id", userId);
 
     if (error) {
       console.error("Error updating user subscription:", error);
+      throw error;
     }
+    
+    console.log(`Successfully updated user ${userId} to pro tier`);
   } catch (error) {
     console.error("Error in updateUserSubscription:", error);
+    throw error;
   }
 }
 
@@ -188,6 +247,7 @@ async function handleSubscriptionCancellation(userId: string, subscription: Stri
       .from("profiles")
       .update({
         subscription_status: "cancelled",
+        subscription_tier: "free",
         updated_at: new Date().toISOString(),
       })
       .eq("id", userId);
