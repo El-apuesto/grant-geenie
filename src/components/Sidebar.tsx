@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Menu, X, Home, ClipboardList, Calendar, FileText, Building2, Settings as SettingsIcon, LogOut, BarChart3, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Profile } from '../types';
 import { getStateName } from '../lib/states';
+import { useAuth } from '../contexts/AuthContext';
 
 interface SidebarProps {
   isPro: boolean;
@@ -14,7 +15,9 @@ interface SidebarProps {
 
 export default function Sidebar({ isPro, onNavigate, onSignOut, onStartTour, profile, currentView }: SidebarProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [collapsed, setCollapsed] = useState(false); // Desktop collapse state
+  const [collapsed, setCollapsed] = useState(false);
+  const [upgrading, setUpgrading] = useState(false);
+  const { user } = useAuth();
 
   const navigation = [
     { name: 'Dashboard', view: 'dashboard', icon: Home, prOnly: false },
@@ -29,6 +32,30 @@ export default function Sidebar({ isPro, onNavigate, onSignOut, onStartTour, pro
   const handleNavigate = (view: string) => {
     onNavigate(view);
     setMobileMenuOpen(false);
+  };
+
+  const handleUpgrade = async () => {
+    if (!user?.id) return;
+    
+    setUpgrading(true);
+    try {
+      const response = await fetch('/api/create-checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user.id,
+          priceId: 'price_1QfCHWP4hdswJ2yVo1RZ3zRv', // Your intro price ID
+        }),
+      });
+
+      const { url } = await response.json();
+      if (url) window.location.href = url;
+    } catch (error) {
+      console.error('Upgrade failed:', error);
+      alert('Failed to start checkout. Please try again.');
+    } finally {
+      setUpgrading(false);
+    }
   };
 
   const isActive = (view: string) => currentView === view;
@@ -173,10 +200,11 @@ export default function Sidebar({ isPro, onNavigate, onSignOut, onStartTour, pro
           {!isPro && !collapsed && (
             <div className="p-4 bg-slate-800/50">
               <button
-                onClick={() => window.open('https://buy.stripe.com/test_4gw5lmdQa3S42NW4gi', '_blank')}
-                className="w-full px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition font-semibold text-sm"
+                onClick={handleUpgrade}
+                disabled={upgrading}
+                className="w-full px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-600 text-white rounded-lg transition font-semibold text-sm"
               >
-                Upgrade to Pro
+                {upgrading ? 'Loading...' : 'Upgrade to Pro'}
               </button>
             </div>
           )}
