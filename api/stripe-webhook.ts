@@ -2,13 +2,13 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2024-12-18.acacia',
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
+  apiVersion: '2024-12-18.acacia' as any,
 });
 
 const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
+  process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+  process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 );
 
 export const config = {
@@ -23,11 +23,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   const sig = req.headers['stripe-signature'] as string;
+  
+  if (!sig) {
+    return res.status(400).json({ error: 'No signature' });
+  }
+
   let body = '';
 
   // Read raw body
-  await new Promise((resolve) => {
-    req.on('data', (chunk) => {
+  await new Promise<void>((resolve) => {
+    req.on('data', (chunk: Buffer) => {
       body += chunk.toString();
     });
     req.on('end', resolve);
@@ -39,49 +44,60 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     event = await stripe.webhooks.constructEventAsync(
       body,
       sig,
-      process.env.STRIPE_WEBHOOK_SECRET!
+      process.env.STRIPE_WEBHOOK_SECRET || ''
     );
   } catch (err: any) {
-    console.error(`Webhook signature verification failed: ${err.message}`);
+    console.error(`Webhook verification failed: ${err.message}`);
     return res.status(400).json({ error: 'Invalid signature' });
   }
 
-  // Handle the event
-  switch (event.type) {
-    case 'checkout.session.completed':
-      const session = event.data.object as Stripe.Checkout.Session;
-      
-      const { error } = await supabase
-        .from('profiles')
-        .update({ 
-          subscription_tier: 'pro',
-          stripe_customer_id: session.customer as string,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', session.metadata?.user_id);
+  try {
+    switch (event.type) {
+      case 'checkout.session.completed':
+        const session = event.data.object as Stripe.Checkout.Session;
+        
+        const userId = session.metadata?.user_id;
+        
+        if (!userId) {
+          console.error('No user_id in metadata');
+          return res.status(400).json({ error: 'No user_id' });
+        }
+        
+        const { error } = await supabase
+          .from('profiles')
+          .update({ 
+            subscription_tier: 'pro',
+            stripe_customer_id: session.customer as string,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', userId);
 
-      if (error) {
-        console.error('Database update failed:', error);
-        return res.status(500).json({ error: 'Database update failed' });
-      }
+        if (error) {
+          console.error('Database update failed:', error);
+          return res.status(500).json({ error: 'Database update failed' });
+        }
 
-      console.log(`✅ User ${session.metadata?.user_id} upgraded to Pro`);
-      break;
+        console.log(`User ${userId} upgraded to Pro`);
+        break;
 
-    case 'customer.subscription.deleted':
-      const subscription = event.data.object as Stripe.Subscription;
-      
-      await supabase
-        .from('profiles')
-        .update({ 
-          subscription_tier: 'free',
-          updated_at: new Date().toISOString()
-        })
-        .eq('stripe_customer_id', subscription.customer as string);
+      case 'customer.subscription.deleted':
+        const subscription = event.data.object as Stripe.Subscription;
+        
+        await supabase
+          .from('profiles')
+          .update({ 
+            subscription_tier: 'free',
+            updated_at: new Date().toISOString()
+          })
+          .eq('stripe_customer_id', subscription.customer as string);
 
-      console.log(`❌ Subscription cancelled for customer ${subscription.customer}`);
-      break;
+        console.log(`Subscription cancelled for ${subscription.customer}`);
+        break;
+    }
+
+    return res.status(200).json({ received: true });
+  } catch (error: any) {
+    console.error('Webhook handler error:', error);
+    return res.status(500).json({ error: error.message });
   }
-
-  return res.status(200).json({ received: true });
 }
