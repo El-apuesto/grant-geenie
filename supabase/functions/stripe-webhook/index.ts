@@ -7,7 +7,7 @@ const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY")!, {
 });
 
 const supabaseAdmin = createClient(
-  Deno.env.get("SUPABASE_URL")!,
+  Deno.env.get("SUPABASE_URL") || "https://ooxkwrnmnygatsxahspd.supabase.co",
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
 );
 
@@ -33,7 +33,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
   try {
     const body = await req.text();
-    const event = await stripe.webhooks.constructEventAsync(body, signature, WEBHOOK_SECRET);
+    const event = stripe.webhooks.constructEvent(body, signature, WEBHOOK_SECRET);
 
     console.log(`Received event: ${event.type}`);
 
