@@ -35,14 +35,14 @@ export function usePaymentVerification() {
       if (response.ok && data.success) {
         setSuccess(true);
         
-        // Refresh the profile to get updated subscription_tier
+        // Refresh the profile to get updated subscription_status
         const { data: profile } = await supabase
           .from('profiles')
-          .select('subscription_tier')
+          .select('subscription_status')
           .eq('id', userId)
           .single();
 
-        console.log('✅ Payment verified! New tier:', profile?.subscription_tier);
+        console.log('✅ Payment verified! New status:', profile?.subscription_status);
 
         // Clean up URL parameters
         const url = new URL(window.location.href);
