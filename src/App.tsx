@@ -5,8 +5,10 @@ import Landing from './components/Landing';
 import Auth from './components/Auth';
 import Questionnaire from './components/Questionnaire';
 import Dashboard from './components/Dashboard';
+import BillingSuccess from './components/BillingSuccess';
+import BillingCancel from './components/BillingCancel';
 
-type AppState = 'landing' | 'auth' | 'questionnaire' | 'dashboard';
+type AppState = 'landing' | 'auth' | 'questionnaire' | 'dashboard' | 'billing-success' | 'billing-cancel';
 
 function AppContent() {
   const { user, loading } = useAuth();
@@ -15,6 +17,17 @@ function AppContent() {
 
   useEffect(() => {
     if (loading) return;
+
+    // Check URL for billing routes
+    const path = window.location.pathname;
+    if (path === '/billing/success') {
+      setAppState('billing-success');
+      return;
+    }
+    if (path === '/billing/cancel') {
+      setAppState('billing-cancel');
+      return;
+    }
 
     if (!user) {
       setAppState('landing');
@@ -67,12 +80,20 @@ function AppContent() {
     );
   }
 
+  if (appState === 'billing-success') {
+    return <BillingSuccess />;
+  }
+
+  if (appState === 'billing-cancel') {
+    return <BillingCancel />;
+  }
+
   if (appState === 'landing') {
     return <Landing onGetStarted={handleGetStarted} />;
   }
 
   if (appState === 'auth') {
-    return <Auth onSuccess={handleAuthSuccess} />;
+    return <Auth onSuccess={handleAuthSuccess} />
   }
 
   if (appState === 'questionnaire') {
