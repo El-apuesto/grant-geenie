@@ -1,25 +1,12 @@
+import type { VercelRequest, VercelResponse } from '@vercel/node';
 import Stripe from 'stripe';
-import { VercelRequest, VercelResponse } from '@vercel/node';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2024-12-18',
 });
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // Set CORS headers
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
-  res.setHeader(
-    'Access-Control-Allow-Headers',
-    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
-  );
-
-  if (req.method === 'OPTIONS') {
-    res.status(200).end();
-    return;
-  }
-
+  // Only accept POST requests
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
@@ -27,25 +14,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const { userId, priceId } = req.body;
 
+    // Make sure we have what we need
     if (!userId || !priceId) {
       return res.status(400).json({ error: 'Missing userId or priceId' });
     }
 
-    // Create Stripe checkout session
+    // Create the checkout session
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
       payment_method_types: ['card'],
-      line_items: [
-        {
-          price: priceId,
-          quantity: 1,
-        },
-      ],
-      metadata: {
-        user_id: userId, // CRITICAL: This is how the webhook identifies the user
-      },
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL || 'https://granthustle.org'}?upgrade=success`,
-      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL || 'https://granthustle.org'}?upgrade=canceled`,
+      line_items: [{ price: priceId, quantity: 1 }],
+      metadata: { user_id: userId }, // THIS IS CRITICAL - webhook needs this!
+      success_url: 'https://granthustle.org?upgrade=success',
+      cancel_url: 'https://granthustle.org?upgrade=canceled',
     });
 
     return res.status(200).json({ url: session.url });
