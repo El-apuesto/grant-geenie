@@ -49,11 +49,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: 'Invalid or unpaid session' });
     }
 
-    // Update the user's profile to Pro tier
+    // Update the user's profile to active Pro subscription
     const { error, data } = await supabaseAdmin
       .from('profiles')
       .update({
-        subscription_tier: 'pro',
+        subscription_status: 'active',
         stripe_customer_id: session.customer as string,
         stripe_subscription_id: session.subscription as string,
         updated_at: new Date().toISOString(),
@@ -66,12 +66,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(500).json({ error: 'Failed to update subscription' });
     }
 
-    console.log(`✅ User ${userId} successfully upgraded to Pro`);
+    console.log(`✅ User ${userId} successfully upgraded to Pro (active)`);
     console.log('Updated profile:', data);
 
     return res.status(200).json({
       success: true,
-      subscription_tier: 'pro',
+      subscription_status: 'active',
       message: 'Successfully upgraded to Pro',
     });
   } catch (error: any) {
