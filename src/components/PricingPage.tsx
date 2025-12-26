@@ -9,8 +9,8 @@ export default function PricingPage({ onSelectPlan }: PricingPageProps) {
   // Live Stripe Price IDs
   const STRIPE_PRICE_IDS = {
     monthly: 'price_1Sa8yzG85r4wkmwW8CGlyij4',    // $9.99 intro, renews at $79.99
-    season: 'price_1Sa918G85r4wkmwW786cBMaH',    // $27.99 (4-month season pass)
-    annual: 'price_1Sa9BPG85r4wkmwWd0BQE2vz'     // $149.99 year 1, $249.99 year 2+
+    season: 'price_1Sa9BPG85r4wkmwWd0BQE2vz',    // $79.99 (4-month season pass)
+    annual: 'price_1Sa9CtG85r4wkmwWNVjMLlVy'     // $149.99 year 1, $249.99 year 2+
   };
 
   return (
@@ -111,11 +111,10 @@ export default function PricingPage({ onSelectPlan }: PricingPageProps) {
             <h3 className="text-xl font-bold text-white mb-2">Season Pass (Pro)</h3>
             <div className="mb-4">
               <div>
-                <span className="text-4xl font-bold text-white">$27.99</span>
+                <span className="text-4xl font-bold text-white">$79.99</span>
                 <span className="text-slate-400">/4 months</span>
               </div>
-              <div className="text-sm text-slate-400 mt-2">One-time charge</div>
-              <div className="text-sm text-emerald-400 mt-1">~$7/month</div>
+              <div className="text-sm text-emerald-400 mt-2">~$20/month</div>
             </div>
             <ul className="space-y-3 mb-6">
               <li className="flex items-start gap-2 text-slate-300">
