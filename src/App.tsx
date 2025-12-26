@@ -4,52 +4,14 @@ import { supabase } from './lib/supabase';
 import Landing from './components/Landing';
 import Auth from './components/Auth';
 import Questionnaire from './components/Questionnaire';
-import PricingPage from './components/PricingPage';
 import Dashboard from './components/Dashboard';
 
-type AppState = 'landing' | 'auth' | 'questionnaire' | 'pricing' | 'dashboard';
+type AppState = 'landing' | 'auth' | 'questionnaire' | 'dashboard';
 
 function AppContent() {
   const { user, loading } = useAuth();
   const [appState, setAppState] = useState<AppState>('landing');
   const [questionnaireCompleted, setQuestionnaireCompleted] = useState(false);
-  const [verifying, setVerifying] = useState(false);
-
-  // Handle Stripe success redirect
-  useEffect(() => {
-    const handleStripeSuccess = async () => {
-      const params = new URLSearchParams(window.location.search);
-      const sessionId = params.get('session_id');
-      const success = params.get('success');
-
-      if (success === 'true' && sessionId && user) {
-        setVerifying(true);
-        try {
-          const response = await fetch('/api/stripe-success', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ sessionId }),
-          });
-
-          if (response.ok) {
-            console.log('✅ Upgraded to Pro!');
-            // Clean URL
-            window.history.replaceState({}, '', window.location.pathname);
-          } else {
-            console.error('Payment verification failed');
-          }
-        } catch (error) {
-          console.error('Error verifying payment:', error);
-        } finally {
-          setVerifying(false);
-        }
-      }
-    };
-
-    if (user && !loading) {
-      handleStripeSuccess();
-    }
-  }, [user, loading]);
 
   useEffect(() => {
     if (loading) return;
@@ -88,10 +50,6 @@ function AppContent() {
     setAppState('auth');
   };
 
-  const handlePricing = () => {
-    setAppState('pricing');
-  };
-
   const handleAuthSuccess = () => {
     checkQuestionnaireStatus();
   };
@@ -101,23 +59,16 @@ function AppContent() {
     setAppState('dashboard');
   };
 
-  const handleSelectPlan = (plan: string) => {
-    console.log('Selected plan:', plan);
-    setAppState('dashboard');
-  };
-
-  if (loading || verifying) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
-        <div className="text-white text-xl">
-          {verifying ? 'Verifying your payment...' : 'Loading...'}
-        </div>
+        <div className="text-white text-xl">Loading...</div>
       </div>
     );
   }
 
   if (appState === 'landing') {
-    return <Landing onGetStarted={handleGetStarted} onPricing={handlePricing} />;
+    return <Landing onGetStarted={handleGetStarted} />;
   }
 
   if (appState === 'auth') {
@@ -126,10 +77,6 @@ function AppContent() {
 
   if (appState === 'questionnaire') {
     return <Questionnaire onComplete={handleQuestionnaireComplete} />;
-  }
-
-  if (appState === 'pricing') {
-    return <PricingPage onSelectPlan={handleSelectPlan} />;
   }
 
   if (appState === 'dashboard') {
