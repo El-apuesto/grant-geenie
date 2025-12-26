@@ -8,7 +8,13 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 
 const supabase = createClient(
   process.env.VITE_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
+  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY!,
+  {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  }
 );
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -23,38 +29,33 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: 'Missing sessionId' });
     }
 
-    // Get session from Stripe
+    // Retrieve the checkout session from Stripe
     const session = await stripe.checkout.sessions.retrieve(sessionId);
 
-    // Check if paid
-    if (session.payment_status !== 'paid') {
+    if (!session || session.payment_status !== 'paid') {
       return res.status(400).json({ error: 'Payment not completed' });
     }
 
-    // Get userId from metadata
     const userId = session.metadata?.user_id;
+
     if (!userId) {
-      return res.status(400).json({ error: 'No user ID in session' });
+      return res.status(400).json({ error: 'No user ID in session metadata' });
     }
 
-    // Update subscription status in database
-    const { error } = await supabase
+    // Update user subscription status in Supabase
+    const { error: updateError } = await supabase
       .from('profiles')
-      .update({
-        subscription_status: 'active',
-        stripe_customer_id: session.customer as string,
-        stripe_subscription_id: session.subscription as string,
-      })
+      .update({ subscription_status: 'active' })
       .eq('id', userId);
 
-    if (error) {
-      console.error('Database error:', error);
+    if (updateError) {
+      console.error('Error updating subscription:', updateError);
       return res.status(500).json({ error: 'Failed to update subscription' });
     }
 
     return res.status(200).json({ success: true });
   } catch (error: any) {
-    console.error('Error:', error);
+    console.error('Error verifying payment:', error);
     return res.status(500).json({ error: error.message });
   }
 }
