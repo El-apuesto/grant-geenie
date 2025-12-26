@@ -23,7 +23,8 @@ export function usePaymentVerification() {
     setError(null);
 
     try {
-      const response = await fetch('/app/api/verify-payment', {
+      // Call the Vercel serverless function
+      const response = await fetch('/api/verify-payment', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ sessionId, userId }),
