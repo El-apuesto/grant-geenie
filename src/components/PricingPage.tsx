@@ -26,14 +26,21 @@ export default function PricingPage({ onSelectPlan }: PricingPageProps) {
         annual: 'price_1QjTKGFfvs6U5JYZiC5gkSzX'    // $149.99 annual
       };
 
-      const response = await fetch('/api/create-checkout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: user.id,
-          priceId: priceIds[plan]
-        })
-      });
+      // Use NEW Supabase Edge Function
+      const response = await fetch(
+        'https://ooxkwrnmnygatsxahspd.supabase.co/functions/v1/create-checkout-stripe',
+        {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            userId: user.id,
+            email: user.email,
+            priceId: priceIds[plan]
+          })
+        }
+      );
 
       const data = await response.json();
 
