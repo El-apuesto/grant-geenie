@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { supabase } from './lib/supabase';
-import { usePaymentVerification } from './hooks/usePaymentVerification';
 import Landing from './components/Landing';
 import Auth from './components/Auth';
 import Questionnaire from './components/Questionnaire';
@@ -14,9 +13,43 @@ function AppContent() {
   const { user, loading } = useAuth();
   const [appState, setAppState] = useState<AppState>('landing');
   const [questionnaireCompleted, setQuestionnaireCompleted] = useState(false);
-  
-  // Handle Stripe payment verification on success redirect
-  const { verifying, error, success } = usePaymentVerification();
+  const [verifying, setVerifying] = useState(false);
+
+  // Handle Stripe success redirect
+  useEffect(() => {
+    const handleStripeSuccess = async () => {
+      const params = new URLSearchParams(window.location.search);
+      const sessionId = params.get('session_id');
+      const success = params.get('success');
+
+      if (success === 'true' && sessionId && user) {
+        setVerifying(true);
+        try {
+          const response = await fetch('/api/stripe-success', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ sessionId }),
+          });
+
+          if (response.ok) {
+            console.log('✅ Upgraded to Pro!');
+            // Clean URL
+            window.history.replaceState({}, '', window.location.pathname);
+          } else {
+            console.error('Payment verification failed');
+          }
+        } catch (error) {
+          console.error('Error verifying payment:', error);
+        } finally {
+          setVerifying(false);
+        }
+      }
+    };
+
+    if (user && !loading) {
+      handleStripeSuccess();
+    }
+  }, [user, loading]);
 
   useEffect(() => {
     if (loading) return;
@@ -28,22 +61,6 @@ function AppContent() {
 
     checkQuestionnaireStatus();
   }, [user, loading]);
-
-  // Show success notification when payment is verified
-  useEffect(() => {
-    if (success) {
-      console.log('🎉 Welcome to Pro! Your subscription is now active.');
-      // You can add a toast notification here if you have a toast library
-    }
-  }, [success]);
-
-  // Show error notification if payment verification fails
-  useEffect(() => {
-    if (error) {
-      console.error('❌ Payment verification error:', error);
-      // You can add a toast notification here
-    }
-  }, [error]);
 
   const checkQuestionnaireStatus = async () => {
     if (!user) return;
