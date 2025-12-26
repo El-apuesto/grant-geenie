@@ -11,7 +11,7 @@ export default function PricingPage({ onSelectPlan }: PricingPageProps) {
     basic: 'price_1Sa8yzG85r4wkmwW8CGlyij4',
     standard: 'price_1Sa918G85r4wkmwW786cBMaH',
     pro: 'price_1Sa9BPG85r4wkmwWd0BQE2vz',
-    enterprise: 'price_1SbWyQG85r4wkmwWKFT2dwlf'
+    enterprise: 'price_1Sa9CtG85r4wkmwWNVjMLlVy'
   };
 
   return (
@@ -155,7 +155,7 @@ export default function PricingPage({ onSelectPlan }: PricingPageProps) {
           <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-6">
             <h3 className="text-xl font-bold text-white mb-2">Enterprise</h3>
             <div className="mb-4">
-              <span className="text-4xl font-bold text-white">$199.99</span>
+              <span className="text-4xl font-bold text-white">$149.99</span>
               <span className="text-slate-400">/month</span>
             </div>
             <ul className="space-y-3 mb-6">
