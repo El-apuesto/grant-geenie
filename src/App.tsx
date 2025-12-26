@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { supabase } from './lib/supabase';
+import { usePaymentVerification } from './hooks/usePaymentVerification';
 import Landing from './components/Landing';
 import Auth from './components/Auth';
 import Questionnaire from './components/Questionnaire';
@@ -13,6 +14,9 @@ function AppContent() {
   const { user, loading } = useAuth();
   const [appState, setAppState] = useState<AppState>('landing');
   const [questionnaireCompleted, setQuestionnaireCompleted] = useState(false);
+  
+  // Handle Stripe payment verification on success redirect
+  const { verifying, error, success } = usePaymentVerification();
 
   useEffect(() => {
     if (loading) return;
@@ -24,6 +28,22 @@ function AppContent() {
 
     checkQuestionnaireStatus();
   }, [user, loading]);
+
+  // Show success notification when payment is verified
+  useEffect(() => {
+    if (success) {
+      console.log('🎉 Welcome to Pro! Your subscription is now active.');
+      // You can add a toast notification here if you have a toast library
+    }
+  }, [success]);
+
+  // Show error notification if payment verification fails
+  useEffect(() => {
+    if (error) {
+      console.error('❌ Payment verification error:', error);
+      // You can add a toast notification here
+    }
+  }, [error]);
 
   const checkQuestionnaireStatus = async () => {
     if (!user) return;
@@ -69,10 +89,12 @@ function AppContent() {
     setAppState('dashboard');
   };
 
-  if (loading) {
+  if (loading || verifying) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
-        <div className="text-white text-xl">Loading...</div>
+        <div className="text-white text-xl">
+          {verifying ? 'Verifying your payment...' : 'Loading...'}
+        </div>
       </div>
     );
   }
