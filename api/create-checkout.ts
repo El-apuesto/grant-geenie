@@ -2,7 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import Stripe from 'stripe';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2024-12-18.acacia',
+  apiVersion: '2024-12-18',
 });
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -25,7 +25,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       payment_method_types: ['card'],
       line_items: [{ price: priceId, quantity: 1 }],
       metadata: { user_id: userId },
-      // UPDATED: Include session_id in success URL for Plan B verification
+      // Include session_id in success URL for Plan B verification
       success_url: 'https://granthustle.org?success=true&session_id={CHECKOUT_SESSION_ID}',
       cancel_url: 'https://granthustle.org?canceled=true',
     });
