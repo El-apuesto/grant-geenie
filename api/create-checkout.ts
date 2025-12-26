@@ -25,9 +25,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       payment_method_types: ['card'],
       line_items: [{ price: priceId, quantity: 1 }],
       metadata: { user_id: userId },
-      // Include session_id in success URL for Plan B verification
-      success_url: 'https://granthustle.org?success=true&session_id={CHECKOUT_SESSION_ID}',
-      cancel_url: 'https://granthustle.org?canceled=true',
+      // Use www version to match your actual domain
+      success_url: 'https://www.granthustle.org/?success=true&session_id={CHECKOUT_SESSION_ID}',
+      cancel_url: 'https://www.granthustle.org/?canceled=true',
     });
 
     return res.status(200).json({ url: session.url });
