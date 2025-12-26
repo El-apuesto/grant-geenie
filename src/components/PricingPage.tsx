@@ -1,18 +1,54 @@
 import { Crown, Check } from 'lucide-react';
+import { useState } from 'react';
+import { useAuth } from '../contexts/AuthContext';
 
 interface PricingPageProps {
   onSelectPlan: (plan: 'free' | 'intro' | 'season' | 'annual') => void;
 }
 
 export default function PricingPage({ onSelectPlan }: PricingPageProps) {
-  const handleUpgrade = (plan: 'intro' | 'season' | 'annual') => {
-    // PRODUCTION STRIPE PAYMENT LINKS
-    const links = {
-      intro: 'https://buy.stripe.com/3cI5kD5VteGzciEdez7AI0b',    // $9.99 intro first month
-      season: 'https://buy.stripe.com/aFa28rbfNcyr5Ug4I37AI09',   // $79.99 seasonal (3 months)
-      annual: 'https://buy.stripe.com/28E14nabJ1TN2I45M77AI08'    // $149.99 annual
-    };
-    window.open(links[plan], '_blank');
+  const { user } = useAuth();
+  const [loading, setLoading] = useState<string | null>(null);
+
+  const handleUpgrade = async (plan: 'intro' | 'season' | 'annual') => {
+    if (!user) {
+      alert('Please sign in to upgrade');
+      return;
+    }
+
+    setLoading(plan);
+
+    try {
+      // Map plan to Stripe price IDs
+      const priceIds = {
+        intro: 'price_1QjTJdFfvs6U5JYZ5sdoRMVq',    // $9.99 intro
+        season: 'price_1QjTK1Ffvs6U5JYZFxWdSckE',   // $79.99 seasonal
+        annual: 'price_1QjTKGFfvs6U5JYZiC5gkSzX'    // $149.99 annual
+      };
+
+      const response = await fetch('/api/create-checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user.id,
+          priceId: priceIds[plan]
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to create checkout session');
+      }
+
+      // Redirect to Stripe Checkout
+      window.location.href = data.url;
+    } catch (error: any) {
+      console.error('Checkout error:', error);
+      alert(error.message || 'Failed to start checkout. Please try again.');
+    } finally {
+      setLoading(null);
+    }
   };
 
   return (
@@ -92,10 +128,11 @@ export default function PricingPage({ onSelectPlan }: PricingPageProps) {
             </ul>
             <button
               onClick={() => handleUpgrade('intro')}
-              className="w-full py-3 bg-white hover:bg-gray-100 text-emerald-700 rounded-lg font-bold transition flex items-center justify-center gap-2"
+              disabled={loading === 'intro'}
+              className="w-full py-3 bg-white hover:bg-gray-100 text-emerald-700 rounded-lg font-bold transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Crown className="w-5 h-5" />
-              Start Trial
+              {loading === 'intro' ? 'Loading...' : 'Start Trial'}
             </button>
           </div>
 
@@ -122,10 +159,11 @@ export default function PricingPage({ onSelectPlan }: PricingPageProps) {
             </ul>
             <button
               onClick={() => handleUpgrade('season')}
-              className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-semibold transition flex items-center justify-center gap-2"
+              disabled={loading === 'season'}
+              className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-semibold transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Crown className="w-5 h-5" />
-              Get Seasonal
+              {loading === 'season' ? 'Loading...' : 'Get Seasonal'}
             </button>
           </div>
 
@@ -152,10 +190,11 @@ export default function PricingPage({ onSelectPlan }: PricingPageProps) {
             </ul>
             <button
               onClick={() => handleUpgrade('annual')}
-              className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-semibold transition flex items-center justify-center gap-2"
+              disabled={loading === 'annual'}
+              className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-semibold transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Crown className="w-5 h-5" />
-              Get Annual
+              {loading === 'annual' ? 'Loading...' : 'Get Annual'}
             </button>
           </div>
         </div>
