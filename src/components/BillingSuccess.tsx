@@ -22,7 +22,7 @@ export default function BillingSuccess() {
       }
 
       try {
-        const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/confirm-session`, {
+        const res = await fetch(`${import.meta.env.VITE_SUPABASE_DB_URL}/functions/v1/confirm-session`, {
           method: "POST",
           headers: { 
             "Content-Type": "application/json",
