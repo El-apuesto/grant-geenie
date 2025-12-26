@@ -22,7 +22,8 @@ export async function POST(req: Request) {
           quantity: 1,
         },
       ],
-      success_url: `${process.env.NEXT_PUBLIC_SITE_URL}?success=true`,
+      // Updated success URL to include session_id for verification
+      success_url: `${process.env.NEXT_PUBLIC_SITE_URL}?success=true&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL}?canceled=true`,
       metadata: {
         user_id: userId,
