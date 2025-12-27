@@ -29,9 +29,16 @@ serve(async (req) => {
       throw new Error("User mismatch");
     }
 
-    // UPDATE YOUR SUPABASE TABLE HERE
-    // Replace 'profiles' with your table name
-    // Replace column names as needed
+    // Get user profile for email
+    const { data: profile, error: profileError } = await supabase
+      .from("profiles")
+      .select("email, first_name")
+      .eq("id", userId)
+      .single();
+
+    if (profileError) throw profileError;
+
+    // Update subscription status
     const { error } = await supabase
       .from("profiles")
       .update({
@@ -43,6 +50,24 @@ serve(async (req) => {
       .eq("id", userId);
 
     if (error) throw error;
+
+    // Send welcome email
+    const frontendUrl = Deno.env.get("FRONTEND_URL") || "https://grant-geenie.vercel.app";
+    const planName = session.metadata?.plan_name || "Pro";
+
+    await fetch(`${Deno.env.get("SUPABASE_DB_URL")}/functions/v1/send-welcome-email`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`
+      },
+      body: JSON.stringify({
+        firstName: profile.first_name || "there",
+        email: profile.email,
+        planName: planName,
+        dashboardUrl: `${frontendUrl}/dashboard`
+      })
+    });
 
     return new Response(JSON.stringify({ success: true }), {
       headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
