@@ -92,11 +92,6 @@ export default function Dashboard() {
     setSidebarOpen(false);
   };
 
-  const handleSelectPlan = (plan: 'free' | 'intro' | 'season' | 'annual') => {
-    // After plan selection, return to dashboard
-    setCurrentView('home');
-  };
-
   const handleRestartTour = () => {
     setCurrentView('home');
     startTour();
@@ -135,7 +130,7 @@ export default function Dashboard() {
 
   const renderView = () => {
     if (currentView === 'pricing') {
-      return <PricingPage onSelectPlan={handleSelectPlan} />;
+      return <PricingPage />;
     }
 
     if (currentView === 'settings') {

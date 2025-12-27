@@ -1,11 +1,7 @@
 import { Check } from 'lucide-react';
 import UpgradeButton from './UpgradeButton';
 
-interface PricingPageProps {
-  onSelectPlan: (plan: 'monthly' | 'season' | 'annual') => void;
-}
-
-export default function PricingPage({ onSelectPlan }: PricingPageProps) {
+export default function PricingPage() {
   // Live Stripe Price IDs
   const STRIPE_PRICE_IDS = {
     monthly: 'price_1Sa8yzG85r4wkmwW8CGlyij4',    // $9.99 intro, renews at $27.99
@@ -50,8 +46,8 @@ export default function PricingPage({ onSelectPlan }: PricingPageProps) {
               </li>
             </ul>
             <button
-              onClick={() => onSelectPlan('monthly')}
               className="w-full py-3 bg-slate-700 hover:bg-slate-600 text-white font-semibold rounded-lg transition"
+              disabled
             >
               Current Plan
             </button>
