@@ -4,10 +4,9 @@ import { useAuth } from '../contexts/AuthContext';
 
 interface LandingProps {
   onGetStarted: () => void;
-  onPricing: () => void;
 }
 
-export default function Landing({ onGetStarted, onPricing }: LandingProps) {
+export default function Landing({ onGetStarted }: LandingProps) {
   const { user } = useAuth();
   const [showLoginModal, setShowLoginModal] = useState(false);
 
@@ -59,8 +58,7 @@ export default function Landing({ onGetStarted, onPricing }: LandingProps) {
         </button>
 
         <p className="text-slate-400 mt-6 text-lg">
-          Free tier: 5 matches/month · No credit card required<br />
-          <span className="text-sm">Upgrade anytime: $9.99 first month, then $27.99/month</span>
+          Free tier: 5 matches/month · No credit card required
         </p>
       </div>
 

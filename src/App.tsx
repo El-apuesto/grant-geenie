@@ -4,55 +4,30 @@ import { supabase } from './lib/supabase';
 import Landing from './components/Landing';
 import Auth from './components/Auth';
 import Questionnaire from './components/Questionnaire';
-import PricingPage from './components/PricingPage';
 import Dashboard from './components/Dashboard';
+import BillingSuccess from './components/BillingSuccess';
+import BillingCancel from './components/BillingCancel';
 
-type AppState = 'landing' | 'auth' | 'questionnaire' | 'pricing' | 'dashboard';
+type AppState = 'landing' | 'auth' | 'questionnaire' | 'dashboard' | 'billing-success' | 'billing-cancel';
 
 function AppContent() {
   const { user, loading } = useAuth();
   const [appState, setAppState] = useState<AppState>('landing');
   const [questionnaireCompleted, setQuestionnaireCompleted] = useState(false);
-  const [verifying, setVerifying] = useState(false);
-
-  // Handle Stripe success redirect
-  useEffect(() => {
-    const handleStripeSuccess = async () => {
-      const params = new URLSearchParams(window.location.search);
-      const sessionId = params.get('session_id');
-      const success = params.get('success');
-
-      if (success === 'true' && sessionId && user) {
-        setVerifying(true);
-        try {
-          const response = await fetch('/api/stripe-success', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ sessionId }),
-          });
-
-          if (response.ok) {
-            console.log('✅ Upgraded to Pro!');
-            // Clean URL
-            window.history.replaceState({}, '', window.location.pathname);
-          } else {
-            console.error('Payment verification failed');
-          }
-        } catch (error) {
-          console.error('Error verifying payment:', error);
-        } finally {
-          setVerifying(false);
-        }
-      }
-    };
-
-    if (user && !loading) {
-      handleStripeSuccess();
-    }
-  }, [user, loading]);
 
   useEffect(() => {
     if (loading) return;
+
+    // Check URL for billing routes
+    const path = window.location.pathname;
+    if (path === '/billing/success') {
+      setAppState('billing-success');
+      return;
+    }
+    if (path === '/billing/cancel') {
+      setAppState('billing-cancel');
+      return;
+    }
 
     if (!user) {
       setAppState('landing');
@@ -88,10 +63,6 @@ function AppContent() {
     setAppState('auth');
   };
 
-  const handlePricing = () => {
-    setAppState('pricing');
-  };
-
   const handleAuthSuccess = () => {
     checkQuestionnaireStatus();
   };
@@ -101,35 +72,32 @@ function AppContent() {
     setAppState('dashboard');
   };
 
-  const handleSelectPlan = (plan: string) => {
-    console.log('Selected plan:', plan);
-    setAppState('dashboard');
-  };
-
-  if (loading || verifying) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
-        <div className="text-white text-xl">
-          {verifying ? 'Verifying your payment...' : 'Loading...'}
-        </div>
+        <div className="text-white text-xl">Loading...</div>
       </div>
     );
   }
 
+  if (appState === 'billing-success') {
+    return <BillingSuccess />;
+  }
+
+  if (appState === 'billing-cancel') {
+    return <BillingCancel />;
+  }
+
   if (appState === 'landing') {
-    return <Landing onGetStarted={handleGetStarted} onPricing={handlePricing} />;
+    return <Landing onGetStarted={handleGetStarted} />;
   }
 
   if (appState === 'auth') {
-    return <Auth onSuccess={handleAuthSuccess} />;
+    return <Auth onSuccess={handleAuthSuccess} />
   }
 
   if (appState === 'questionnaire') {
     return <Questionnaire onComplete={handleQuestionnaireComplete} />;
-  }
-
-  if (appState === 'pricing') {
-    return <PricingPage onSelectPlan={handleSelectPlan} />;
   }
 
   if (appState === 'dashboard') {
