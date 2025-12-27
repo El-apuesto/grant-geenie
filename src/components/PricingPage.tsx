@@ -2,11 +2,11 @@ import { Check } from 'lucide-react';
 import UpgradeButton from './UpgradeButton';
 
 export default function PricingPage() {
-  // Live Stripe Price IDs
+  // Live Stripe Price IDs - ALL RECURRING
   const STRIPE_PRICE_IDS = {
-    monthly: 'price_1Sa8yzG85r4wkmwW8CGlyij4',    // $9.99 intro, renews at $27.99
-    season: 'price_1Sa9BPG85r4wkmwWd0BQE2vz',    // $79.99 (4-month season pass)
-    annual: 'price_1Sa9CtG85r4wkmwWNVjMLlVy'     // $149.99 year 1, $249.99 year 2+
+    monthly: 'price_1Sa918G85r4wkmwW786cBMaH',    // $27.99/month recurring
+    season: 'price_1Sa9BPG85r4wkmwWd0BQE2vz',     // $79.99 (4-month season pass)
+    annual: 'price_1Sa9CtG85r4wkmwWNVjMLlVy'      // $149.99/year
   };
 
   return (
@@ -53,7 +53,7 @@ export default function PricingPage() {
             </button>
           </div>
 
-          {/* Monthly - Intro Offer */}
+          {/* Monthly - Best Value */}
           <div className="bg-slate-800/50 border-2 border-emerald-500 rounded-lg p-6 relative">
             <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-emerald-600 text-white px-3 py-1 rounded-full text-sm font-semibold">
               Best Value
@@ -61,11 +61,12 @@ export default function PricingPage() {
             <h3 className="text-xl font-bold text-white mb-2">Monthly (Pro)</h3>
             <div className="mb-4">
               <div>
-                <span className="text-4xl font-bold text-white">$9.99</span>
+                <span className="text-4xl font-bold text-white">$27.99</span>
                 <span className="text-slate-400">/month</span>
               </div>
-              <div className="text-sm text-emerald-400 mt-2">First month only</div>
-              <div className="text-sm text-slate-400 mt-1">Renews at $27.99/month</div>
+              <div className="text-sm text-emerald-400 font-semibold mt-2">
+                💰 Use code FIRSTMONTH for $9.99 first month!
+              </div>
             </div>
             <ul className="space-y-3 mb-6">
               <li className="flex items-start gap-2 text-slate-300">
@@ -155,9 +156,7 @@ export default function PricingPage() {
                 <span className="text-4xl font-bold text-white">$149.99</span>
                 <span className="text-slate-400">/year</span>
               </div>
-              <div className="text-sm text-emerald-400 mt-2">Year 1</div>
-              <div className="text-sm text-slate-400 mt-1">Renews at $249.99/year</div>
-              <div className="text-sm text-slate-400 mt-1">Or switch to $27.99/month</div>
+              <div className="text-sm text-emerald-400 mt-2">~$12.50/month</div>
             </div>
             <ul className="space-y-3 mb-6">
               <li className="flex items-start gap-2 text-slate-300">
