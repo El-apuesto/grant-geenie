@@ -21,7 +21,8 @@ serve(async (req) => {
 
     const session = await stripe.checkout.sessions.retrieve(sessionId);
 
-    if (session.payment_status !== "paid") {
+    // Allow both paid and unpaid (for $0.00 promo codes)
+    if (session.payment_status !== "paid" && session.payment_status !== "unpaid") {
       throw new Error("Payment not completed");
     }
 
@@ -52,7 +53,7 @@ serve(async (req) => {
     if (error) throw error;
 
     // Send welcome email
-    const frontendUrl = Deno.env.get("FRONTEND_URL") || "https://grant-geenie.vercel.app";
+    const frontendUrl = Deno.env.get("FRONTEND_URL") || "https://granthustle.org";
     const planName = session.metadata?.plan_name || "Pro";
 
     await fetch(`${Deno.env.get("SUPABASE_DB_URL")}/functions/v1/send-welcome-email`, {
