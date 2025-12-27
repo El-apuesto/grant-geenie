@@ -17,17 +17,21 @@ export default function UpgradeButton({ priceId, children = "Upgrade" }: Upgrade
         throw new Error("User not authenticated");
       }
 
-      const res = await fetch(`${import.meta.env.VITE_SUPABASE_DB_URL}/functions/v1/create-checkout-session`, {
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_DB_URL}/functions/v1/stripe-checkout`, {
         method: "POST",
         headers: { 
           "Content-Type": "application/json",
           "Authorization": `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
         },
-        body: JSON.stringify({ priceId, userId: user.id }),
+        body: JSON.stringify({ priceId, userId: user.id, email: user.email }),
       });
 
-      const { url } = await res.json();
-      window.location.href = url;
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        throw new Error(data.error || "Failed to create checkout session");
+      }
     } catch (error) {
       console.error(error);
       alert("Failed to start checkout. Please try again.");
@@ -39,7 +43,7 @@ export default function UpgradeButton({ priceId, children = "Upgrade" }: Upgrade
     <button 
       onClick={handleUpgrade} 
       disabled={loading}
-      className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+      className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
     >
       {loading ? "Loading..." : children}
     </button>
