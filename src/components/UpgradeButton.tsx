@@ -18,7 +18,7 @@ export default function UpgradeButton({ priceId, children = "Upgrade" }: Upgrade
 
     setLoading(true);
     try {
-      const res = await fetch(`${import.meta.env.VITE_SUPABASE_DB_URL}/functions/v1/create-checkout-session`, {
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-checkout-session`, {
         method: "POST",
         headers: { 
           "Content-Type": "application/json",
