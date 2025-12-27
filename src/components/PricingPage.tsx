@@ -1,119 +1,206 @@
-import { useState } from 'react'
-import { supabase } from '../lib/supabase'
-import { useAuth } from '../contexts/AuthContext'
+import { Check } from 'lucide-react';
+import UpgradeButton from './UpgradeButton';
 
 export default function PricingPage() {
-  const { user } = useAuth()
-  const [loading, setLoading] = useState(false)
-
-  const handleSubscribe = async () => {
-    if (!user) {
-      alert('Please sign in first')
-      return
-    }
-
-    setLoading(true)
-    try {
-      const { data, error } = await supabase.functions.invoke('stripe-checkout', {
-        body: {
-          userId: user.id,
-          email: user.email,
-          priceId: 'price_1QYourStripePriceID', // TODO: Replace with your Stripe Price ID
-        },
-      })
-
-      if (error) throw error
-      if (data?.url) {
-        window.location.href = data.url
-      }
-    } catch (error) {
-      console.error('Checkout error:', error)
-      alert('Failed to start checkout. Please try again.')
-    } finally {
-      setLoading(false)
-    }
-  }
+  // Live Stripe Price IDs
+  const STRIPE_PRICE_IDS = {
+    monthly: 'price_1Sa8yzG85r4wkmwW8CGlyij4',    // $9.99 intro, renews at $27.99
+    season: 'price_1Sa9BPG85r4wkmwWd0BQE2vz',    // $79.99 (4-month season pass)
+    annual: 'price_1Sa9CtG85r4wkmwWNVjMLlVy'     // $149.99 year 1, $249.99 year 2+
+  };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4 md:p-8">
       <div className="max-w-6xl mx-auto">
-        <h1 className="text-4xl font-bold text-center mb-4">Choose Your Plan</h1>
-        <p className="text-center text-gray-600 mb-12">Start finding grants that match your mission</p>
-        
-        <div className="grid md:grid-cols-2 gap-8">
-          {/* Free Plan */}
-          <div className="bg-white rounded-xl shadow-lg p-8 border-2 border-gray-200">
-            <h2 className="text-2xl font-bold mb-4">Free</h2>
-            <p className="text-4xl font-bold mb-6">
-              $0<span className="text-lg font-normal text-gray-600">/month</span>
-            </p>
-            <ul className="space-y-3 mb-8">
-              <li className="flex items-center">
-                <span className="text-green-500 mr-2">✓</span>
+        {/* Header */}
+        <div className="text-center mb-12">
+          <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
+            Choose Your Pro Plan
+          </h1>
+          <p className="text-xl text-slate-400">
+            All plans unlock full Pro access to Grant Geenie
+          </p>
+        </div>
+
+        {/* Pricing Cards */}
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-4xl mx-auto">
+          {/* Free Tier */}
+          <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-6">
+            <h3 className="text-xl font-bold text-white mb-2">Free</h3>
+            <div className="mb-4">
+              <span className="text-4xl font-bold text-white">$0</span>
+              <span className="text-slate-400">/month</span>
+            </div>
+            <ul className="space-y-3 mb-6">
+              <li className="flex items-start gap-2 text-slate-300">
+                <Check className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" />
+                <span>5 grant matches per month</span>
+              </li>
+              <li className="flex items-start gap-2 text-slate-300">
+                <Check className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" />
                 <span>Basic grant search</span>
               </li>
-              <li className="flex items-center">
-                <span className="text-green-500 mr-2">✓</span>
-                <span>5 saved grants</span>
-              </li>
-              <li className="flex items-center">
-                <span className="text-green-500 mr-2">✓</span>
-                <span>Email alerts</span>
+              <li className="flex items-start gap-2 text-slate-300">
+                <Check className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" />
+                <span>Community support</span>
               </li>
             </ul>
-            <button 
-              disabled 
-              className="w-full bg-gray-300 text-gray-600 py-3 rounded-lg font-semibold cursor-not-allowed"
+            <button
+              className="w-full py-3 bg-slate-700 hover:bg-slate-600 text-white font-semibold rounded-lg transition"
+              disabled
             >
               Current Plan
             </button>
           </div>
 
-          {/* Premium Plan */}
-          <div className="bg-white rounded-xl shadow-lg p-8 border-2 border-blue-500 relative">
-            <div className="absolute top-0 right-0 bg-blue-500 text-white px-4 py-1 rounded-bl-lg rounded-tr-lg text-sm font-semibold">
-              RECOMMENDED
+          {/* Monthly - Intro Offer */}
+          <div className="bg-slate-800/50 border-2 border-emerald-500 rounded-lg p-6 relative">
+            <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-emerald-600 text-white px-3 py-1 rounded-full text-sm font-semibold">
+              Best Value
             </div>
-            <h2 className="text-2xl font-bold mb-4">Premium</h2>
-            <p className="text-4xl font-bold mb-6">
-              $29<span className="text-lg font-normal text-gray-600">/month</span>
-            </p>
-            <ul className="space-y-3 mb-8">
-              <li className="flex items-center">
-                <span className="text-blue-500 mr-2">✓</span>
-                <span className="font-medium">Unlimited grant searches</span>
+            <h3 className="text-xl font-bold text-white mb-2">Monthly (Pro)</h3>
+            <div className="mb-4">
+              <div>
+                <span className="text-4xl font-bold text-white">$9.99</span>
+                <span className="text-slate-400">/month</span>
+              </div>
+              <div className="text-sm text-emerald-400 mt-2">First month only</div>
+              <div className="text-sm text-slate-400 mt-1">Renews at $27.99/month</div>
+            </div>
+            <ul className="space-y-3 mb-6">
+              <li className="flex items-start gap-2 text-slate-300">
+                <Check className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" />
+                <span>Unlimited grant matches</span>
               </li>
-              <li className="flex items-center">
-                <span className="text-blue-500 mr-2">✓</span>
-                <span className="font-medium">Unlimited saved grants</span>
+              <li className="flex items-start gap-2 text-slate-300">
+                <Check className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" />
+                <span>Application tracker</span>
               </li>
-              <li className="flex items-center">
-                <span className="text-blue-500 mr-2">✓</span>
-                <span className="font-medium">AI-powered matching</span>
+              <li className="flex items-start gap-2 text-slate-300">
+                <Check className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" />
+                <span>LOI Generator</span>
               </li>
-              <li className="flex items-center">
-                <span className="text-blue-500 mr-2">✓</span>
-                <span className="font-medium">Grant writing assistant</span>
+              <li className="flex items-start gap-2 text-slate-300">
+                <Check className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" />
+                <span>Fiscal Sponsors database</span>
               </li>
-              <li className="flex items-center">
-                <span className="text-blue-500 mr-2">✓</span>
-                <span className="font-medium">Priority support</span>
+              <li className="flex items-start gap-2 text-slate-300">
+                <Check className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" />
+                <span>Calendar & deadlines</span>
               </li>
-              <li className="flex items-center">
-                <span className="text-blue-500 mr-2">✓</span>
-                <span className="font-medium">Advanced filters</span>
+              <li className="flex items-start gap-2 text-slate-300">
+                <Check className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" />
+                <span>Advanced analytics</span>
+              </li>
+              <li className="flex items-start gap-2 text-slate-300">
+                <Check className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" />
+                <span>Priority support</span>
               </li>
             </ul>
-            <button
-              onClick={handleSubscribe}
-              disabled={loading}
-              className="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? 'Loading...' : 'Subscribe Now'}
-            </button>
+            <UpgradeButton priceId={STRIPE_PRICE_IDS.monthly}>
+              Subscribe Now
+            </UpgradeButton>
           </div>
+
+          {/* Season Pass - 4 Months */}
+          <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-6">
+            <h3 className="text-xl font-bold text-white mb-2">Season Pass (Pro)</h3>
+            <div className="mb-4">
+              <div>
+                <span className="text-4xl font-bold text-white">$79.99</span>
+                <span className="text-slate-400">/4 months</span>
+              </div>
+              <div className="text-sm text-emerald-400 mt-2">~$20/month</div>
+            </div>
+            <ul className="space-y-3 mb-6">
+              <li className="flex items-start gap-2 text-slate-300">
+                <Check className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" />
+                <span>Unlimited grant matches</span>
+              </li>
+              <li className="flex items-start gap-2 text-slate-300">
+                <Check className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" />
+                <span>Application tracker</span>
+              </li>
+              <li className="flex items-start gap-2 text-slate-300">
+                <Check className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" />
+                <span>LOI Generator</span>
+              </li>
+              <li className="flex items-start gap-2 text-slate-300">
+                <Check className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" />
+                <span>Fiscal Sponsors database</span>
+              </li>
+              <li className="flex items-start gap-2 text-slate-300">
+                <Check className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" />
+                <span>Calendar & deadlines</span>
+              </li>
+              <li className="flex items-start gap-2 text-slate-300">
+                <Check className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" />
+                <span>Advanced analytics</span>
+              </li>
+              <li className="flex items-start gap-2 text-slate-300">
+                <Check className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" />
+                <span>Priority support</span>
+              </li>
+            </ul>
+            <UpgradeButton priceId={STRIPE_PRICE_IDS.season}>
+              Subscribe Now
+            </UpgradeButton>
+          </div>
+
+          {/* Annual */}
+          <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-6 md:col-span-2 lg:col-span-1">
+            <h3 className="text-xl font-bold text-white mb-2">Annual (Pro)</h3>
+            <div className="mb-4">
+              <div>
+                <span className="text-4xl font-bold text-white">$149.99</span>
+                <span className="text-slate-400">/year</span>
+              </div>
+              <div className="text-sm text-emerald-400 mt-2">Year 1</div>
+              <div className="text-sm text-slate-400 mt-1">Renews at $249.99/year</div>
+              <div className="text-sm text-slate-400 mt-1">Or switch to $27.99/month</div>
+            </div>
+            <ul className="space-y-3 mb-6">
+              <li className="flex items-start gap-2 text-slate-300">
+                <Check className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" />
+                <span>Unlimited grant matches</span>
+              </li>
+              <li className="flex items-start gap-2 text-slate-300">
+                <Check className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" />
+                <span>Application tracker</span>
+              </li>
+              <li className="flex items-start gap-2 text-slate-300">
+                <Check className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" />
+                <span>LOI Generator</span>
+              </li>
+              <li className="flex items-start gap-2 text-slate-300">
+                <Check className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" />
+                <span>Fiscal Sponsors database</span>
+              </li>
+              <li className="flex items-start gap-2 text-slate-300">
+                <Check className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" />
+                <span>Calendar & deadlines</span>
+              </li>
+              <li className="flex items-start gap-2 text-slate-300">
+                <Check className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" />
+                <span>Advanced analytics</span>
+              </li>
+              <li className="flex items-start gap-2 text-slate-300">
+                <Check className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" />
+                <span>Priority support</span>
+              </li>
+            </ul>
+            <UpgradeButton priceId={STRIPE_PRICE_IDS.annual}>
+              Subscribe Now
+            </UpgradeButton>
+          </div>
+        </div>
+
+        {/* Footer Info */}
+        <div className="mt-12 text-center text-slate-400 text-sm">
+          <p>All plans include full Pro access and 30-day money-back guarantee</p>
+          <p className="mt-2">Cancel anytime, no questions asked</p>
         </div>
       </div>
     </div>
-  )
+  );
 }
