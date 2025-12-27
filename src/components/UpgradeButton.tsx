@@ -11,29 +11,39 @@ export default function UpgradeButton({ priceId, children = "Upgrade" }: Upgrade
   const { user } = useAuth();
 
   const handleUpgrade = async () => {
+    if (!user) {
+      alert("Please sign in first");
+      return;
+    }
+
     setLoading(true);
     try {
-      if (!user) {
-        throw new Error("User not authenticated");
-      }
-
-      const res = await fetch(`${import.meta.env.VITE_SUPABASE_DB_URL}/functions/v1/stripe-checkout`, {
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_DB_URL}/functions/v1/create-checkout-session`, {
         method: "POST",
         headers: { 
           "Content-Type": "application/json",
           "Authorization": `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
         },
-        body: JSON.stringify({ priceId, userId: user.id, email: user.email }),
+        body: JSON.stringify({ 
+          priceId, 
+          userId: user.id,
+          email: user.email 
+        }),
       });
 
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+
       const data = await res.json();
+      
       if (data.url) {
         window.location.href = data.url;
       } else {
-        throw new Error(data.error || "Failed to create checkout session");
+        throw new Error(data.error || "No checkout URL returned");
       }
     } catch (error) {
-      console.error(error);
+      console.error("Checkout error:", error);
       alert("Failed to start checkout. Please try again.");
       setLoading(false);
     }
