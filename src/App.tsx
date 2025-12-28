@@ -7,8 +7,9 @@ import Questionnaire from './components/Questionnaire';
 import Dashboard from './components/Dashboard';
 import BillingSuccess from './components/BillingSuccess';
 import BillingCancel from './components/BillingCancel';
+import TermsOfService from './pages/TermsOfService';
 
-type AppState = 'landing' | 'auth' | 'questionnaire' | 'dashboard' | 'billing-success' | 'billing-cancel';
+type AppState = 'landing' | 'auth' | 'questionnaire' | 'dashboard' | 'billing-success' | 'billing-cancel' | 'terms';
 
 function AppContent() {
   const { user, loading } = useAuth();
@@ -18,7 +19,7 @@ function AppContent() {
   useEffect(() => {
     if (loading) return;
 
-    // Check URL for billing routes
+    // Check URL for routes
     const path = window.location.pathname;
     if (path === '/billing/success') {
       setAppState('billing-success');
@@ -26,6 +27,10 @@ function AppContent() {
     }
     if (path === '/billing/cancel') {
       setAppState('billing-cancel');
+      return;
+    }
+    if (path === '/terms') {
+      setAppState('terms');
       return;
     }
 
@@ -78,6 +83,10 @@ function AppContent() {
         <div className="text-white text-xl">Loading...</div>
       </div>
     );
+  }
+
+  if (appState === 'terms') {
+    return <TermsOfService />;
   }
 
   if (appState === 'billing-success') {
