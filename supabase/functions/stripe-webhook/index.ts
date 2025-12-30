@@ -7,10 +7,17 @@ const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') || '', {
 })
 
 serve(async (req) => {
+  // Log all headers to debug
+  console.log('All request headers:', Object.fromEntries(req.headers.entries()))
+  
   const signature = req.headers.get('stripe-signature')
   const webhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET')
 
+  console.log('Signature present:', !!signature)
+  console.log('Webhook secret present:', !!webhookSecret)
+
   if (!signature || !webhookSecret) {
+    console.error('Missing signature or webhook secret')
     return new Response('Missing signature or webhook secret', { status: 400 })
   }
 
@@ -28,7 +35,7 @@ serve(async (req) => {
     // Handle successful subscription payment
     if (event.type === 'checkout.session.completed') {
       const session = event.data.object as Stripe.Checkout.Session
-      const userId = session.metadata?.userId || session.client_reference_id
+      const userId = session.metadata?.user_id || session.client_reference_id
 
       if (userId) {
         const { error } = await supabase
