@@ -9,22 +9,31 @@ export default function BillingSuccess() {
 
   useEffect(() => {
     const verifyPayment = async () => {
+      console.log("🔍 Starting payment verification...");
+      
       const params = new URLSearchParams(window.location.search);
       const sessionId = params.get("session_id");
       
+      console.log("Session ID:", sessionId);
+      console.log("User:", user);
+      
       if (!sessionId) {
+        console.error("❌ No session ID found");
         setStatus("error");
         setErrorMessage("No session ID found in URL");
         return;
       }
 
       if (!user) {
+        console.error("❌ User not authenticated");
         setStatus("error");
         setErrorMessage("User not authenticated");
         return;
       }
 
       try {
+        console.log("📞 Calling /api/stripe-success...");
+        
         // Call your existing Vercel API endpoint
         const response = await fetch("/api/stripe-success", {
           method: "POST",
@@ -32,22 +41,31 @@ export default function BillingSuccess() {
           body: JSON.stringify({ sessionId }),
         });
 
+        console.log("Response status:", response.status);
+        
         const data = await response.json();
+        console.log("Response data:", data);
 
         if (!response.ok) {
           throw new Error(data.error || "Payment verification failed");
         }
 
+        console.log("✅ Payment verified! Refreshing session...");
+        
         // Refresh the session to get updated profile data
         await supabase.auth.refreshSession();
         
+        console.log("✅ Session refreshed!");
         setStatus("success");
         
-        // Redirect to dashboard after 3 seconds
-        setTimeout(() => window.location.href = "/", 3000);
+        // Redirect to home (dashboard) after 2 seconds
+        console.log("Redirecting to dashboard in 2 seconds...");
+        setTimeout(() => {
+          window.location.href = "/";
+        }, 2000);
         
       } catch (error: any) {
-        console.error("Payment verification error:", error);
+        console.error("❌ Payment verification error:", error);
         setStatus("error");
         setErrorMessage(error.message || "An unexpected error occurred");
       }
