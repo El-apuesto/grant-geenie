@@ -18,21 +18,21 @@ export default function UpgradeButton({ priceId, children = "Upgrade" }: Upgrade
 
     setLoading(true);
     try {
-      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-checkout-session`, {
+      // FIXED: Call the Vercel API endpoint instead of Supabase Edge Function
+      const response = await fetch("/api/create-checkout", {
         method: "POST",
         headers: { 
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+          "Content-Type": "application/json"
         },
         body: JSON.stringify({ 
           priceId, 
-          userId: user.id,
-          email: user.email 
+          userId: user.id
         }),
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorData = await response.json();
+        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
       }
 
       const data = await response.json();
@@ -40,7 +40,7 @@ export default function UpgradeButton({ priceId, children = "Upgrade" }: Upgrade
       if (data.url) {
         window.location.href = data.url;
       } else {
-        throw new Error(data.error || "No checkout URL returned");
+        throw new Error("No checkout URL returned");
       }
     } catch (error) {
       console.error("Checkout error:", error);
