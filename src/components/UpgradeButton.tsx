@@ -18,12 +18,10 @@ export default function UpgradeButton({ priceId, children = "Upgrade" }: Upgrade
 
     setLoading(true);
     try {
-      const res = await fetch(`${import.meta.env.VITE_SUPABASE_DB_URL}/functions/v1/create-checkout-session`, {
+      // Call your existing Vercel API endpoint
+      const response = await fetch("/api/create-checkout", {
         method: "POST",
-        headers: { 
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
           priceId, 
           userId: user.id,
@@ -31,11 +29,11 @@ export default function UpgradeButton({ priceId, children = "Upgrade" }: Upgrade
         }),
       });
 
-      if (!res.ok) {
-        throw new Error(`HTTP error! status: ${res.status}`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const data = await res.json();
+      const data = await response.json();
       
       if (data.url) {
         window.location.href = data.url;
