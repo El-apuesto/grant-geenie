@@ -23,6 +23,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       payment_method_types: ['card'],
       line_items: [{ price: priceId, quantity: 1 }],
       metadata: { user_id: userId },
+      // Enable promo code/coupon field
+      allow_promotion_codes: true,
       // Redirect to billing success page with session_id
       success_url: `${process.env.VITE_APP_URL || 'https://www.granthustle.org'}/billing/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.VITE_APP_URL || 'https://www.granthustle.org'}/billing/cancel`,
