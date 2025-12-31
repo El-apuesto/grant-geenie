@@ -6,7 +6,6 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 });
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // Only accept POST requests
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
@@ -14,7 +13,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const { userId, priceId } = req.body;
 
-    // Make sure we have what we need
     if (!userId || !priceId) {
       return res.status(400).json({ error: 'Missing userId or priceId' });
     }
@@ -25,9 +23,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       payment_method_types: ['card'],
       line_items: [{ price: priceId, quantity: 1 }],
       metadata: { user_id: userId },
-      // Use www version to match your actual domain
-      success_url: 'https://www.granthustle.org/?success=true&session_id={CHECKOUT_SESSION_ID}',
-      cancel_url: 'https://www.granthustle.org/?canceled=true',
+      // Redirect to billing success page with session_id
+      success_url: `${process.env.VITE_APP_URL || 'https://www.granthustle.org'}/billing/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${process.env.VITE_APP_URL || 'https://www.granthustle.org'}/billing/cancel`,
     });
 
     return res.status(200).json({ url: session.url });
