@@ -18,10 +18,12 @@ export default function UpgradeButton({ priceId, children = "Upgrade" }: Upgrade
 
     setLoading(true);
     try {
-      // Call your existing Vercel API endpoint
-      const response = await fetch("/api/create-checkout", {
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-checkout-session`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+        },
         body: JSON.stringify({ 
           priceId, 
           userId: user.id,
