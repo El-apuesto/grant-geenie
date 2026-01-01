@@ -8,7 +8,6 @@ import Dashboard from './components/Dashboard';
 import BillingSuccess from './components/BillingSuccess';
 import BillingCancel from './components/BillingCancel';
 import TermsOfService from './pages/TermsOfService';
-import BetaInvitePopup from './components/BetaInvitePopup';
 
 type AppState = 'landing' | 'auth' | 'questionnaire' | 'dashboard' | 'billing-success' | 'billing-cancel' | 'terms';
 
@@ -99,12 +98,7 @@ function AppContent() {
   }
 
   if (appState === 'landing') {
-    return (
-      <>
-        <Landing onGetStarted={handleGetStarted} />
-        <BetaInvitePopup />
-      </>
-    );
+    return <Landing onGetStarted={handleGetStarted} />;
   }
 
   if (appState === 'auth') {
