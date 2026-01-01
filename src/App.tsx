@@ -8,7 +8,7 @@ import Dashboard from './components/Dashboard';
 import BillingSuccess from './components/BillingSuccess';
 import BillingCancel from './components/BillingCancel';
 import TermsOfService from './pages/TermsOfService';
-import PromoPopup from './components/PromoPopup';
+import BetaInvitePopup from './components/BetaInvitePopup';
 
 type AppState = 'landing' | 'auth' | 'questionnaire' | 'dashboard' | 'billing-success' | 'billing-cancel' | 'terms';
 
@@ -102,7 +102,7 @@ function AppContent() {
     return (
       <>
         <Landing onGetStarted={handleGetStarted} />
-        <PromoPopup />
+        <BetaInvitePopup />
       </>
     );
   }
