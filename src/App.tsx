@@ -8,6 +8,7 @@ import Dashboard from './components/Dashboard';
 import BillingSuccess from './components/BillingSuccess';
 import BillingCancel from './components/BillingCancel';
 import TermsOfService from './pages/TermsOfService';
+import PromoPopup from './components/PromoPopup';
 
 type AppState = 'landing' | 'auth' | 'questionnaire' | 'dashboard' | 'billing-success' | 'billing-cancel' | 'terms';
 
@@ -98,7 +99,12 @@ function AppContent() {
   }
 
   if (appState === 'landing') {
-    return <Landing onGetStarted={handleGetStarted} />;
+    return (
+      <>
+        <Landing onGetStarted={handleGetStarted} />
+        <PromoPopup />
+      </>
+    );
   }
 
   if (appState === 'auth') {
