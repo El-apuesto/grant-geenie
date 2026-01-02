@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { supabase } from './lib/supabase';
+import { analytics } from './lib/analytics';
 import Landing from './components/Landing';
 import Auth from './components/Auth';
 import Questionnaire from './components/Questionnaire';
@@ -11,10 +12,35 @@ import TermsOfService from './pages/TermsOfService';
 
 type AppState = 'landing' | 'auth' | 'questionnaire' | 'dashboard' | 'billing-success' | 'billing-cancel' | 'terms';
 
+const PAGE_TITLES: Record<AppState, string> = {
+  'landing': 'Grant Geenie - Find Perfect Grants',
+  'auth': 'Sign In - Grant Geenie',
+  'questionnaire': 'Setup - Grant Geenie',
+  'dashboard': 'Dashboard - Grant Geenie',
+  'billing-success': 'Payment Success - Grant Geenie',
+  'billing-cancel': 'Payment Cancelled - Grant Geenie',
+  'terms': 'Terms of Service - Grant Geenie',
+};
+
 function AppContent() {
   const { user, loading } = useAuth();
   const [appState, setAppState] = useState<AppState>('landing');
   const [questionnaireCompleted, setQuestionnaireCompleted] = useState(false);
+
+  // Initialize analytics on mount
+  useEffect(() => {
+    const gaId = import.meta.env.VITE_GA_MEASUREMENT_ID;
+    if (gaId) {
+      analytics.initGA4(gaId);
+    }
+  }, []);
+
+  // Track page views when appState changes
+  useEffect(() => {
+    const path = window.location.pathname;
+    const title = PAGE_TITLES[appState] || 'Grant Geenie';
+    analytics.trackPageView({ path, title });
+  }, [appState]);
 
   useEffect(() => {
     if (loading) return;
@@ -69,10 +95,12 @@ function AppContent() {
   };
 
   const handleAuthSuccess = () => {
+    analytics.trackAuth('login');
     checkQuestionnaireStatus();
   };
 
   const handleQuestionnaireComplete = () => {
+    analytics.trackQuestionnaireComplete();
     setQuestionnaireCompleted(true);
     setAppState('dashboard');
   };
