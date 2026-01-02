@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { X } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import PromoPopup from './PromoPopup';
 
 interface LandingProps {
   onGetStarted: () => void;
@@ -12,6 +13,9 @@ export default function Landing({ onGetStarted }: LandingProps) {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+      {/* PROMO POPUP - Shows 1 second after landing */}
+      <PromoPopup />
+
       {/* NAVIGATION */}
       <nav className="border-b border-slate-700 bg-slate-900/50 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
