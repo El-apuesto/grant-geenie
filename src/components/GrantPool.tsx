@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
+import { analytics } from '../lib/analytics';
 import { Grant } from '../types';
 import { ExternalLink, Search, DollarSign, Calendar, Bookmark, Lock, Crown, Filter, X } from 'lucide-react';
 
@@ -79,6 +80,9 @@ export default function GrantPool({ isPro, profile }: GrantPoolProps) {
           .eq('user_id', user.id)
           .eq('grant_id', grantId);
         
+        // Track unsave event
+        analytics.trackGrantAction('unfavorite', grantId);
+        
         setSavedGrantIds(prev => {
           const newSet = new Set(prev);
           newSet.delete(grantId);
@@ -89,11 +93,36 @@ export default function GrantPool({ isPro, profile }: GrantPoolProps) {
           .from('saved_grants')
           .insert({ user_id: user.id, grant_id: grantId });
         
+        // Track save event
+        analytics.trackGrantAction('favorite', grantId);
+        
         setSavedGrantIds(prev => new Set([...prev, grantId]));
       }
     } catch (err) {
       console.error('Error toggling save grant:', err);
     }
+  };
+
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
+    if (query.trim()) {
+      const resultCount = getFilteredGrants().length;
+      analytics.trackSearch(query, resultCount);
+    }
+  };
+
+  const handleGrantClick = (grantId: string) => {
+    // Track grant view
+    analytics.trackGrantAction('view', grantId);
+  };
+
+  const handleUpgradeClick = () => {
+    // Track upgrade intent
+    analytics.trackEvent({
+      category: 'Conversion',
+      action: 'upgrade_click',
+      label: 'grant_pool_banner',
+    });
   };
 
   const formatCurrency = (amount: number) => {
@@ -176,7 +205,10 @@ export default function GrantPool({ isPro, profile }: GrantPoolProps) {
                 <li>• Advanced search and filtering</li>
               </ul>
               <button
-                onClick={() => window.open('https://buy.stripe.com/3cI5kD5VteGzciEdez7AI0b', '_blank')}
+                onClick={() => {
+                  handleUpgradeClick();
+                  window.open('https://buy.stripe.com/3cI5kD5VteGzciEdez7AI0b', '_blank');
+                }}
                 className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg transition"
               >
                 Upgrade to Pro Now
@@ -194,7 +226,7 @@ export default function GrantPool({ isPro, profile }: GrantPoolProps) {
             type="text"
             placeholder="Search grants by title, funder, or keywords..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => handleSearch(e.target.value)}
             className="w-full pl-10 pr-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-emerald-500"
           />
         </div>
@@ -295,6 +327,7 @@ export default function GrantPool({ isPro, profile }: GrantPoolProps) {
                     href={grant.apply_url}
                     target="_blank"
                     rel="noopener noreferrer"
+                    onClick={() => handleGrantClick(grant.id)}
                     className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded font-semibold hover:bg-emerald-700 transition-colors"
                   >
                     View Grant
