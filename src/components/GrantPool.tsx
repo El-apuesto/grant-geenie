@@ -33,8 +33,14 @@ export default function GrantPool({ isPro, profile }: GrantPoolProps) {
       const query = supabase
         .from('grants')
         .select('*')
-        .eq('is_active', true)
-        .order(sortBy === 'deadline' ? 'deadline' : 'award_max', { ascending: sortBy === 'deadline' });
+        .eq('is_active', true);
+      
+      // Filter by user's state OR grants available in all states (state is null)
+      if (profile?.state) {
+        query.or(`state.eq.${profile.state},state.is.null`);
+      }
+      
+      query.order(sortBy === 'deadline' ? 'deadline' : 'award_max', { ascending: sortBy === 'deadline' });
       
       if (!isPro) {
         query.limit(5);
