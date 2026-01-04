@@ -35,9 +35,9 @@ export default function GrantPool({ isPro, profile }: GrantPoolProps) {
         .select('*')
         .eq('is_active', true);
       
-      // Filter by user's state OR grants available in all states (state is null)
+      // Filter by user's state OR grants available in all states (states is null)
       if (profile?.state) {
-        query.or(`state.eq.${profile.state},state.is.null`);
+        query.or(`states.eq.${profile.state},states.is.null`);
       }
       
       query.order(sortBy === 'deadline' ? 'deadline' : 'award_max', { ascending: sortBy === 'deadline' });
