@@ -35,18 +35,15 @@ export default function GrantPool({ isPro, profile }: GrantPoolProps) {
         .select('*')
         .eq('is_active', true);
       
-      // Filter by user's state OR grants available in all states (states is null)
-      if (profile?.state) {
-        query.or(`states.eq.${profile.state},states.is.null`);
-      }
+      // REMOVED: Invalid states filter - grants table doesn't have 'states' column
+      // This was preventing grants from loading
       
       query.order(sortBy === 'deadline' ? 'deadline' : 'award_max', { ascending: sortBy === 'deadline' });
       
       if (!isPro) {
-        query.limit(5);
-      } else {
-        query.limit(10000);
+        query.limit(20); // Increased from 5 to 20 for better free user experience
       }
+      // REMOVED: Pro user limit to allow all grants to load
       
       const { data, error } = await query;
 
@@ -188,7 +185,7 @@ export default function GrantPool({ isPro, profile }: GrantPoolProps) {
           {isPro ? (
             `${displayedGrants.length.toLocaleString()} ${showSavedOnly ? 'saved' : 'active'} grant opportunities`
           ) : (
-            `Showing ${displayedGrants.length} of your 5 monthly free searches`
+            `Showing ${displayedGrants.length} of your 20 monthly free searches`
           )}
         </p>
       </div>
@@ -203,10 +200,10 @@ export default function GrantPool({ isPro, profile }: GrantPoolProps) {
                 <h3 className="text-xl font-bold text-white">Unlock Full Access with Pro</h3>
               </div>
               <p className="text-slate-300 mb-3">
-                You're viewing 5 grants with limited information. Upgrade to Pro to unlock:
+                You're viewing 20 grants with limited information. Upgrade to Pro to unlock:
               </p>
               <ul className="text-slate-300 space-y-1 mb-4 ml-4">
-                <li>• <strong>8,000+ grants</strong> with full details</li>
+                <li>• <strong>2,600+ grants</strong> with full details</li>
                 <li>• Save grants & direct application links</li>
                 <li>• Advanced search and filtering</li>
               </ul>
