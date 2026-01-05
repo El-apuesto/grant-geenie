@@ -45,6 +45,7 @@ Deno.serve(async (req: Request) => {
     let failedCount = 0;
     let rateLimitErrors = 0;
     let authErrors = 0;
+    let skippedExpired = 0;
 
     try {
       // Legacy Grants.gov API - No authentication required
@@ -54,12 +55,22 @@ Deno.serve(async (req: Request) => {
       let hasMore = true;
       const maxRetries = 3;
 
+      // Calculate date filters for active grants only
+      const today = new Date();
+      const twoYearsAgo = new Date();
+      twoYearsAgo.setFullYear(today.getFullYear() - 2);
+
       while (hasMore) {
-        // Build query parameters for ALL grants (no geographic filtering)
+        // Build query parameters for ACTIVE grants only
         const params = new URLSearchParams({
           rows: limit.toString(),
           start: offset.toString(),
-          // Don't filter by state - capture ALL grants
+          // Filter for recent posted dates (within last 2 years)
+          postedDateFrom: twoYearsAgo.toISOString().split('T')[0],
+          // Filter for future close dates only
+          closeDateFrom: today.toISOString().split('T')[0],
+          // Exclude archived and closed opportunities
+          opportunityStatuses: 'posted,forecasted',
         });
 
         const url = `${baseUrl}?${params.toString()}`;
@@ -109,21 +120,79 @@ Deno.serve(async (req: Request) => {
               processedCount++;
 
               try {
+                // Additional validation: skip if close date is in the past
+                if (opp.closeDate) {
+                  const closeDate = new Date(opp.closeDate);
+                  if (closeDate < today) {
+                    skippedExpired++;
+                    continue;
+                  }
+                }
+
+                // Map to correct database schema
                 const grantData = {
+                  // Core identification
                   source: 'grants_gov',
                   source_id: opp.opportunityId,
-                  url: opp.opportunityURL,
+                  source_url: opp.opportunityURL,
+                  
+                  // Basic information
                   title: opp.opportunityTitle,
                   description: opp.opportunityDescription?.substring(0, 2000) || '',
-                  amount: opp.awardCeiling || opp.awardFloor || 0,
-                  deadline: opp.closeDate ? new Date(opp.closeDate).toISOString() : null,
-                  state: null, // Federal grants are nationwide
-                  org_types: opp.eligibleApplicants || ['All'],
+                  
+                  // Funder information
+                  funder_name: opp.agencyName || opp.agencyCode || 'Federal Agency',
+                  funder_type: 'Federal',
+                  
+                  // Award amounts
+                  award_min: opp.awardFloor || null,
+                  award_max: opp.awardCeiling || null,
+                  
+                  // Deadlines
+                  deadline: opp.closeDate ? new Date(opp.closeDate).toISOString().split('T')[0] : null,
+                  is_rolling: false,
+                  
+                  // Application
+                  apply_url: opp.opportunityURL,
+                  
+                  // Eligibility
+                  entity_types: opp.eligibleApplicants && opp.eligibleApplicants.length > 0 
+                    ? opp.eligibleApplicants 
+                    : ['All'],
+                  eligibility_criteria: opp.additionalInformationOnEligibility 
+                    ? { notes: opp.additionalInformationOnEligibility }
+                    : null,
+                  
+                  // Location (Federal grants are nationwide)
+                  countries: ['US'],
+                  states: [], // Empty array for nationwide
+                  
+                  // Status
+                  is_active: true,
+                  sync_status: 'posted',
+                  
+                  // Grants.gov specific fields
                   agency_code: opp.agencyCode,
-                  agency_name: opp.agencyName,
-                  opportunity_status: 'posted',
-                  posted_date: opp.postedDate ? new Date(opp.postedDate).toISOString() : null,
-                  last_updated_date: new Date().toISOString(),
+                  agency_name: opp.agencyName || opp.agencyCode || 'Federal Agency',
+                  opportunity_number: opp.opportunityNumber,
+                  cfda_number: opp.cfdaNumbers || null,
+                  posted_date: opp.postedDate ? new Date(opp.postedDate).toISOString().split('T')[0] : null,
+                  close_date: opp.closeDate ? new Date(opp.closeDate).toISOString().split('T')[0] : null,
+                  archive_date: opp.archiveDate ? new Date(opp.archiveDate).toISOString().split('T')[0] : null,
+                  
+                  // Funding details
+                  estimated_total_funding: opp.estimatedTotalProgramFunding || null,
+                  expected_awards: opp.expectedNumberOfAwards || null,
+                  funding_instrument_types: opp.fundingInstrumentTypes || [],
+                  funding_activity_categories: opp.fundingActivityCategories || [],
+                  cost_sharing_required: opp.costSharingOrMatchingRequirement === 'Yes',
+                  
+                  // Additional info
+                  additional_info_url: opp.opportunityURL,
+                  
+                  // Sync metadata
+                  last_synced_at: new Date().toISOString(),
+                  updated_at: new Date().toISOString(),
                 };
 
                 // Upsert grant (update if exists, insert if new)
@@ -137,6 +206,7 @@ Deno.serve(async (req: Request) => {
 
                 if (error) {
                   console.error('Error upserting grant:', error);
+                  console.error('Grant data:', grantData);
                   failedCount++;
                 } else {
                   const wasCreated = result && result[0]?.created_at === result[0]?.updated_at;
@@ -181,9 +251,10 @@ Deno.serve(async (req: Request) => {
           created: createdCount,
           updated: updatedCount,
           failed: failedCount,
+          skippedExpired: skippedExpired,
           rateLimitErrors,
           authErrors,
-          message: `Successfully synced ${processedCount} grants from Grants.gov`,
+          message: `Successfully synced ${processedCount} active grants from Grants.gov (created: ${createdCount}, updated: ${updatedCount}, skipped expired: ${skippedExpired})`,
         }),
         {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
