@@ -26,21 +26,27 @@ export interface Profile {
   fiscal_sponsor?: string;
 }
 
+// Updated to match actual database columns from grants.gov
 export interface Grant {
   id: string;
+  opportunity_number: string;
   title: string;
-  funder_name: string;
-  funder_type: string;
+  agency_code: string;
+  agency_name: string;  // funder name
   description: string;
-  award_min: number;
-  award_max: number;
-  deadline: string | null;
-  is_rolling: boolean;
+  posted_date: string;
+  close_date: string;  // deadline
+  award_floor: string;  // min award amount
+  award_ceiling: string;  // max award amount
+  estimated_funding: string;
+  expected_awards: string;
+  opportunity_status: string;
+  grant_source: string;
+  opportunity_id: string;
+  // New columns added for functionality
   is_active: boolean;
-  apply_url: string;
-  states: string[] | null;
-  countries: string[] | null;
-  entity_types: string[] | null;
+  apply_url: string | null;
+  is_rolling: boolean;
   created_at: string;
 }
 
