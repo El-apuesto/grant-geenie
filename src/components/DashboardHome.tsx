@@ -1,8 +1,7 @@
-import { Search, ClipboardList, Calendar as CalendarIcon, FileText, Building2, BarChart3, Settings as SettingsIcon, Crown, ArrowRight, TrendingUp, AlertCircle, CheckCircle, XCircle } from 'lucide-react';
+import { Search, ClipboardList, Calendar as CalendarIcon, FileText, Building2, BarChart3, Crown, ArrowRight, TrendingUp, AlertCircle, CheckCircle, XCircle } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
-import PromoPopup from './PromoPopup';
 
 interface DashboardHomeProps {
   isPro: boolean;
@@ -192,8 +191,7 @@ export default function DashboardHome({ isPro, onNavigate }: DashboardHomeProps)
 
   return (
     <div className="relative min-h-screen p-8">
-      {/* Promo Popup - Shows after 1 second */}
-      <PromoPopup />
+      {/* REMOVED: PromoPopup - it was annoying Pro users */}
 
       {/* Faded Logo Background */}
       <div 
