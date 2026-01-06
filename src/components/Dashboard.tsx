@@ -66,14 +66,15 @@ export default function Dashboard() {
     loadProfile();
   }, [user]);
 
-  // Auto-show upgrade prompt for non-subscribers after 1 second
+  // ONLY show upgrade prompt to FREE users after page load
   useEffect(() => {
     if (loading || !profile) return;
     
     const isPro = profile.subscription_status === 'active';
     const hasCompletedQuestionnaire = profile.state && profile.organization_type;
     
-    // Only show to non-Pro users who completed questionnaire
+    // CRITICAL: Only show to non-Pro users who completed questionnaire
+    // Pro users should NEVER see this popup
     if (!isPro && hasCompletedQuestionnaire) {
       const timer = setTimeout(() => {
         setShowUpgradePrompt(true);
@@ -182,7 +183,7 @@ export default function Dashboard() {
       );
     }
 
-    // Show upgrade prompt for pro-only features
+    // Show upgrade prompt for pro-only features (when clicked)
     const currentNavItem = navItems.find(item => item.id === currentView);
     if (!isPro && currentNavItem?.prOnly) {
       return (
@@ -482,7 +483,7 @@ export default function Dashboard() {
         </div>
       </main>
 
-      {/* Upgrade Prompt Modal - Only shows for non-subscribers */}
+      {/* Upgrade Prompt Modal - ONLY for FREE users, NEVER for Pro */}
       {!isPro && showUpgradePrompt && (
         <UpgradePrompt
           onClose={() => setShowUpgradePrompt(false)}
@@ -490,7 +491,7 @@ export default function Dashboard() {
         />
       )}
 
-      {/* Product Tour */}
+      {/* Product Tour - ONLY for Pro users */}
       {isPro && isTourActive && (
         <ProductTour
           isActive={isTourActive}
