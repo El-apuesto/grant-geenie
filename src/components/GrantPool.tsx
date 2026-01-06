@@ -33,9 +33,13 @@ export default function GrantPool({ isPro, profile }: GrantPoolProps) {
       const query = supabase
         .from('grants')
         .select('*')
-        .eq('is_active', true);  // Only show active grants (not expired)
+        .eq('is_active', true);  // Only show active grants
       
-      query.order(sortBy === 'deadline' ? 'deadline' : 'award_max', { ascending: sortBy === 'deadline', nullsLast: true });
+      // Sort by close_date or award_ceiling
+      query.order(
+        sortBy === 'deadline' ? 'close_date' : 'award_ceiling', 
+        { ascending: sortBy === 'deadline', nullsLast: true }
+      );
       
       if (!isPro) {
         query.limit(20);
@@ -125,7 +129,9 @@ export default function GrantPool({ isPro, profile }: GrantPoolProps) {
     });
   };
 
-  const formatCurrency = (amount: number) => {
+  const formatCurrency = (amountStr: string) => {
+    const amount = parseFloat(amountStr?.replace(/[^0-9.-]+/g, '') || '0');
+    if (amount === 0) return 'N/A';
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
@@ -133,14 +139,24 @@ export default function GrantPool({ isPro, profile }: GrantPoolProps) {
     }).format(amount);
   };
 
-  const formatDeadline = (deadline: string | null, isRolling: boolean) => {
+  const formatDeadline = (closeDate: string | null, isRolling: boolean) => {
     if (isRolling) return 'Rolling';
-    if (!deadline) return 'TBD';
-    return new Date(deadline).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
-    });
+    if (!closeDate || closeDate === '') return 'TBD';
+    try {
+      // Try parsing MM/DD/YYYY format
+      const parts = closeDate.split('/');
+      if (parts.length === 3) {
+        const date = new Date(parseInt(parts[2]), parseInt(parts[0]) - 1, parseInt(parts[1]));
+        return date.toLocaleDateString('en-US', {
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric'
+        });
+      }
+    } catch (e) {
+      console.error('Date parsing error:', e);
+    }
+    return closeDate;
   };
 
   const getFilteredGrants = () => {
@@ -152,8 +168,9 @@ export default function GrantPool({ isPro, profile }: GrantPoolProps) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(g => 
         g.title.toLowerCase().includes(query) ||
-        g.funder_name.toLowerCase().includes(query) ||
-        g.description.toLowerCase().includes(query)
+        g.agency_name.toLowerCase().includes(query) ||
+        g.description.toLowerCase().includes(query) ||
+        g.opportunity_number.toLowerCase().includes(query)
       );
     }
 
@@ -200,7 +217,7 @@ export default function GrantPool({ isPro, profile }: GrantPoolProps) {
                 You're viewing 20 grants with limited information. Upgrade to Pro to unlock:
               </p>
               <ul className="text-slate-300 space-y-1 mb-4 ml-4">
-                <li>• <strong>All active grants</strong> with full details</li>
+                <li>• <strong>73,000+ active grants</strong> with full details</li>
                 <li>• Save grants & direct application links</li>
                 <li>• Advanced search and filtering</li>
               </ul>
@@ -224,7 +241,7 @@ export default function GrantPool({ isPro, profile }: GrantPoolProps) {
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
           <input
             type="text"
-            placeholder="Search grants by title, funder, or keywords..."
+            placeholder="Search grants by title, agency, or keywords..."
             value={searchQuery}
             onChange={(e) => handleSearch(e.target.value)}
             className="w-full pl-10 pr-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-emerald-500"
@@ -263,13 +280,15 @@ export default function GrantPool({ isPro, profile }: GrantPoolProps) {
             {showSavedOnly ? 'No saved grants yet.' : 'No active grants found.'}
           </p>
           <p className="text-slate-400">
-            {showSavedOnly ? 'Click the bookmark icon on grants to save them.' : grants.length === 0 ? 'Make sure you ran the is_active migration in Supabase.' : 'Try adjusting your search.'}
+            {showSavedOnly ? 'Click the bookmark icon on grants to save them.' : 'Try adjusting your search filters.'}
           </p>
         </div>
       ) : (
         <div className="space-y-4">
           {displayedGrants.map((grant) => {
             const isSaved = savedGrantIds.has(grant.id);
+            const applyUrl = grant.apply_url || `https://www.grants.gov/search-results-detail/${grant.opportunity_number}`;
+            
             return (
               <div
                 key={grant.id}
@@ -297,9 +316,9 @@ export default function GrantPool({ isPro, profile }: GrantPoolProps) {
                       )}
                     </div>
                     <div className="flex items-center gap-4 text-sm text-slate-400 mb-3">
-                      <span className="font-medium">{grant.funder_name}</span>
-                      <span className="px-2 py-1 bg-slate-700 rounded text-xs capitalize">
-                        {grant.funder_type}
+                      <span className="font-medium">{grant.agency_name}</span>
+                      <span className="px-2 py-1 bg-slate-700 rounded text-xs">
+                        {grant.opportunity_number}
                       </span>
                     </div>
                   </div>
@@ -313,24 +332,24 @@ export default function GrantPool({ isPro, profile }: GrantPoolProps) {
                   <div className="flex items-center gap-2 text-slate-300">
                     <DollarSign className="w-4 h-4 text-emerald-500" />
                     <span>
-                      {formatCurrency(grant.award_min)} - {formatCurrency(grant.award_max)}
+                      {formatCurrency(grant.award_floor)} - {formatCurrency(grant.award_ceiling)}
                     </span>
                   </div>
                   <div className="flex items-center gap-2 text-slate-300">
                     <Calendar className="w-4 h-4 text-emerald-500" />
-                    <span>{formatDeadline(grant.deadline, grant.is_rolling)}</span>
+                    <span>{formatDeadline(grant.close_date, grant.is_rolling)}</span>
                   </div>
                 </div>
 
                 {isPro ? (
                   <a
-                    href={grant.apply_url}
+                    href={applyUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={() => handleGrantClick(grant.id)}
                     className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded font-semibold hover:bg-emerald-700 transition-colors"
                   >
-                    View Grant
+                    View on Grants.gov
                     <ExternalLink className="w-4 h-4" />
                   </a>
                 ) : (
