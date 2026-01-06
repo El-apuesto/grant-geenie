@@ -14,7 +14,6 @@ import Settings from './Settings';
 import Questionnaire from './Questionnaire';
 import PricingPage from './PricingPage';
 import ProductTour from './ProductTour';
-import UpgradePrompt from './UpgradePrompt';
 import { useTour } from '../hooks/useTour';
 import { getStateName } from '../lib/states';
 
@@ -35,7 +34,6 @@ export default function Dashboard() {
   const [currentView, setCurrentView] = useState<ViewType>('home');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showQuestionnaire, setShowQuestionnaire] = useState(false);
-  const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
   const { isTourActive, startTour, completeTour, skipTour } = useTour();
 
   useEffect(() => {
@@ -66,23 +64,8 @@ export default function Dashboard() {
     loadProfile();
   }, [user]);
 
-  // ONLY show upgrade prompt to FREE users after page load
-  useEffect(() => {
-    if (loading || !profile) return;
-    
-    const isPro = profile.subscription_status === 'active';
-    const hasCompletedQuestionnaire = profile.state && profile.organization_type;
-    
-    // CRITICAL: Only show to non-Pro users who completed questionnaire
-    // Pro users should NEVER see this popup
-    if (!isPro && hasCompletedQuestionnaire) {
-      const timer = setTimeout(() => {
-        setShowUpgradePrompt(true);
-      }, 1000); // 1 second delay
-
-      return () => clearTimeout(timer);
-    }
-  }, [loading, profile]);
+  // REMOVED: Auto-popup on page load - it was annoying Pro users
+  // Popup only shows when clicking Pro features now
 
   const handleQuestionnaireComplete = async () => {
     if (!user) return;
@@ -110,7 +93,6 @@ export default function Dashboard() {
   const handleUpgrade = () => {
     setCurrentView('pricing');
     setSidebarOpen(false);
-    setShowUpgradePrompt(false);
   };
 
   const handleRestartTour = () => {
@@ -482,14 +464,6 @@ export default function Dashboard() {
           {renderView()}
         </div>
       </main>
-
-      {/* Upgrade Prompt Modal - ONLY for FREE users, NEVER for Pro */}
-      {!isPro && showUpgradePrompt && (
-        <UpgradePrompt
-          onClose={() => setShowUpgradePrompt(false)}
-          onUpgrade={handleUpgrade}
-        />
-      )}
 
       {/* Product Tour - ONLY for Pro users */}
       {isPro && isTourActive && (
