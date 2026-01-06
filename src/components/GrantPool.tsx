@@ -32,10 +32,8 @@ export default function GrantPool({ isPro, profile }: GrantPoolProps) {
       
       const query = supabase
         .from('grants')
-        .select('*');
-      
-      // REMOVED: .eq('is_active', true) - column doesn't exist
-      // REMOVED: Invalid states filter - column doesn't exist
+        .select('*')
+        .eq('is_active', true);  // Only show active grants (not expired)
       
       query.order(sortBy === 'deadline' ? 'deadline' : 'award_max', { ascending: sortBy === 'deadline', nullsLast: true });
       
@@ -182,7 +180,7 @@ export default function GrantPool({ isPro, profile }: GrantPoolProps) {
         </h1>
         <p className="text-slate-400">
           {isPro ? (
-            `${displayedGrants.length.toLocaleString()} ${showSavedOnly ? 'saved' : 'available'} grant opportunities`
+            `${displayedGrants.length.toLocaleString()} ${showSavedOnly ? 'saved' : 'active'} grant opportunities`
           ) : (
             `Showing ${displayedGrants.length} of your 20 monthly free searches`
           )}
@@ -202,7 +200,7 @@ export default function GrantPool({ isPro, profile }: GrantPoolProps) {
                 You're viewing 20 grants with limited information. Upgrade to Pro to unlock:
               </p>
               <ul className="text-slate-300 space-y-1 mb-4 ml-4">
-                <li>• <strong>All grants</strong> with full details</li>
+                <li>• <strong>All active grants</strong> with full details</li>
                 <li>• Save grants & direct application links</li>
                 <li>• Advanced search and filtering</li>
               </ul>
@@ -262,10 +260,10 @@ export default function GrantPool({ isPro, profile }: GrantPoolProps) {
         <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-12 text-center">
           <Search className="w-16 h-16 text-slate-600 mx-auto mb-4" />
           <p className="text-slate-300 text-lg mb-2">
-            {showSavedOnly ? 'No saved grants yet.' : 'No grants found.'}
+            {showSavedOnly ? 'No saved grants yet.' : 'No active grants found.'}
           </p>
           <p className="text-slate-400">
-            {showSavedOnly ? 'Click the bookmark icon on grants to save them.' : grants.length === 0 ? 'Check browser console for errors or contact support.' : 'Try adjusting your search.'}
+            {showSavedOnly ? 'Click the bookmark icon on grants to save them.' : grants.length === 0 ? 'Make sure you ran the is_active migration in Supabase.' : 'Try adjusting your search.'}
           </p>
         </div>
       ) : (
