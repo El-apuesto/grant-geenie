@@ -3,7 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { analytics } from '../lib/analytics';
 import { Grant } from '../types';
-import { ExternalLink, Search, DollarSign, Calendar, Bookmark, Lock, Crown, Filter, X } from 'lucide-react';
+import { ExternalLink, Search, DollarSign, Calendar, Bookmark, Lock, Crown } from 'lucide-react';
 
 interface GrantPoolProps {
   isPro: boolean;
@@ -32,22 +32,25 @@ export default function GrantPool({ isPro, profile }: GrantPoolProps) {
       
       const query = supabase
         .from('grants')
-        .select('*')
-        .eq('is_active', true);
+        .select('*');
       
-      // REMOVED: Invalid states filter - grants table doesn't have 'states' column
-      // This was preventing grants from loading
+      // REMOVED: .eq('is_active', true) - column doesn't exist
+      // REMOVED: Invalid states filter - column doesn't exist
       
-      query.order(sortBy === 'deadline' ? 'deadline' : 'award_max', { ascending: sortBy === 'deadline' });
+      query.order(sortBy === 'deadline' ? 'deadline' : 'award_max', { ascending: sortBy === 'deadline', nullsLast: true });
       
       if (!isPro) {
-        query.limit(20); // Increased from 5 to 20 for better free user experience
+        query.limit(20);
       }
-      // REMOVED: Pro user limit to allow all grants to load
       
       const { data, error } = await query;
 
-      if (error) throw error;
+      if (error) {
+        console.error('Grants query error:', error);
+        throw error;
+      }
+      
+      console.log('Loaded grants:', data?.length || 0);
       setGrants(data || []);
     } catch (err) {
       console.error('Failed to load grants:', err);
@@ -83,7 +86,6 @@ export default function GrantPool({ isPro, profile }: GrantPoolProps) {
           .eq('user_id', user.id)
           .eq('grant_id', grantId);
         
-        // Track unsave event
         analytics.trackGrantAction('unfavorite', grantId);
         
         setSavedGrantIds(prev => {
@@ -96,7 +98,6 @@ export default function GrantPool({ isPro, profile }: GrantPoolProps) {
           .from('saved_grants')
           .insert({ user_id: user.id, grant_id: grantId });
         
-        // Track save event
         analytics.trackGrantAction('favorite', grantId);
         
         setSavedGrantIds(prev => new Set([...prev, grantId]));
@@ -115,12 +116,10 @@ export default function GrantPool({ isPro, profile }: GrantPoolProps) {
   };
 
   const handleGrantClick = (grantId: string) => {
-    // Track grant view
     analytics.trackGrantAction('view', grantId);
   };
 
   const handleUpgradeClick = () => {
-    // Track upgrade intent
     analytics.trackEvent({
       category: 'Conversion',
       action: 'upgrade_click',
@@ -183,7 +182,7 @@ export default function GrantPool({ isPro, profile }: GrantPoolProps) {
         </h1>
         <p className="text-slate-400">
           {isPro ? (
-            `${displayedGrants.length.toLocaleString()} ${showSavedOnly ? 'saved' : 'active'} grant opportunities`
+            `${displayedGrants.length.toLocaleString()} ${showSavedOnly ? 'saved' : 'available'} grant opportunities`
           ) : (
             `Showing ${displayedGrants.length} of your 20 monthly free searches`
           )}
@@ -203,7 +202,7 @@ export default function GrantPool({ isPro, profile }: GrantPoolProps) {
                 You're viewing 20 grants with limited information. Upgrade to Pro to unlock:
               </p>
               <ul className="text-slate-300 space-y-1 mb-4 ml-4">
-                <li>• <strong>2,600+ grants</strong> with full details</li>
+                <li>• <strong>All grants</strong> with full details</li>
                 <li>• Save grants & direct application links</li>
                 <li>• Advanced search and filtering</li>
               </ul>
@@ -263,10 +262,10 @@ export default function GrantPool({ isPro, profile }: GrantPoolProps) {
         <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-12 text-center">
           <Search className="w-16 h-16 text-slate-600 mx-auto mb-4" />
           <p className="text-slate-300 text-lg mb-2">
-            {showSavedOnly ? 'No saved grants yet.' : 'No matching grants found.'}
+            {showSavedOnly ? 'No saved grants yet.' : 'No grants found.'}
           </p>
           <p className="text-slate-400">
-            {showSavedOnly ? 'Click the bookmark icon on grants to save them.' : 'Try adjusting your search or filters.'}
+            {showSavedOnly ? 'Click the bookmark icon on grants to save them.' : grants.length === 0 ? 'Check browser console for errors or contact support.' : 'Try adjusting your search.'}
           </p>
         </div>
       ) : (
