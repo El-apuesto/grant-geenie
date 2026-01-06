@@ -14,6 +14,7 @@ import Settings from './Settings';
 import Questionnaire from './Questionnaire';
 import PricingPage from './PricingPage';
 import ProductTour from './ProductTour';
+import UpgradePrompt from './UpgradePrompt';
 import { useTour } from '../hooks/useTour';
 import { getStateName } from '../lib/states';
 
@@ -34,6 +35,7 @@ export default function Dashboard() {
   const [currentView, setCurrentView] = useState<ViewType>('home');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showQuestionnaire, setShowQuestionnaire] = useState(false);
+  const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
   const { isTourActive, startTour, completeTour, skipTour } = useTour();
 
   useEffect(() => {
@@ -64,6 +66,23 @@ export default function Dashboard() {
     loadProfile();
   }, [user]);
 
+  // Auto-show upgrade prompt for non-subscribers after 1 second
+  useEffect(() => {
+    if (loading || !profile) return;
+    
+    const isPro = profile.subscription_status === 'active';
+    const hasCompletedQuestionnaire = profile.state && profile.organization_type;
+    
+    // Only show to non-Pro users who completed questionnaire
+    if (!isPro && hasCompletedQuestionnaire) {
+      const timer = setTimeout(() => {
+        setShowUpgradePrompt(true);
+      }, 1000); // 1 second delay
+
+      return () => clearTimeout(timer);
+    }
+  }, [loading, profile]);
+
   const handleQuestionnaireComplete = async () => {
     if (!user) return;
     
@@ -90,6 +109,7 @@ export default function Dashboard() {
   const handleUpgrade = () => {
     setCurrentView('pricing');
     setSidebarOpen(false);
+    setShowUpgradePrompt(false);
   };
 
   const handleRestartTour = () => {
@@ -256,15 +276,16 @@ export default function Dashboard() {
               return (
                 <li key={item.id}>
                   <button
-                    onClick={() => setCurrentView(item.id)}
+                    onClick={() => {
+                      setCurrentView(item.id);
+                    }}
                     className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition ${
                       isActive
                         ? 'bg-emerald-600 text-white'
                         : isLocked
-                        ? 'text-slate-500 hover:bg-slate-800/50 cursor-not-allowed'
+                        ? 'text-slate-500 hover:bg-slate-800/50'
                         : 'text-slate-300 hover:bg-slate-800/50'
                     }`}
-                    disabled={isLocked}
                   >
                     <Icon className="w-5 h-5" />
                     <span className="flex-1 text-left">{item.label}</span>
@@ -366,10 +387,9 @@ export default function Dashboard() {
                           isActive
                             ? 'bg-emerald-600 text-white'
                             : isLocked
-                            ? 'text-slate-500 hover:bg-slate-800/50 cursor-not-allowed'
+                            ? 'text-slate-500 hover:bg-slate-800/50'
                             : 'text-slate-300 hover:bg-slate-800/50'
                         }`}
-                        disabled={isLocked}
                       >
                         <Icon className="w-5 h-5" />
                         <span className="flex-1 text-left">{item.label}</span>
@@ -461,6 +481,14 @@ export default function Dashboard() {
           {renderView()}
         </div>
       </main>
+
+      {/* Upgrade Prompt Modal - Only shows for non-subscribers */}
+      {!isPro && showUpgradePrompt && (
+        <UpgradePrompt
+          onClose={() => setShowUpgradePrompt(false)}
+          onUpgrade={handleUpgrade}
+        />
+      )}
 
       {/* Product Tour */}
       {isPro && isTourActive && (
