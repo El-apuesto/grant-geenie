@@ -36,10 +36,11 @@ export default function GrantPool({ isPro, profile }: GrantPoolProps) {
         .eq('is_active', true);  // Only show active grants
       
       // Sort by close_date or award_ceiling
-      query.order(
-        sortBy === 'deadline' ? 'close_date' : 'award_ceiling', 
-        { ascending: sortBy === 'deadline', nullsLast: true }
-      );
+      if (sortBy === 'deadline') {
+        query.order('close_date', { ascending: true, nullsFirst: false });
+      } else {
+        query.order('award_ceiling', { ascending: false, nullsFirst: false });
+      }
       
       if (!isPro) {
         query.limit(20);
