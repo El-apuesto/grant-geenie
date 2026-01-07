@@ -3,7 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { analytics } from '../lib/analytics';
 import { Grant } from '../types';
-import { ExternalLink, Search, DollarSign, Calendar, Bookmark, Lock, Crown } from 'lucide-react';
+import { ExternalLink, Search, DollarSign, Calendar, Bookmark, Lock, Crown, Sparkles } from 'lucide-react';
 
 interface GrantPoolProps {
   isPro: boolean;
@@ -14,7 +14,7 @@ export default function GrantPool({ isPro, profile }: GrantPoolProps) {
   const { user } = useAuth();
   const [grants, setGrants] = useState<Grant[]>([]);
   const [savedGrantIds, setSavedGrantIds] = useState<Set<string>>(new Set());
-  const [showSavedOnly, setShowSavedOnly] = useState(false);
+  const [activeTab, setActiveTab] = useState<'all' | 'saved'>('all');
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'deadline' | 'amount'>('deadline');
@@ -144,7 +144,6 @@ export default function GrantPool({ isPro, profile }: GrantPoolProps) {
     if (isRolling) return 'Rolling';
     if (!closeDate || closeDate === '') return 'TBD';
     try {
-      // Try parsing MM/DD/YYYY format
       const parts = closeDate.split('/');
       if (parts.length === 3) {
         const date = new Date(parseInt(parts[2]), parseInt(parts[0]) - 1, parseInt(parts[1]));
@@ -161,7 +160,7 @@ export default function GrantPool({ isPro, profile }: GrantPoolProps) {
   };
 
   const getFilteredGrants = () => {
-    let filtered = showSavedOnly 
+    let filtered = activeTab === 'saved'
       ? grants.filter(g => savedGrantIds.has(g.id))
       : grants;
 
@@ -191,14 +190,51 @@ export default function GrantPool({ isPro, profile }: GrantPoolProps) {
 
   return (
     <div className="p-8">
-      {/* Header */}
+      {/* Header with Tabs */}
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-white mb-2">
-          {isPro ? 'Grant Pool' : 'Grant Search Results'}
-        </h1>
+        <div className="flex items-center justify-between mb-4">
+          <h1 className="text-3xl font-bold text-white">
+            {isPro ? 'Grant Database' : 'Grant Search Results'}
+          </h1>
+        </div>
+        
+        {/* Tabs */}
+        <div className="flex gap-2 mb-4">
+          <button
+            onClick={() => setActiveTab('all')}
+            className={`px-6 py-3 rounded-lg font-semibold transition ${
+              activeTab === 'all'
+                ? 'bg-emerald-600 text-white'
+                : 'bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700'
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-4 h-4" />
+              All Grants
+            </div>
+          </button>
+          {isPro && savedCount > 0 && (
+            <button
+              onClick={() => setActiveTab('saved')}
+              className={`px-6 py-3 rounded-lg font-semibold transition ${
+                activeTab === 'saved'
+                  ? 'bg-emerald-600 text-white'
+                  : 'bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700'
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <Bookmark className="w-4 h-4" fill="currentColor" />
+                Saved Grants ({savedCount})
+              </div>
+            </button>
+          )}
+        </div>
+
         <p className="text-slate-400">
           {isPro ? (
-            `${displayedGrants.length.toLocaleString()} ${showSavedOnly ? 'saved' : 'active'} grant opportunities`
+            activeTab === 'saved'
+              ? `${displayedGrants.length} saved grants`
+              : `${displayedGrants.length.toLocaleString()} active federal grants`
           ) : (
             `Showing ${displayedGrants.length} of your 20 monthly free searches`
           )}
@@ -257,32 +293,31 @@ export default function GrantPool({ isPro, profile }: GrantPoolProps) {
             <option value="deadline">Sort by Deadline</option>
             <option value="amount">Sort by Amount</option>
           </select>
-          {savedCount > 0 && (
-            <button
-              onClick={() => setShowSavedOnly(!showSavedOnly)}
-              className={`flex items-center gap-2 px-4 py-3 rounded-lg font-semibold transition ${
-                showSavedOnly
-                  ? 'bg-emerald-600 text-white'
-                  : 'bg-slate-800 border border-slate-700 text-slate-300 hover:bg-slate-700'
-              }`}
-            >
-              <Bookmark className="w-4 h-4" fill={showSavedOnly ? 'currentColor' : 'none'} />
-              Saved ({savedCount})
-            </button>
-          )}
         </div>
       </div>
 
       {/* Grants List */}
       {displayedGrants.length === 0 ? (
         <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-12 text-center">
-          <Search className="w-16 h-16 text-slate-600 mx-auto mb-4" />
-          <p className="text-slate-300 text-lg mb-2">
-            {showSavedOnly ? 'No saved grants yet.' : 'No active grants found.'}
-          </p>
-          <p className="text-slate-400">
-            {showSavedOnly ? 'Click the bookmark icon on grants to save them.' : 'Try adjusting your search filters.'}
-          </p>
+          {activeTab === 'saved' ? (
+            <>
+              <Bookmark className="w-16 h-16 text-slate-600 mx-auto mb-4" />
+              <p className="text-slate-300 text-lg mb-2">No saved grants yet</p>
+              <p className="text-slate-400">Click the bookmark icon on grants to save them for later</p>
+              <button
+                onClick={() => setActiveTab('all')}
+                className="mt-4 px-6 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition"
+              >
+                Browse All Grants
+              </button>
+            </>
+          ) : (
+            <>
+              <Search className="w-16 h-16 text-slate-600 mx-auto mb-4" />
+              <p className="text-slate-300 text-lg mb-2">No grants found</p>
+              <p className="text-slate-400">Try adjusting your search filters</p>
+            </>
+          )}
         </div>
       ) : (
         <div className="space-y-4">
@@ -305,7 +340,7 @@ export default function GrantPool({ isPro, profile }: GrantPoolProps) {
                         <button
                           onClick={() => toggleSaveGrant(grant.id)}
                           className="p-2 rounded-lg transition hover:bg-slate-700"
-                          title={isSaved ? 'Unsave grant' : 'Save grant'}
+                          title={isSaved ? 'Remove from saved' : 'Save for later'}
                         >
                           <Bookmark 
                             className={`w-5 h-5 ${
