@@ -3,7 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { analytics } from '../lib/analytics';
 import { Grant } from '../types';
-import { ExternalLink, Search, DollarSign, Calendar, Bookmark, Lock, Crown, Sparkles } from 'lucide-react';
+import { ExternalLink, Search, DollarSign, Calendar, Bookmark, Lock, Crown, Sparkles, Filter } from 'lucide-react';
 
 interface GrantPoolProps {
   isPro: boolean;
@@ -18,13 +18,14 @@ export default function GrantPool({ isPro, profile }: GrantPoolProps) {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'deadline' | 'amount'>('deadline');
+  const [showAllGrants, setShowAllGrants] = useState(false);
 
   useEffect(() => {
     if (user) {
       loadGrants();
       loadSavedGrants();
     }
-  }, [user, profile]);
+  }, [user, profile, showAllGrants]);
 
   const loadGrants = async () => {
     try {
@@ -34,6 +35,11 @@ export default function GrantPool({ isPro, profile }: GrantPoolProps) {
         .from('grants')
         .select('*')
         .eq('is_active', true);  // Only show active grants
+      
+      // FILTER 1: Under $250k (most relevant for small orgs/artists)
+      if (!showAllGrants) {
+        query.lte('award_ceiling', '250000');
+      }
       
       // Sort by close_date or award_ceiling
       if (sortBy === 'deadline') {
@@ -53,8 +59,48 @@ export default function GrantPool({ isPro, profile }: GrantPoolProps) {
         throw error;
       }
       
-      console.log('Loaded grants:', data?.length || 0);
-      setGrants(data || []);
+      let filtered = data || [];
+      
+      // FILTER 2: Match user's funding amount range
+      if (profile?.grant_amount && Array.isArray(profile.grant_amount) && !showAllGrants) {
+        filtered = filtered.filter(grant => {
+          const ceiling = parseFloat(grant.award_ceiling?.replace(/[^0-9.-]+/g, '') || '0');
+          const floor = parseFloat(grant.award_floor?.replace(/[^0-9.-]+/g, '') || '0');
+          
+          return profile.grant_amount.some((range: string) => {
+            if (range === 'Under $10,000') return ceiling <= 10000;
+            if (range === '$10,000 - $50,000') return ceiling >= 10000 && floor <= 50000;
+            if (range === '$50,000 - $100,000') return ceiling >= 50000 && floor <= 100000;
+            if (range === '$100,000 - $250,000') return ceiling >= 100000 && floor <= 250000;
+            if (range === 'Over $250,000') return floor >= 250000;
+            return true;
+          });
+        });
+      }
+      
+      // FILTER 3: Match user's primary fields (keyword search in title + description)
+      if (profile?.primary_fields && Array.isArray(profile.primary_fields) && profile.primary_fields.length > 0 && !showAllGrants) {
+        const keywords = profile.primary_fields.flatMap((field: string) => {
+          const fieldMap: { [key: string]: string[] } = {
+            'Arts & Culture': ['art', 'arts', 'culture', 'cultural', 'music', 'theater', 'theatre', 'museum', 'gallery', 'dance', 'film', 'creative'],
+            'Environment': ['environment', 'environmental', 'climate', 'sustainability', 'conservation', 'green', 'ecology', 'wildlife'],
+            'Health': ['health', 'healthcare', 'medical', 'wellness', 'mental health', 'public health', 'hospital', 'clinic'],
+            'Education': ['education', 'educational', 'school', 'student', 'learning', 'teaching', 'academic', 'literacy', 'scholarship'],
+            'Housing': ['housing', 'homeless', 'shelter', 'affordable housing', 'community development', 'neighborhood'],
+            'Technology': ['technology', 'tech', 'digital', 'innovation', 'STEM', 'computer', 'software', 'internet'],
+            'Social Justice': ['justice', 'equity', 'civil rights', 'social justice', 'inclusion', 'diversity', 'human rights', 'community'],
+          };
+          return fieldMap[field] || [field.toLowerCase()];
+        });
+        
+        filtered = filtered.filter(grant => {
+          const searchText = `${grant.title} ${grant.description}`.toLowerCase();
+          return keywords.some(keyword => searchText.includes(keyword));
+        });
+      }
+      
+      console.log(`Loaded ${filtered.length} grants (filtered from ${data?.length || 0})`);
+      setGrants(filtered);
     } catch (err) {
       console.error('Failed to load grants:', err);
     } finally {
@@ -194,9 +240,43 @@ export default function GrantPool({ isPro, profile }: GrantPoolProps) {
       <div className="mb-6">
         <div className="flex items-center justify-between mb-4">
           <h1 className="text-3xl font-bold text-white">
-            {isPro ? 'Grant Database' : 'Grant Search Results'}
+            {isPro ? 'Grants Matched For You' : 'Grant Search Results'}
           </h1>
         </div>
+        
+        {/* Smart Filter Notice */}
+        {!showAllGrants && profile?.primary_fields && (
+          <div className="mb-4 p-4 bg-emerald-900/20 border border-emerald-500/30 rounded-lg">
+            <div className="flex items-start gap-3">
+              <Filter className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <p className="text-emerald-300 text-sm">
+                  <strong>Smart Filters Active:</strong> Showing grants under $250k matching your profile: {profile.primary_fields.join(', ')}
+                </p>
+                <button
+                  onClick={() => setShowAllGrants(true)}
+                  className="text-emerald-400 text-sm underline hover:text-emerald-300 mt-1"
+                >
+                  Show all grants →
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showAllGrants && (
+          <div className="mb-4 p-4 bg-slate-800 border border-slate-600 rounded-lg">
+            <div className="flex items-center justify-between">
+              <p className="text-slate-300 text-sm">Showing all grants (unfiltered)</p>
+              <button
+                onClick={() => setShowAllGrants(false)}
+                className="text-emerald-400 text-sm hover:text-emerald-300"
+              >
+                ← Use smart filters
+              </button>
+            </div>
+          </div>
+        )}
         
         {/* Tabs */}
         <div className="flex gap-2 mb-4">
@@ -210,7 +290,7 @@ export default function GrantPool({ isPro, profile }: GrantPoolProps) {
           >
             <div className="flex items-center gap-2">
               <Sparkles className="w-4 h-4" />
-              All Grants
+              Matched Grants
             </div>
           </button>
           {isPro && savedCount > 0 && (
@@ -234,7 +314,7 @@ export default function GrantPool({ isPro, profile }: GrantPoolProps) {
           {isPro ? (
             activeTab === 'saved'
               ? `${displayedGrants.length} saved grants`
-              : `${displayedGrants.length.toLocaleString()} active federal grants`
+              : `${displayedGrants.length.toLocaleString()} grants matched to your profile`
           ) : (
             `Showing ${displayedGrants.length} of your 20 monthly free searches`
           )}
@@ -254,7 +334,7 @@ export default function GrantPool({ isPro, profile }: GrantPoolProps) {
                 You're viewing 20 grants with limited information. Upgrade to Pro to unlock:
               </p>
               <ul className="text-slate-300 space-y-1 mb-4 ml-4">
-                <li>• <strong>73,000+ active grants</strong> with full details</li>
+                <li>• <strong>Unlimited matched grants</strong> personalized for you</li>
                 <li>• Save grants & direct application links</li>
                 <li>• Advanced search and filtering</li>
               </ul>
@@ -308,14 +388,22 @@ export default function GrantPool({ isPro, profile }: GrantPoolProps) {
                 onClick={() => setActiveTab('all')}
                 className="mt-4 px-6 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition"
               >
-                Browse All Grants
+                Browse Matched Grants
               </button>
             </>
           ) : (
             <>
               <Search className="w-16 h-16 text-slate-600 mx-auto mb-4" />
               <p className="text-slate-300 text-lg mb-2">No grants found</p>
-              <p className="text-slate-400">Try adjusting your search filters</p>
+              <p className="text-slate-400 mb-4">Try adjusting your search or showing all grants</p>
+              {!showAllGrants && (
+                <button
+                  onClick={() => setShowAllGrants(true)}
+                  className="px-6 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition"
+                >
+                  Show All Grants
+                </button>
+              )}
             </>
           )}
         </div>
