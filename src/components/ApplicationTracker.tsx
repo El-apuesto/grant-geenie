@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { Application } from '../types';
-import { Plus, Calendar, DollarSign, FileText, X, Edit2, Trash2, CheckCircle } from 'lucide-react';
+import { Application, Grant } from '../types';
+import { Plus, Calendar, DollarSign, FileText, X, Edit2, Trash2, Bookmark } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 const STATUS_COLUMNS = [
@@ -20,16 +20,19 @@ interface ApplicationTrackerProps {
 export default function ApplicationTracker({ isPro }: ApplicationTrackerProps) {
   const { user } = useAuth();
   const [applications, setApplications] = useState<Application[]>([]);
+  const [savedGrants, setSavedGrants] = useState<Grant[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showGrantSelector, setShowGrantSelector] = useState(true);
   const [editingApp, setEditingApp] = useState<Application | null>(null);
   const [error, setError] = useState('');
 
   // Form state
   const [formData, setFormData] = useState({
+    grant_id: '',
     grant_title: '',
     funder_name: '',
-    application_type: 'LOI' as Application['application_type'],
+    application_type: 'Full Application' as Application['application_type'],
     status: 'Draft' as Application['status'],
     due_date: '',
     submitted_date: '',
@@ -40,7 +43,10 @@ export default function ApplicationTracker({ isPro }: ApplicationTrackerProps) {
   });
 
   useEffect(() => {
-    if (user) loadApplications();
+    if (user) {
+      loadApplications();
+      loadSavedGrants();
+    }
   }, [user]);
 
   const loadApplications = async () => {
@@ -63,6 +69,58 @@ export default function ApplicationTracker({ isPro }: ApplicationTrackerProps) {
     }
   };
 
+  const loadSavedGrants = async () => {
+    if (!user) return;
+    try {
+      const { data: savedGrantIds, error: sgError } = await supabase
+        .from('saved_grants')
+        .select('grant_id')
+        .eq('user_id', user.id);
+      
+      if (sgError) throw sgError;
+      
+      if (savedGrantIds && savedGrantIds.length > 0) {
+        const ids = savedGrantIds.map(sg => sg.grant_id);
+        const { data: grants, error: gError } = await supabase
+          .from('grants')
+          .select('*')
+          .in('id', ids);
+        
+        if (gError) throw gError;
+        setSavedGrants(grants || []);
+      }
+    } catch (err) {
+      console.error('Error loading saved grants:', err);
+    }
+  };
+
+  const handleSelectGrant = (grant: Grant) => {
+    // Parse close_date to YYYY-MM-DD format for input field
+    let dueDate = '';
+    if (grant.close_date && grant.close_date !== '') {
+      try {
+        const parts = grant.close_date.split('/');
+        if (parts.length === 3) {
+          const month = parts[0].padStart(2, '0');
+          const day = parts[1].padStart(2, '0');
+          const year = parts[2];
+          dueDate = `${year}-${month}-${day}`;
+        }
+      } catch (e) {
+        console.error('Date parsing error:', e);
+      }
+    }
+
+    setFormData({
+      ...formData,
+      grant_id: grant.id,
+      grant_title: grant.title,
+      funder_name: grant.agency_name,
+      due_date: dueDate,
+    });
+    setShowGrantSelector(false);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
@@ -70,6 +128,7 @@ export default function ApplicationTracker({ isPro }: ApplicationTrackerProps) {
     try {
       const appData = {
         user_id: user.id,
+        grant_id: formData.grant_id || null,
         grant_title: formData.grant_title,
         funder_name: formData.funder_name,
         application_type: formData.application_type,
@@ -127,6 +186,7 @@ export default function ApplicationTracker({ isPro }: ApplicationTrackerProps) {
   const handleEdit = (app: Application) => {
     setEditingApp(app);
     setFormData({
+      grant_id: app.grant_id || '',
       grant_title: app.grant_title,
       funder_name: app.funder_name,
       application_type: app.application_type,
@@ -138,14 +198,16 @@ export default function ApplicationTracker({ isPro }: ApplicationTrackerProps) {
       amount_awarded: app.amount_awarded?.toString() || '',
       notes: app.notes || '',
     });
+    setShowGrantSelector(false); // Skip selector when editing
     setShowAddModal(true);
   };
 
   const resetForm = () => {
     setFormData({
+      grant_id: '',
       grant_title: '',
       funder_name: '',
-      application_type: 'LOI',
+      application_type: 'Full Application',
       status: 'Draft',
       due_date: '',
       submitted_date: '',
@@ -154,6 +216,7 @@ export default function ApplicationTracker({ isPro }: ApplicationTrackerProps) {
       amount_awarded: '',
       notes: '',
     });
+    setShowGrantSelector(true);
   };
 
   const getStatusColor = (status: Application['status']) => {
@@ -304,10 +367,10 @@ export default function ApplicationTracker({ isPro }: ApplicationTrackerProps) {
       {/* Add/Edit Modal */}
       {showAddModal && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-800 border-2 border-slate-700 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="bg-slate-800 border-2 border-slate-700 rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
             <div className="sticky top-0 bg-slate-800 border-b border-slate-700 p-6 flex justify-between items-center">
               <h3 className="text-xl font-bold text-white">
-                {editingApp ? 'Edit Application' : 'Add New Application'}
+                {editingApp ? 'Edit Application' : 'Create New Application'}
               </h3>
               <button
                 onClick={() => {
@@ -321,148 +384,191 @@ export default function ApplicationTracker({ isPro }: ApplicationTrackerProps) {
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="p-6 space-y-4">
-              {/* Grant Title */}
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">Grant Title *</label>
-                <input
-                  type="text"
-                  required
-                  value={formData.grant_title}
-                  onChange={(e) => setFormData({ ...formData, grant_title: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-emerald-500"
-                />
-              </div>
-
-              {/* Funder Name */}
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">Funder Name *</label>
-                <input
-                  type="text"
-                  required
-                  value={formData.funder_name}
-                  onChange={(e) => setFormData({ ...formData, funder_name: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-emerald-500"
-                />
-              </div>
-
-              {/* Type and Status */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">Type</label>
-                  <select
-                    value={formData.application_type}
-                    onChange={(e) => setFormData({ ...formData, application_type: e.target.value as Application['application_type'] })}
-                    className="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-emerald-500"
+            {/* Saved Grants Selector */}
+            {!editingApp && showGrantSelector && savedGrants.length > 0 && (
+              <div className="p-6 border-b border-slate-700">
+                <div className="flex items-center gap-2 mb-4">
+                  <Bookmark className="w-5 h-5 text-emerald-500" fill="currentColor" />
+                  <h4 className="text-lg font-semibold text-white">Select from Saved Grants</h4>
+                </div>
+                <div className="grid gap-3 max-h-64 overflow-y-auto">
+                  {savedGrants.map(grant => (
+                    <button
+                      key={grant.id}
+                      onClick={() => handleSelectGrant(grant)}
+                      className="text-left p-4 bg-slate-900 border border-slate-600 rounded-lg hover:border-emerald-500 transition"
+                    >
+                      <div className="font-semibold text-white mb-1">{grant.title}</div>
+                      <div className="text-sm text-slate-400">{grant.agency_name}</div>
+                    </button>
+                  ))}
+                </div>
+                <div className="mt-4 text-center">
+                  <button
+                    onClick={() => setShowGrantSelector(false)}
+                    className="text-sm text-slate-400 hover:text-white transition"
                   >
-                    <option value="LOI">LOI</option>
-                    <option value="Letter of Intent">Letter of Intent</option>
-                    <option value="Full Application">Full Application</option>
-                    <option value="Proposal">Proposal</option>
-                  </select>
+                    Or enter grant details manually →
+                  </button>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">Status</label>
-                  <select
-                    value={formData.status}
-                    onChange={(e) => setFormData({ ...formData, status: e.target.value as Application['status'] })}
-                    className="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-emerald-500"
+              </div>
+            )}
+
+            {/* Manual Entry Form */}
+            {(!showGrantSelector || editingApp) && (
+              <form onSubmit={handleSubmit} className="p-6 space-y-4">
+                {!editingApp && savedGrants.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setShowGrantSelector(true)}
+                    className="text-sm text-emerald-400 hover:text-emerald-300 transition"
                   >
-                    {STATUS_COLUMNS.map(col => (
-                      <option key={col.id} value={col.id}>{col.label}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
+                    ← Back to saved grants
+                  </button>
+                )}
 
-              {/* Dates */}
-              <div className="grid grid-cols-3 gap-4">
+                {/* Grant Title */}
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">Due Date</label>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">Grant Title *</label>
                   <input
-                    type="date"
-                    value={formData.due_date}
-                    onChange={(e) => setFormData({ ...formData, due_date: e.target.value })}
+                    type="text"
+                    required
+                    value={formData.grant_title}
+                    onChange={(e) => setFormData({ ...formData, grant_title: e.target.value })}
                     className="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-emerald-500"
                   />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">Submitted Date</label>
-                  <input
-                    type="date"
-                    value={formData.submitted_date}
-                    onChange={(e) => setFormData({ ...formData, submitted_date: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-emerald-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">Decision Date</label>
-                  <input
-                    type="date"
-                    value={formData.decision_date}
-                    onChange={(e) => setFormData({ ...formData, decision_date: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-emerald-500"
-                  />
-                </div>
-              </div>
 
-              {/* Amounts */}
-              <div className="grid grid-cols-2 gap-4">
+                {/* Funder Name */}
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">Amount Requested</label>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">Funder Name *</label>
                   <input
-                    type="number"
-                    placeholder="50000"
-                    value={formData.amount_requested}
-                    onChange={(e) => setFormData({ ...formData, amount_requested: e.target.value })}
+                    type="text"
+                    required
+                    value={formData.funder_name}
+                    onChange={(e) => setFormData({ ...formData, funder_name: e.target.value })}
                     className="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-emerald-500"
                   />
                 </div>
+
+                {/* Type and Status */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-2">Type</label>
+                    <select
+                      value={formData.application_type}
+                      onChange={(e) => setFormData({ ...formData, application_type: e.target.value as Application['application_type'] })}
+                      className="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-emerald-500"
+                    >
+                      <option value="LOI">LOI</option>
+                      <option value="Letter of Intent">Letter of Intent</option>
+                      <option value="Full Application">Full Application</option>
+                      <option value="Proposal">Proposal</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-2">Status</label>
+                    <select
+                      value={formData.status}
+                      onChange={(e) => setFormData({ ...formData, status: e.target.value as Application['status'] })}
+                      className="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-emerald-500"
+                    >
+                      {STATUS_COLUMNS.map(col => (
+                        <option key={col.id} value={col.id}>{col.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Dates */}
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-2">Due Date</label>
+                    <input
+                      type="date"
+                      value={formData.due_date}
+                      onChange={(e) => setFormData({ ...formData, due_date: e.target.value })}
+                      className="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-2">Submitted Date</label>
+                    <input
+                      type="date"
+                      value={formData.submitted_date}
+                      onChange={(e) => setFormData({ ...formData, submitted_date: e.target.value })}
+                      className="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-2">Decision Date</label>
+                    <input
+                      type="date"
+                      value={formData.decision_date}
+                      onChange={(e) => setFormData({ ...formData, decision_date: e.target.value })}
+                      className="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+                </div>
+
+                {/* Amounts */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-2">Amount Requested</label>
+                    <input
+                      type="number"
+                      placeholder="50000"
+                      value={formData.amount_requested}
+                      onChange={(e) => setFormData({ ...formData, amount_requested: e.target.value })}
+                      className="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-2">Amount Awarded</label>
+                    <input
+                      type="number"
+                      placeholder="50000"
+                      value={formData.amount_awarded}
+                      onChange={(e) => setFormData({ ...formData, amount_awarded: e.target.value })}
+                      className="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+                </div>
+
+                {/* Notes */}
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">Amount Awarded</label>
-                  <input
-                    type="number"
-                    placeholder="50000"
-                    value={formData.amount_awarded}
-                    onChange={(e) => setFormData({ ...formData, amount_awarded: e.target.value })}
+                  <label className="block text-sm font-medium text-slate-300 mb-2">Notes</label>
+                  <textarea
+                    rows={4}
+                    value={formData.notes}
+                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                    placeholder="Add any notes about this application..."
                     className="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-emerald-500"
                   />
                 </div>
-              </div>
 
-              {/* Notes */}
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">Notes</label>
-                <textarea
-                  rows={4}
-                  value={formData.notes}
-                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                  placeholder="Add any notes about this application..."
-                  className="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-emerald-500"
-                />
-              </div>
-
-              {/* Buttons */}
-              <div className="flex gap-3 pt-4">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowAddModal(false);
-                    setEditingApp(null);
-                    resetForm();
-                  }}
-                  className="flex-1 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition font-semibold"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition font-semibold"
-                >
-                  {editingApp ? 'Update' : 'Add'} Application
-                </button>
-              </div>
-            </form>
+                {/* Buttons */}
+                <div className="flex gap-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowAddModal(false);
+                      setEditingApp(null);
+                      resetForm();
+                    }}
+                    className="flex-1 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition font-semibold"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-1 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition font-semibold"
+                  >
+                    {editingApp ? 'Update' : 'Create'} Application
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
         </div>
       )}
