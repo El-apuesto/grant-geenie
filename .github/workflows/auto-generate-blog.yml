@@ -1,0 +1,65 @@
+name: Auto-Generate Daily Blog Post
+
+on:
+  schedule:
+    # Runs every day at 9 AM CST (3 PM UTC)
+    - cron: '0 15 * * *'
+  workflow_dispatch: # Manual trigger for testing
+
+jobs:
+  generate-post:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: |
+          npm install openai @anthropic-ai/sdk
+
+      - name: Generate blog post with AI
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          node .github/scripts/generate-blog-post.js
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2'
+          bundler-cache: true
+          working-directory: ./blog
+
+      - name: Build Jekyll site
+        run: |
+          cd blog
+          bundle install
+          bundle exec jekyll build
+        env:
+          JEKYLL_ENV: production
+
+      - name: Commit and push new post
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add blog/_posts/
+          git commit -m "Auto-generate blog post $(date +'%Y-%m-%d')" || echo "No changes to commit"
+          git push
+
+      - name: Deploy to Vercel
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          working-directory: ./blog/_site
+          vercel-args: '--prod'
+          alias-domains: blog.granthustle.org
