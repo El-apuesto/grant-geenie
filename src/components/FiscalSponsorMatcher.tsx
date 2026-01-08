@@ -1,6 +1,7 @@
 // =====================================================
 // FISCAL SPONSOR MATCHER - REACT COMPONENT
 // Auto-reads from user profile (primary_fields, state)
+// Updated with 401 fiscal sponsors in database
 // =====================================================
 
 'use client';
@@ -10,6 +11,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import type { FiscalSponsorMatch } from '../types/fiscal-sponsor';
 import { Profile } from '../types';
+import { Building2, MapPin, DollarSign, CheckCircle } from 'lucide-react';
 
 interface FiscalSponsorMatcherProps {
   isPro?: boolean;
@@ -138,16 +140,26 @@ export default function FiscalSponsorMatcher({
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold mb-2 text-white">Recommended Fiscal Sponsors</h2>
-        <p className="text-slate-400">
-          Based on your focus: {focusAreas.slice(0, 3).join(', ')}
-          {focusAreas.length > 3 && ` and ${focusAreas.length - 3} more`}
+      <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-5">
+        <div className="flex items-center justify-between mb-3">
+          <div>
+            <h2 className="text-2xl font-bold text-white mb-1">Recommended Fiscal Sponsors</h2>
+            <p className="text-slate-400 text-sm">
+              Based on your focus: {focusAreas.slice(0, 3).join(', ')}
+              {focusAreas.length > 3 && ` and ${focusAreas.length - 3} more`}
+            </p>
+          </div>
+          <div className="bg-emerald-600/20 border border-emerald-500/30 text-emerald-400 px-4 py-2 rounded-full font-semibold">
+            401 sponsors
+          </div>
+        </div>
+        <p className="text-slate-400 text-sm">
+          We match you with fiscal sponsors from our database of 401 verified organizations across all 50 states.
         </p>
       </div>
 
       {loading && offset === 0 ? (
-        <div className="text-center py-8">Loading matches...</div>
+        <div className="text-center py-8 text-slate-400">Loading matches...</div>
       ) : (
         <>
           <div className="space-y-4">
@@ -156,24 +168,30 @@ export default function FiscalSponsorMatcher({
                 key={match.sponsor_id}
                 className="bg-slate-800/50 border border-slate-700 rounded-lg p-6 hover:border-emerald-500/30 transition"
               >
-                <div className="flex justify-between items-start mb-3">
-                  <div>
-                    <h3 className="text-xl font-semibold text-white">{match.sponsor_name}</h3>
-                    <p className="text-slate-400 text-sm">
-                      {match.sponsor_city}, {match.sponsor_state}
-                    </p>
+                <div className="flex justify-between items-start mb-4">
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 bg-emerald-600/10 rounded-lg">
+                      <Building2 className="w-5 h-5 text-emerald-400" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-semibold text-white">{match.sponsor_name}</h3>
+                      <div className="flex items-center gap-2 text-slate-400 text-sm mt-1">
+                        <MapPin className="w-3 h-3" />
+                        <span>{match.sponsor_city}, {match.sponsor_state}</span>
+                      </div>
+                    </div>
                   </div>
-                  <div className="bg-emerald-600/20 border border-emerald-500/30 text-emerald-400 px-3 py-1 rounded-full text-sm font-medium">
+                  <div className="bg-emerald-600/20 border border-emerald-500/30 text-emerald-400 px-3 py-1 rounded-full text-sm font-medium whitespace-nowrap">
                     {match.match_score}% match
                   </div>
                 </div>
 
-                <div className="mb-3">
-                  <div className="flex flex-wrap gap-2 mb-2">
+                <div className="mb-4">
+                  <div className="flex flex-wrap gap-2">
                     {match.sponsor_focus_areas.map(area => (
                       <span 
                         key={area}
-                        className="bg-slate-700 text-slate-300 px-2 py-1 rounded text-xs"
+                        className="bg-slate-700/70 text-slate-300 px-3 py-1 rounded-full text-xs font-medium"
                       >
                         {area}
                       </span>
@@ -184,21 +202,24 @@ export default function FiscalSponsorMatcher({
                 <div className="space-y-2 mb-4">
                   {match.match_reasons.map((reason, i) => (
                     <div key={i} className="flex items-start gap-2 text-sm text-slate-300">
-                      <span className="text-emerald-400 mt-0.5">✓</span>
+                      <CheckCircle className="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5" />
                       <span>{reason}</span>
                     </div>
                   ))}
                 </div>
 
                 {match.sponsor_fee_structure && (
-                  <p className="text-sm text-slate-400 mb-3">
-                    <strong>Fee:</strong> {match.sponsor_fee_structure}
-                  </p>
+                  <div className="flex items-start gap-2 text-sm text-slate-400 mb-3 p-3 bg-slate-900/50 rounded">
+                    <DollarSign className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <strong className="text-slate-300">Fee:</strong> {match.sponsor_fee_structure}
+                    </div>
+                  </div>
                 )}
 
                 {match.sponsor_eligibility && (
-                  <p className="text-sm text-slate-400 mb-3">
-                    <strong>Eligibility:</strong> {match.sponsor_eligibility}
+                  <p className="text-sm text-slate-400 mb-4 p-3 bg-slate-900/50 rounded">
+                    <strong className="text-slate-300">Eligibility:</strong> {match.sponsor_eligibility}
                   </p>
                 )}
 
@@ -207,9 +228,9 @@ export default function FiscalSponsorMatcher({
                     href={match.sponsor_website}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-block bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded font-medium transition"
+                    className="inline-block bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
                   >
-                    Learn More & Apply
+                    Learn More & Apply →
                   </a>
                 )}
               </div>
@@ -229,12 +250,14 @@ export default function FiscalSponsorMatcher({
           )}
 
           {!hasMore && matches.length > 0 && (
-            <p className="text-center text-slate-500">No more matches found</p>
+            <p className="text-center text-slate-500 text-sm">End of matches — refine your profile to see different options</p>
           )}
 
           {matches.length === 0 && !loading && (
-            <div className="text-center py-8 text-slate-500">
-              No fiscal sponsors found matching your criteria. Try updating your profile.
+            <div className="text-center py-12 text-slate-500">
+              <Building2 className="w-16 h-16 text-slate-700 mx-auto mb-4" />
+              <p className="text-lg mb-2">No fiscal sponsors found matching your criteria</p>
+              <p className="text-sm">Try updating your profile focus areas in Settings</p>
             </div>
           )}
         </>
