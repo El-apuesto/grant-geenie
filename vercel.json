@@ -1,6 +1,3 @@
 {
-  "version": 2,
-  "buildCommand": "cd blog && bundle install && bundle exec jekyll build",
-  "outputDirectory": "blog/_site",
-  "installCommand": "gem install bundler"
+  "version": 2
 }
