@@ -1,0 +1,46 @@
+name: Deploy Jekyll Blog
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'blog/**'
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2'
+          bundler-cache: true
+          working-directory: ./blog
+
+      - name: Install dependencies
+        run: |
+          cd blog
+          bundle install
+
+      - name: Build Jekyll site
+        run: |
+          cd blog
+          bundle exec jekyll build
+        env:
+          JEKYLL_ENV: production
+
+      - name: Deploy to Vercel
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          working-directory: ./blog/_site
+          vercel-args: '--prod'
+          alias-domains: blog.granthustle.org
