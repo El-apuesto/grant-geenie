@@ -3,7 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { analytics } from '../lib/analytics';
 import { Grant } from '../types';
-import { ExternalLink, Search, DollarSign, Calendar, Bookmark, Lock, Crown, Sparkles, Filter } from 'lucide-react';
+import { ExternalLink, Search, DollarSign, Calendar, Bookmark, Lock, Crown, Sparkles, Filter, AlertCircle } from 'lucide-react';
 
 interface GrantPoolProps {
   isPro: boolean;
@@ -19,13 +19,33 @@ export default function GrantPool({ isPro, profile }: GrantPoolProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'deadline' | 'amount'>('deadline');
   const [showAllGrants, setShowAllGrants] = useState(false);
+  const [useSearchOnly, setUseSearchOnly] = useState(false);
 
   useEffect(() => {
     if (user) {
       loadGrants();
       loadSavedGrants();
     }
-  }, [user, profile, showAllGrants]);
+  }, [user, profile, showAllGrants, useSearchOnly]);
+
+  // Helper: Check if grant deadline has passed
+  const isGrantExpired = (closeDate: string | null, isRolling: boolean): boolean => {
+    if (isRolling) return false; // Rolling deadlines never expire
+    if (!closeDate || closeDate === '') return false; // TBD is considered active
+    
+    try {
+      const parts = closeDate.split('/');
+      if (parts.length === 3) {
+        const grantDate = new Date(parseInt(parts[2]), parseInt(parts[0]) - 1, parseInt(parts[1]));
+        const today = new Date();
+        today.setHours(0, 0, 0, 0); // Compare dates only
+        return grantDate < today;
+      }
+    } catch (e) {
+      console.error('Date parsing error:', e);
+    }
+    return false;
+  };
 
   const loadGrants = async () => {
     try {
@@ -36,11 +56,6 @@ export default function GrantPool({ isPro, profile }: GrantPoolProps) {
         .select('*')
         .eq('is_active', true);  // Only show active grants
       
-      // FILTER 1: Under $250k (most relevant for small orgs/artists)
-      if (!showAllGrants) {
-        query.lte('award_ceiling', '250000');
-      }
-      
       // Sort by close_date or award_ceiling
       if (sortBy === 'deadline') {
         query.order('close_date', { ascending: true, nullsFirst: false });
@@ -48,6 +63,7 @@ export default function GrantPool({ isPro, profile }: GrantPoolProps) {
         query.order('award_ceiling', { ascending: false, nullsFirst: false });
       }
       
+      // Free users: limit to 20
       if (!isPro) {
         query.limit(20);
       }
@@ -61,42 +77,77 @@ export default function GrantPool({ isPro, profile }: GrantPoolProps) {
       
       let filtered = data || [];
       
-      // FILTER 2: Match user's funding amount range
-      if (profile?.grant_amount && Array.isArray(profile.grant_amount) && !showAllGrants) {
-        filtered = filtered.filter(grant => {
-          const ceiling = parseFloat(grant.award_ceiling?.replace(/[^0-9.-]+/g, '') || '0');
-          const floor = parseFloat(grant.award_floor?.replace(/[^0-9.-]+/g, '') || '0');
-          
-          return profile.grant_amount.some((range: string) => {
-            if (range === 'Under $10,000') return ceiling <= 10000;
-            if (range === '$10,000 - $50,000') return ceiling >= 10000 && floor <= 50000;
-            if (range === '$50,000 - $100,000') return ceiling >= 50000 && floor <= 100000;
-            if (range === '$100,000 - $250,000') return ceiling >= 100000 && floor <= 250000;
-            if (range === 'Over $250,000') return floor >= 250000;
-            return true;
-          });
-        });
+      // ===== CRITICAL: Filter out EXPIRED grants =====
+      filtered = filtered.filter(grant => !isGrantExpired(grant.close_date, grant.is_rolling));
+      console.log(`Removed ${(data?.length || 0) - filtered.length} expired grants`);
+      
+      // If user wants search-only mode (Pro feature), skip eligibility filters
+      if (useSearchOnly && isPro) {
+        console.log(`Pro search mode: ${filtered.length} active grants (unfiltered)`);
+        setGrants(filtered);
+        setLoading(false);
+        return;
       }
       
-      // FILTER 3: Match user's primary fields (keyword search in title + description)
-      if (profile?.primary_fields && Array.isArray(profile.primary_fields) && profile.primary_fields.length > 0 && !showAllGrants) {
-        const keywords = profile.primary_fields.flatMap((field: string) => {
-          const fieldMap: { [key: string]: string[] } = {
-            'Arts & Culture': ['art', 'arts', 'culture', 'cultural', 'music', 'theater', 'theatre', 'museum', 'gallery', 'dance', 'film', 'creative'],
-            'Environment': ['environment', 'environmental', 'climate', 'sustainability', 'conservation', 'green', 'ecology', 'wildlife'],
-            'Health': ['health', 'healthcare', 'medical', 'wellness', 'mental health', 'public health', 'hospital', 'clinic'],
-            'Education': ['education', 'educational', 'school', 'student', 'learning', 'teaching', 'academic', 'literacy', 'scholarship'],
-            'Housing': ['housing', 'homeless', 'shelter', 'affordable housing', 'community development', 'neighborhood'],
-            'Technology': ['technology', 'tech', 'digital', 'innovation', 'STEM', 'computer', 'software', 'internet'],
-            'Social Justice': ['justice', 'equity', 'civil rights', 'social justice', 'inclusion', 'diversity', 'human rights', 'community'],
-          };
-          return fieldMap[field] || [field.toLowerCase()];
+      // Otherwise apply smart filters based on questionnaire
+      if (!showAllGrants) {
+        // FILTER 1: Under $250k by default (most relevant for small orgs/artists)
+        filtered = filtered.filter(grant => {
+          const ceiling = parseFloat(grant.award_ceiling?.replace(/[^0-9.-]+/g, '') || '0');
+          return ceiling <= 250000;
         });
         
-        filtered = filtered.filter(grant => {
-          const searchText = `${grant.title} ${grant.description}`.toLowerCase();
-          return keywords.some(keyword => searchText.includes(keyword));
-        });
+        // FILTER 2: Match user's funding amount range
+        if (profile?.grant_amount && Array.isArray(profile.grant_amount)) {
+          filtered = filtered.filter(grant => {
+            const ceiling = parseFloat(grant.award_ceiling?.replace(/[^0-9.-]+/g, '') || '0');
+            const floor = parseFloat(grant.award_floor?.replace(/[^0-9.-]+/g, '') || '0');
+            
+            return profile.grant_amount.some((range: string) => {
+              if (range === 'Under $10,000') return ceiling <= 10000;
+              if (range === '$10,000 - $50,000') return ceiling >= 10000 && floor <= 50000;
+              if (range === '$50,000 - $100,000') return ceiling >= 50000 && floor <= 100000;
+              if (range === '$100,000 - $250,000') return ceiling >= 100000 && floor <= 250000;
+              if (range === 'Over $250,000') return floor >= 250000;
+              return true;
+            });
+          });
+        }
+        
+        // FILTER 3: Match user's primary fields (enhanced keyword search)
+        if (profile?.primary_fields && Array.isArray(profile.primary_fields) && profile.primary_fields.length > 0) {
+          const keywords = profile.primary_fields.flatMap((field: string) => {
+            const fieldMap: { [key: string]: string[] } = {
+              'Arts & Culture': ['art', 'arts', 'culture', 'cultural', 'music', 'theater', 'theatre', 'museum', 'gallery', 'dance', 'film', 'creative', 'humanities', 'artist'],
+              'Environment': ['environment', 'environmental', 'climate', 'sustainability', 'sustainable', 'conservation', 'green', 'ecology', 'wildlife', 'renewable', 'clean energy', 'nature'],
+              'Health': ['health', 'healthcare', 'medical', 'wellness', 'mental health', 'public health', 'hospital', 'clinic', 'disease', 'nutrition', 'behavioral'],
+              'Education': ['education', 'educational', 'school', 'student', 'learning', 'teaching', 'academic', 'literacy', 'scholarship', 'STEM', 'college', 'university', 'youth'],
+              'Housing': ['housing', 'homeless', 'shelter', 'affordable housing', 'community development', 'neighborhood', 'urban development', 'residential'],
+              'Technology': ['technology', 'tech', 'digital', 'innovation', 'STEM', 'computer', 'software', 'internet', 'AI', 'data', 'cyber'],
+              'Social Justice': ['justice', 'equity', 'civil rights', 'social justice', 'inclusion', 'diversity', 'human rights', 'community', 'empowerment', 'advocacy'],
+            };
+            return fieldMap[field] || [field.toLowerCase()];
+          });
+          
+          filtered = filtered.filter(grant => {
+            const searchText = `${grant.title} ${grant.description}`.toLowerCase();
+            return keywords.some(keyword => searchText.includes(keyword));
+          });
+        }
+        
+        // FILTER 4: Weed out grants requiring 501(c)(3) if user doesn't have fiscal sponsor
+        if (profile?.fiscal_sponsor === 'No') {
+          filtered = filtered.filter(grant => {
+            const searchText = `${grant.title} ${grant.description} ${grant.eligibility || ''}`.toLowerCase();
+            const requires501c3 = 
+              searchText.includes('501(c)(3)') || 
+              searchText.includes('501c3') ||
+              searchText.includes('nonprofit organization') ||
+              searchText.includes('tax-exempt') ||
+              searchText.includes('charitable organization');
+            return !requires501c3; // Exclude if requires 501c3
+          });
+        }
       }
       
       console.log(`Loaded ${filtered.length} grants (filtered from ${data?.length || 0})`);
@@ -244,14 +295,50 @@ export default function GrantPool({ isPro, profile }: GrantPoolProps) {
           </h1>
         </div>
         
+        {/* Pro Search Mode Toggle */}
+        {isPro && (
+          <div className="mb-4 flex gap-2">
+            <button
+              onClick={() => {
+                setUseSearchOnly(false);
+                setShowAllGrants(false);
+              }}
+              className={`px-4 py-2 rounded-lg font-medium transition ${
+                !useSearchOnly
+                  ? 'bg-emerald-600 text-white'
+                  : 'bg-slate-800 text-slate-400 hover:text-white'
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <Filter className="w-4 h-4" />
+                Smart Filters
+              </div>
+            </button>
+            <button
+              onClick={() => setUseSearchOnly(true)}
+              className={`px-4 py-2 rounded-lg font-medium transition ${
+                useSearchOnly
+                  ? 'bg-emerald-600 text-white'
+                  : 'bg-slate-800 text-slate-400 hover:text-white'
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <Search className="w-4 h-4" />
+                Search All (Pro)
+              </div>
+            </button>
+          </div>
+        )}
+        
         {/* Smart Filter Notice */}
-        {!showAllGrants && profile?.primary_fields && (
+        {!useSearchOnly && !showAllGrants && profile?.primary_fields && (
           <div className="mb-4 p-4 bg-emerald-900/20 border border-emerald-500/30 rounded-lg">
             <div className="flex items-start gap-3">
               <Filter className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" />
               <div className="flex-1">
                 <p className="text-emerald-300 text-sm">
                   <strong>Smart Filters Active:</strong> Showing grants under $250k matching your profile: {profile.primary_fields.join(', ')}
+                  {profile.fiscal_sponsor === 'No' && ' (excluding 501c3-only grants)'}
                 </p>
                 <button
                   onClick={() => setShowAllGrants(true)}
@@ -264,7 +351,7 @@ export default function GrantPool({ isPro, profile }: GrantPoolProps) {
           </div>
         )}
 
-        {showAllGrants && (
+        {showAllGrants && !useSearchOnly && (
           <div className="mb-4 p-4 bg-slate-800 border border-slate-600 rounded-lg">
             <div className="flex items-center justify-between">
               <p className="text-slate-300 text-sm">Showing all grants (unfiltered)</p>
@@ -274,6 +361,19 @@ export default function GrantPool({ isPro, profile }: GrantPoolProps) {
               >
                 ← Use smart filters
               </button>
+            </div>
+          </div>
+        )}
+
+        {useSearchOnly && (
+          <div className="mb-4 p-4 bg-blue-900/20 border border-blue-500/30 rounded-lg">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <p className="text-blue-300 text-sm">
+                  <strong>Pro Search Mode:</strong> All active grants shown. Use search bar below to find specific opportunities.
+                </p>
+              </div>
             </div>
           </div>
         )}
@@ -290,7 +390,7 @@ export default function GrantPool({ isPro, profile }: GrantPoolProps) {
           >
             <div className="flex items-center gap-2">
               <Sparkles className="w-4 h-4" />
-              Matched Grants
+              {useSearchOnly ? 'All Grants' : 'Matched Grants'}
             </div>
           </button>
           {isPro && savedCount > 0 && (
@@ -314,7 +414,7 @@ export default function GrantPool({ isPro, profile }: GrantPoolProps) {
           {isPro ? (
             activeTab === 'saved'
               ? `${displayedGrants.length} saved grants`
-              : `${displayedGrants.length.toLocaleString()} grants matched to your profile`
+              : `${displayedGrants.length.toLocaleString()} grants ${useSearchOnly ? '(all active)' : 'matched to your profile'}`
           ) : (
             `Showing ${displayedGrants.length} of your 20 monthly free searches`
           )}
@@ -335,8 +435,8 @@ export default function GrantPool({ isPro, profile }: GrantPoolProps) {
               </p>
               <ul className="text-slate-300 space-y-1 mb-4 ml-4">
                 <li>• <strong>Unlimited matched grants</strong> personalized for you</li>
+                <li>• <strong>Advanced search</strong> across all 79,000+ grants</li>
                 <li>• Save grants & direct application links</li>
-                <li>• Advanced search and filtering</li>
               </ul>
               <button
                 onClick={() => {
@@ -358,10 +458,11 @@ export default function GrantPool({ isPro, profile }: GrantPoolProps) {
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
           <input
             type="text"
-            placeholder="Search grants by title, agency, or keywords..."
+            placeholder={isPro ? "Search grants by title, agency, or keywords..." : "🔒 Pro: Search all 79K+ grants"}
             value={searchQuery}
             onChange={(e) => handleSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-emerald-500"
+            disabled={!isPro}
+            className="w-full pl-10 pr-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed"
           />
         </div>
         <div className="flex gap-2">
@@ -396,7 +497,7 @@ export default function GrantPool({ isPro, profile }: GrantPoolProps) {
               <Search className="w-16 h-16 text-slate-600 mx-auto mb-4" />
               <p className="text-slate-300 text-lg mb-2">No grants found</p>
               <p className="text-slate-400 mb-4">Try adjusting your search or showing all grants</p>
-              {!showAllGrants && (
+              {!showAllGrants && !useSearchOnly && (
                 <button
                   onClick={() => setShowAllGrants(true)}
                   className="px-6 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition"
