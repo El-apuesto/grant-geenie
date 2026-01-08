@@ -1,7 +1,7 @@
 title: Grant Geenie Blog
 description: Expert grant funding tips, success stories, and resources
-url: "https://grantgeenie.com"
-baseurl: "/blog"
+url: "https://blog.granthustle.org"
+baseurl: ""
 theme: minima
 permalink: /:year/:month/:day/:title/
 
@@ -15,3 +15,13 @@ header_pages:
   - resources.md
 
 show_excerpts: true
+
+# SEO
+author:
+  name: Grant Geenie Team
+  email: support@granthustle.org
+
+social:
+  name: Grant Geenie
+  links:
+    - https://granthustle.org

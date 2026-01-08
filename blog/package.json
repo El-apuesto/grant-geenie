@@ -1,0 +1,7 @@
+{
+  "name": "grant-geenie-blog",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "bundle install && bundle exec jekyll build"
+  }
+}
