@@ -1,22 +1,6 @@
 {
   "version": 2,
-  "builds": [
-    {
-      "src": "blog/**",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "_site"
-      }
-    },
-    {
-      "src": "package.json",
-      "use": "@vercel/node"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/blog/(.*)",
-      "dest": "/blog/$1"
-    }
-  ]
+  "buildCommand": "cd blog && bundle install && bundle exec jekyll build",
+  "outputDirectory": "blog/_site",
+  "installCommand": "gem install bundler"
 }
