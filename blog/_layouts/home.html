@@ -1,0 +1,22 @@
+---
+layout: default
+---
+
+<div class="blog-header">
+    <h1>Grant Funding Insights</h1>
+    <p>Expert tips, strategies, and resources for securing grant funding</p>
+</div>
+
+<div class="posts-grid">
+    {% for post in site.posts %}
+    <article class="post-card">
+        <h2><a href="{{ post.url | relative_url }}">{{ post.title }}</a></h2>
+        <div class="post-meta">
+            <span class="post-date">{{ post.date | date: "%B %d, %Y" }}</span>
+            <span class="post-author">{{ post.author }}</span>
+        </div>
+        <p class="post-excerpt">{{ post.excerpt | strip_html | truncate: 160 }}</p>
+        <a href="{{ post.url | relative_url }}" class="read-more">Read More →</a>
+    </article>
+    {% endfor %}
+</div>

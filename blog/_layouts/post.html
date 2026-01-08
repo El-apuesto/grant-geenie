@@ -1,0 +1,35 @@
+---
+layout: default
+---
+
+<article class="post">
+    <header class="post-header">
+        <h1>{{ page.title }}</h1>
+        <div class="post-meta">
+            <time datetime="{{ page.date | date_to_xmlschema }}">{{ page.date | date: "%B %d, %Y" }}</time>
+            <span class="separator">•</span>
+            <span class="author">{{ page.author }}</span>
+        </div>
+    </header>
+
+    <div class="post-content">
+        {{ content }}
+    </div>
+
+    <footer class="post-footer">
+        <div class="cta-box">
+            <h3>Ready to Find Your Perfect Grant?</h3>
+            <p>Discover thousands of funding opportunities tailored to your mission.</p>
+            <a href="https://granthustle.org" class="cta-button">Start Finding Grants</a>
+        </div>
+    </footer>
+</article>
+
+<nav class="post-navigation">
+    {% if page.previous.url %}
+    <a href="{{ page.previous.url | relative_url }}" class="nav-previous">← {{ page.previous.title | truncate: 50 }}</a>
+    {% endif %}
+    {% if page.next.url %}
+    <a href="{{ page.next.url | relative_url }}" class="nav-next">{{ page.next.title | truncate: 50 }} →</a>
+    {% endif %}
+</nav>
