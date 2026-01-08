@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { useTheme } from '../contexts/ThemeContext';
 import { supabase } from '../lib/supabase';
 import { Profile } from '../types';
 import { US_STATES } from '../lib/states';
-import { ArrowLeft, Play, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Play, RefreshCw, Sun, Moon } from 'lucide-react';
 
 const ORG_TYPES = ['Nonprofit', 'Small Business', 'Freelancer/Solo', 'Artist/Creator', 'Other'];
 
@@ -15,6 +16,7 @@ interface SettingsProps {
 
 export default function Settings({ onBack, onRestartTour, onRetakeQuestionnaire }: SettingsProps) {
   const { user } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [orgType, setOrgType] = useState('');
   const [state, setState] = useState('');
@@ -141,6 +143,33 @@ export default function Settings({ onBack, onRestartTour, onRetakeQuestionnaire 
                 )}
               </div>
             </div>
+          </div>
+        </div>
+
+        {/* Appearance */}
+        <div className="bg-slate-800 border border-slate-700 rounded-lg p-6 mb-6">
+          <h2 className="text-xl font-bold text-white mb-4">Appearance</h2>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-slate-300 font-medium mb-1">Theme</p>
+              <p className="text-slate-400 text-sm">Choose light or dark mode</p>
+            </div>
+            <button
+              onClick={toggleTheme}
+              className="flex items-center gap-2 px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg transition"
+            >
+              {theme === 'dark' ? (
+                <>
+                  <Sun className="w-4 h-4 text-yellow-400" />
+                  <span className="text-white">Light</span>
+                </>
+              ) : (
+                <>
+                  <Moon className="w-4 h-4 text-slate-400" />
+                  <span className="text-white">Dark</span>
+                </>
+              )}
+            </button>
           </div>
         </div>
 
