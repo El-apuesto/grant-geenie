@@ -21,13 +21,9 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Install dependencies
-        run: |
-          npm install openai @anthropic-ai/sdk
-
-      - name: Generate blog post with AI
+      - name: Generate blog post with Perplexity Sonar
         env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          PERPLEXITY_API_KEY: ${{ secrets.PERPLEXITY_API_KEY }}
         run: |
           node .github/scripts/generate-blog-post.js
 
