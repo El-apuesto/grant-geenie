@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Menu, X, Home, ClipboardList, Calendar, FileText, Building2, Settings as SettingsIcon, LogOut, BarChart3, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Menu, X, Home, Globe, ClipboardList, Calendar, FileText, Building2, Settings as SettingsIcon, LogOut, BarChart3, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Profile } from '../types';
 import { getStateName } from '../lib/states';
 import { useAuth } from '../contexts/AuthContext';
@@ -9,17 +9,19 @@ interface SidebarProps {
   onNavigate: (view: string) => void;
   onSignOut: () => void;
   onStartTour: () => void;
+  onGoHome: () => void;
   profile: Profile | null;
   currentView: string;
 }
 
-export default function Sidebar({ isPro, onNavigate, onSignOut, onStartTour, profile, currentView }: SidebarProps) {
+export default function Sidebar({ isPro, onNavigate, onSignOut, onStartTour, onGoHome, profile, currentView }: SidebarProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [upgrading, setUpgrading] = useState(false);
   const { user } = useAuth();
 
   const navigation = [
+    { name: 'Home', view: 'home', icon: Globe, prOnly: false },
     { name: 'Dashboard', view: 'dashboard', icon: Home, prOnly: false },
     { name: 'Application Tracker', view: 'tracker', icon: ClipboardList, prOnly: true },
     { name: 'Calendar', view: 'calendar', icon: Calendar, prOnly: true },
@@ -30,6 +32,11 @@ export default function Sidebar({ isPro, onNavigate, onSignOut, onStartTour, pro
   ];
 
   const handleNavigate = (view: string) => {
+    if (view === 'home') {
+      onGoHome();
+      setMobileMenuOpen(false);
+      return;
+    }
     onNavigate(view);
     setMobileMenuOpen(false);
   };
