@@ -5,7 +5,8 @@ import { User } from '../types';
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  signIn: () => Promise<void>;
+  signIn: (email?: string, password?: string) => Promise<void>;
+  signUp: (email?: string, password?: string) => Promise<void>;
   signOut: () => Promise<void>;
 }
 
@@ -13,6 +14,7 @@ const AuthContext = createContext<AuthContextType>({
   user: null,
   loading: true,
   signIn: async () => {},
+  signUp: async () => {},
   signOut: async () => {},
 });
 
@@ -42,17 +44,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  const signIn = async () => {
-    // In a real app, this would trigger the Supabase Auth UI or flow
-    // For now, we rely on the Auth component
+  const signIn = async (email?: string, password?: string) => {
+    if (!email || !password) throw new Error('Email and password required');
+    const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+    });
+    if (error) throw error;
   };
+
+  const signUp = async (email?: string, password?: string) => {
+      if (!email || !password) throw new Error('Email and password required');
+      const { error } = await supabase.auth.signUp({
+          email,
+          password,
+      });
+      if (error) throw error;
+  }
 
   const signOut = async () => {
     await supabase.auth.signOut();
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, signIn, signOut }}>
+    <AuthContext.Provider value={{ user, loading, signIn, signUp, signOut }}>
       {children}
     </AuthContext.Provider>
   );
