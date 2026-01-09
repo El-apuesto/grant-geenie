@@ -34,6 +34,7 @@ const QUESTIONS = [
       'Unincorporated group',
       '501(c)(3) or equivalent nonprofit',
       'For-profit business',
+      'Grant Writing Agency / Consultant',
       'Other',
     ],
   },
@@ -194,7 +195,11 @@ export default function Questionnaire({ onComplete }: QuestionnaireProps) {
 
     try {
       const primaryFields = answers.primary_fields as string[];
-      const orgType = primaryFields[0] || 'Other';
+      let orgType = primaryFields[0] || 'Other';
+      
+      if (answers.legal_entity === 'Grant Writing Agency / Consultant') {
+        orgType = 'Agency';
+      }
 
       const profileData = {
         id: user.id,
