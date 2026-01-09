@@ -15,17 +15,10 @@ import Questionnaire from './Questionnaire';
 import PricingPage from './PricingPage';
 import ProductTour from './ProductTour';
 import Sidebar from './Sidebar';
-import ShadowProfileGenerator from './ShadowProfileGenerator'; // Import Agency Tool
+import ShadowProfileGenerator from './ShadowProfileGenerator';
 import { useTour } from '../hooks/useTour';
 import { getStateName } from '../lib/states';
-
-interface Profile {
-  id: string;
-  state: string;
-  organization_type: string;
-  questionnaire_completed: boolean;
-  subscription_status: string | null;
-}
+import { Profile } from '../types'; // Import from types/index.ts
 
 interface DashboardProps {
   onGoHome?: () => void;
@@ -56,7 +49,7 @@ export default function Dashboard({ onGoHome }: DashboardProps) {
         if (err) throw err;
         if (data) {
           setProfile(data);
-          if (!data.state || !data.organization_type) {
+          if (!data.state || !data.org_type) { // Changed from organization_type to org_type to match DB/Type
             setShowQuestionnaire(true);
           }
         }
@@ -110,7 +103,7 @@ export default function Dashboard({ onGoHome }: DashboardProps) {
   };
 
   const isPro = profile?.subscription_status === 'active';
-  const hasCompletedQuestionnaire = profile?.state && profile?.organization_type;
+  const hasCompletedQuestionnaire = profile?.state && profile?.org_type; // Changed from organization_type
 
   if (showQuestionnaire) {
     return <Questionnaire onComplete={handleQuestionnaireComplete} />;
