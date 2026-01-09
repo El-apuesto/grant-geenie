@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
-import { Home, Search, BarChart3, FileText, Building2, Calendar as CalendarIcon, ClipboardList, Settings as SettingsIcon, LogOut, Crown, Menu, X } from 'lucide-react';
+import { Home, Search, BarChart3, FileText, Building2, Calendar as CalendarIcon, ClipboardList, Settings as SettingsIcon, LogOut, Crown, Menu, X, Briefcase } from 'lucide-react';
 import DashboardHome from './DashboardHome';
 import GrantPool from './GrantPool';
 import ApplicationTracker from './ApplicationTracker';
@@ -15,6 +15,7 @@ import Questionnaire from './Questionnaire';
 import PricingPage from './PricingPage';
 import ProductTour from './ProductTour';
 import Sidebar from './Sidebar';
+import ShadowProfileGenerator from './ShadowProfileGenerator'; // Import Agency Tool
 import { useTour } from '../hooks/useTour';
 import { getStateName } from '../lib/states';
 
@@ -30,7 +31,7 @@ interface DashboardProps {
   onGoHome?: () => void;
 }
 
-type ViewType = 'home' | 'grants' | 'tracker' | 'calendar' | 'loi' | 'fiscal' | 'templates' | 'analytics' | 'settings' | 'pricing';
+type ViewType = 'home' | 'grants' | 'tracker' | 'calendar' | 'loi' | 'fiscal' | 'templates' | 'analytics' | 'settings' | 'pricing' | 'agency';
 
 export default function Dashboard({ onGoHome }: DashboardProps) {
   const { user, signOut } = useAuth();
@@ -87,7 +88,6 @@ export default function Dashboard({ onGoHome }: DashboardProps) {
   const handleSignOut = async () => {
     try {
       await signOut();
-      // Optionally redirect to home is handled by auth state change in App.tsx
       if (onGoHome) onGoHome();
     } catch (err) {
       console.error('Failed to sign out:', err);
@@ -139,6 +139,44 @@ export default function Dashboard({ onGoHome }: DashboardProps) {
       );
     }
 
+    // Agency Tools View
+    if (currentView === 'agency') {
+        // If we want to gate this strictly:
+        // if (!isAgency) return <AgencyGate />
+        
+        // For now, render the tool as requested
+        return (
+            <div className="space-y-6">
+                <div className="bg-amber-900/20 border border-amber-700/50 p-6 rounded-lg mb-6">
+                    <div className="flex items-start gap-4">
+                        <Briefcase className="w-8 h-8 text-amber-500 flex-shrink-0" />
+                        <div>
+                            <h2 className="text-xl font-bold text-white mb-2">Agency Tools</h2>
+                            <p className="text-slate-300">
+                                Create shadow profiles and manage applications for your clients. 
+                                <br />
+                                <span className="text-sm text-amber-400 mt-2 inline-block">
+                                    Want to offer this service to your own clients? <a href="#" className="underline hover:text-amber-300">Contact us about our Agency Plan</a>.
+                                </span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <ShadowProfileGenerator onProfileGenerated={(shadowProfile) => {
+                    // When a profile is generated, we could automatically switch to LOI view 
+                    // and pass this state. For now, the user manually copies or we update state context.
+                    // The ShadowProfileGenerator gives feedback "Use for Application".
+                    // Let's make it alert or console log for now, as LOIGenerator has its own toggle.
+                    // Ideally, we lift this state up.
+                    // For this iteration, we'll let the user generate it here, and maybe copy-paste details,
+                    // OR we tell them "Now go to LOI Generator and enable Agency Mode".
+                    alert("Shadow Profile Created! Go to LOI Generator and enable 'Agency Mode' to use these details.");
+                }} />
+            </div>
+        );
+    }
+
     if (!hasCompletedQuestionnaire) {
       return (
         <div className="p-8">
@@ -158,26 +196,13 @@ export default function Dashboard({ onGoHome }: DashboardProps) {
       );
     }
 
-    // Show upgrade prompt for pro-only features (when clicked)
-    // Note: This logic is partially handled by Sidebar blocking navigation, 
-    // but if we somehow get here (e.g. direct nav if we had it), we show this.
-    // However, the Sidebar handles the 'prOnly' check mainly.
-    // We'll keep it for safety if needed, but navItems logic is in Sidebar now.
-    
-    // We need to define navItems here ONLY if we use them for checking permissions in renderView, 
-    // but Sidebar handles the navigation.
-    // Let's rely on Sidebar for navigation blocking.
-    // But if we are in a locked view, show the lock screen.
-    // We need the list of locked views.
     const lockedViews = ['tracker', 'calendar', 'loi', 'fiscal', 'templates', 'analytics'];
     if (!isPro && lockedViews.includes(currentView)) {
-        // ... Render upgrade prompt ...
          return (
         <div className="p-8">
           <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-12 text-center">
             <Crown className="w-16 h-16 text-emerald-500 mx-auto mb-4" />
             <h3 className="text-2xl font-bold text-white mb-4">Pro Feature</h3>
-            {/* ... copy from original file ... */}
             <p className="text-slate-400 mb-6">
               This feature is available exclusively to Pro subscribers.
             </p>
@@ -226,34 +251,12 @@ export default function Dashboard({ onGoHome }: DashboardProps) {
         currentView={currentView}
       />
 
-      {/* Main Content */}
       <main className="flex-1 flex flex-col min-w-0 transition-all duration-300 lg:pl-16 lg:ml-0">
-        {/* We need to adjust margin if sidebar is collapsed/expanded, but Sidebar component handles its own width. 
-            We just need to make sure content doesn't overlap. 
-            Sidebar is fixed. So we need a spacer or margin.
-            Sidebar adds a Spacer div visible on desktop. So we don't need margin-left on main?
-            Wait, in the original code, the Sidebar was part of the layout.
-            In my new Sidebar component, I added a Spacer div at the end of the fragment.
-            So flex layout should handle it?
-            Yes, Sidebar returns <><FixedDiv /><SpacerDiv /></>.
-            So <Dashboard> flex container will see SpacerDiv and Main.
-            Perfect.
-        */}
-
-        {/* Mobile Header - Only visible on mobile (Sidebar handles its own toggle button for desktop) */}
-         {/* Wait, Sidebar handles the mobile menu button and overlay. 
-             But we might need a header for the content area on mobile if Sidebar is closed?
-             In the new Sidebar, the hamburger button is fixed `fixed top-4 left-4`.
-             So we don't need a header here.
-        */}
-
-        {/* View Content */}
         <div className="flex-1 overflow-y-auto p-4 lg:p-8">
           {renderView()}
         </div>
       </main>
 
-      {/* Product Tour - ONLY for Pro users */}
       {isPro && isTourActive && (
         <ProductTour
           isActive={isTourActive}
