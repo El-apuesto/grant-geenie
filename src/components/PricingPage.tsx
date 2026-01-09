@@ -1,4 +1,4 @@
-import { Check } from 'lucide-react';
+import { Check, HelpCircle } from 'lucide-react';
 import UpgradeButton from './UpgradeButton';
 
 export default function PricingPage() {
@@ -23,7 +23,7 @@ export default function PricingPage() {
         </div>
 
         {/* Pricing Cards */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-4xl mx-auto">
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-[80rem] mx-auto">
           {/* Free Tier */}
           <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-6">
             <h3 className="text-xl font-bold text-white mb-2">Free</h3>
@@ -103,53 +103,8 @@ export default function PricingPage() {
             </UpgradeButton>
           </div>
 
-          {/* Season Pass - 4 Months */}
-          <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-6">
-            <h3 className="text-xl font-bold text-white mb-2">Season Pass (Pro)</h3>
-            <div className="mb-4">
-              <div>
-                <span className="text-4xl font-bold text-white">$79.99</span>
-                <span className="text-slate-400">/4 months</span>
-              </div>
-              <div className="text-sm text-emerald-400 mt-2">~$20/month</div>
-            </div>
-            <ul className="space-y-3 mb-6">
-              <li className="flex items-start gap-2 text-slate-300">
-                <Check className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" />
-                <span>Unlimited grant matches</span>
-              </li>
-              <li className="flex items-start gap-2 text-slate-300">
-                <Check className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" />
-                <span>Application tracker</span>
-              </li>
-              <li className="flex items-start gap-2 text-slate-300">
-                <Check className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" />
-                <span>LOI Generator</span>
-              </li>
-              <li className="flex items-start gap-2 text-slate-300">
-                <Check className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" />
-                <span>Fiscal Sponsors database</span>
-              </li>
-              <li className="flex items-start gap-2 text-slate-300">
-                <Check className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" />
-                <span>Calendar & deadlines</span>
-              </li>
-              <li className="flex items-start gap-2 text-slate-300">
-                <Check className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" />
-                <span>Advanced analytics</span>
-              </li>
-              <li className="flex items-start gap-2 text-slate-300">
-                <Check className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" />
-                <span>Priority support</span>
-              </li>
-            </ul>
-            <UpgradeButton priceId={STRIPE_PRICE_IDS.season}>
-              Subscribe Now
-            </UpgradeButton>
-          </div>
-
           {/* Annual */}
-          <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-6 md:col-span-2 lg:col-span-1">
+          <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-6">
             <h3 className="text-xl font-bold text-white mb-2">Annual (Pro)</h3>
             <div className="mb-4">
               <div>
@@ -192,6 +147,38 @@ export default function PricingPage() {
               Subscribe Now
             </UpgradeButton>
           </div>
+
+          {/* Agency Plan - Secretive */}
+          <div className="bg-slate-900/50 border border-slate-700/50 rounded-lg p-6 flex flex-col">
+            <h3 className="text-xl font-bold text-white mb-2">Agency</h3>
+            <div className="mb-4">
+              <div>
+                <span className="text-3xl font-bold text-white">Contact Us</span>
+              </div>
+              <div className="text-sm text-slate-500 mt-2">Application Management</div>
+            </div>
+            <ul className="space-y-3 mb-6 flex-1">
+              <li className="flex items-start gap-2 text-slate-400">
+                <Check className="w-5 h-5 text-slate-600 mt-0.5 flex-shrink-0" />
+                <span>Multi-client profiles</span>
+              </li>
+              <li className="flex items-start gap-2 text-slate-400">
+                <Check className="w-5 h-5 text-slate-600 mt-0.5 flex-shrink-0" />
+                <span>Client application drafting</span>
+              </li>
+              <li className="flex items-start gap-2 text-slate-400">
+                <HelpCircle className="w-5 h-5 text-slate-600 mt-0.5 flex-shrink-0" />
+                <span>Advanced management tools</span>
+              </li>
+            </ul>
+            <a 
+              href="mailto:support@grantgeenie.com?subject=Agency%20Plan%20Inquiry"
+              className="w-full py-3 bg-slate-800 hover:bg-slate-700 text-white font-semibold rounded-lg transition text-center block"
+            >
+              Contact Support
+            </a>
+          </div>
+
         </div>
 
         {/* Footer Info */}
