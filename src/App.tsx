@@ -34,6 +34,26 @@ function AppContent() {
     if (gaId) {
       analytics.initGA4(gaId);
     }
+
+    // Handle browser back/forward buttons
+    const handlePopState = () => {
+      const path = window.location.pathname;
+      if (path === '/dashboard') {
+        // We'll let the user/loading effect handle the auth check
+        setAppState('dashboard');
+      } else if (path === '/') {
+        setAppState('landing');
+      } else if (path === '/billing/success') {
+        setAppState('billing-success');
+      } else if (path === '/billing/cancel') {
+        setAppState('billing-cancel');
+      } else if (path === '/terms') {
+        setAppState('terms');
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
   // Track page views when appState changes
@@ -41,13 +61,18 @@ function AppContent() {
     const path = window.location.pathname;
     const title = PAGE_TITLES[appState] || 'Grant Geenie';
     analytics.trackPageView({ path, title });
+    
+    // Update document title
+    document.title = title;
   }, [appState]);
 
+  // Initial Routing Logic & Auth Protection
   useEffect(() => {
     if (loading) return;
 
-    // Check URL for routes
     const path = window.location.pathname;
+
+    // Public Routes
     if (path === '/billing/success') {
       setAppState('billing-success');
       return;
@@ -61,12 +86,28 @@ function AppContent() {
       return;
     }
 
-    if (!user) {
+    // Dashboard Route - Protected
+    if (path === '/dashboard') {
+      if (user) {
+        checkQuestionnaireStatus();
+      } else {
+        // If trying to access dashboard while logged out, redirect to landing (or auth)
+        setAppState('landing');
+        window.history.replaceState(null, '', '/');
+      }
+      return;
+    }
+
+    // Landing Route (/)
+    if (path === '/' || path === '') {
+      // Even if logged in, we allow staying on landing page now
       setAppState('landing');
       return;
     }
 
-    checkQuestionnaireStatus();
+    // Default fallback
+    setAppState('landing');
+
   }, [user, loading]);
 
   const checkQuestionnaireStatus = async () => {
@@ -92,11 +133,24 @@ function AppContent() {
   };
 
   const handleGetStarted = () => {
-    setAppState('auth');
+    if (user) {
+      setAppState('dashboard');
+      window.history.pushState(null, '', '/dashboard');
+    } else {
+      setAppState('auth');
+    }
+  };
+
+  const handleGoHome = () => {
+    setAppState('landing');
+    window.history.pushState(null, '', '/');
   };
 
   const handleAuthSuccess = () => {
     analytics.trackAuth('login');
+    // On success, go to dashboard
+    setAppState('dashboard');
+    window.history.pushState(null, '', '/dashboard');
     checkQuestionnaireStatus();
   };
 
@@ -104,6 +158,7 @@ function AppContent() {
     analytics.trackQuestionnaireComplete();
     setQuestionnaireCompleted(true);
     setAppState('dashboard');
+    window.history.pushState(null, '', '/dashboard');
   };
 
   if (loading) {
@@ -139,7 +194,7 @@ function AppContent() {
   }
 
   if (appState === 'dashboard') {
-    return <Dashboard />;
+    return <Dashboard onGoHome={handleGoHome} />;
   }
 
   return null;
