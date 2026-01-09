@@ -86,7 +86,7 @@ export default function FiscalSponsorMatcher({
     try {
       const { data, error } = await supabase.rpc('match_fiscal_sponsors', {
         user_focus_areas: focusAreas.length > 0 ? focusAreas : ['General'],
-        user_state: userProfile.state || null,
+        user_state: null, // Force national search by ignoring state
         user_country: 'USA',
         match_limit: LIMIT,
         match_offset: currentOffset,
@@ -154,7 +154,7 @@ export default function FiscalSponsorMatcher({
           </div>
         </div>
         <p className="text-slate-400 text-sm">
-          We match you with fiscal sponsors from our database of 401 verified organizations across all 50 states.
+          We match you with fiscal sponsors from our database of 401 verified organizations. Showing national and local results.
         </p>
       </div>
 
