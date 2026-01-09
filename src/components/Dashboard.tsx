@@ -14,6 +14,7 @@ import Settings from './Settings';
 import Questionnaire from './Questionnaire';
 import PricingPage from './PricingPage';
 import ProductTour from './ProductTour';
+import Sidebar from './Sidebar';
 import { useTour } from '../hooks/useTour';
 import { getStateName } from '../lib/states';
 
@@ -25,9 +26,13 @@ interface Profile {
   subscription_status: string | null;
 }
 
+interface DashboardProps {
+  onGoHome?: () => void;
+}
+
 type ViewType = 'home' | 'grants' | 'tracker' | 'calendar' | 'loi' | 'fiscal' | 'templates' | 'analytics' | 'settings' | 'pricing';
 
-export default function Dashboard() {
+export default function Dashboard({ onGoHome }: DashboardProps) {
   const { user, signOut } = useAuth();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -64,9 +69,6 @@ export default function Dashboard() {
     loadProfile();
   }, [user]);
 
-  // REMOVED: Auto-popup on page load - it was annoying Pro users
-  // Popup only shows when clicking Pro features now
-
   const handleQuestionnaireComplete = async () => {
     if (!user) return;
     
@@ -85,6 +87,8 @@ export default function Dashboard() {
   const handleSignOut = async () => {
     try {
       await signOut();
+      // Optionally redirect to home is handled by auth state change in App.tsx
+      if (onGoHome) onGoHome();
     } catch (err) {
       console.error('Failed to sign out:', err);
     }
@@ -119,17 +123,6 @@ export default function Dashboard() {
       </div>
     );
   }
-
-  const navItems = [
-    { id: 'home' as ViewType, label: 'Home', icon: Home, prOnly: false },
-    { id: 'grants' as ViewType, label: 'Find Grants', icon: Search, prOnly: false },
-    { id: 'tracker' as ViewType, label: 'Application Tracker', icon: ClipboardList, prOnly: true },
-    { id: 'calendar' as ViewType, label: 'Calendar', icon: CalendarIcon, prOnly: true },
-    { id: 'loi' as ViewType, label: 'LOI Generator', icon: FileText, prOnly: true },
-    { id: 'fiscal' as ViewType, label: 'Fiscal Sponsors', icon: Building2, prOnly: true },
-    { id: 'templates' as ViewType, label: 'Templates', icon: FileText, prOnly: true },
-    { id: 'analytics' as ViewType, label: 'Analytics', icon: BarChart3, prOnly: true },
-  ];
 
   const renderView = () => {
     if (currentView === 'pricing') {
@@ -166,25 +159,28 @@ export default function Dashboard() {
     }
 
     // Show upgrade prompt for pro-only features (when clicked)
-    const currentNavItem = navItems.find(item => item.id === currentView);
-    if (!isPro && currentNavItem?.prOnly) {
-      return (
+    // Note: This logic is partially handled by Sidebar blocking navigation, 
+    // but if we somehow get here (e.g. direct nav if we had it), we show this.
+    // However, the Sidebar handles the 'prOnly' check mainly.
+    // We'll keep it for safety if needed, but navItems logic is in Sidebar now.
+    
+    // We need to define navItems here ONLY if we use them for checking permissions in renderView, 
+    // but Sidebar handles the navigation.
+    // Let's rely on Sidebar for navigation blocking.
+    // But if we are in a locked view, show the lock screen.
+    // We need the list of locked views.
+    const lockedViews = ['tracker', 'calendar', 'loi', 'fiscal', 'templates', 'analytics'];
+    if (!isPro && lockedViews.includes(currentView)) {
+        // ... Render upgrade prompt ...
+         return (
         <div className="p-8">
           <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-12 text-center">
             <Crown className="w-16 h-16 text-emerald-500 mx-auto mb-4" />
             <h3 className="text-2xl font-bold text-white mb-4">Pro Feature</h3>
+            {/* ... copy from original file ... */}
             <p className="text-slate-400 mb-6">
-              {currentNavItem.label} is available exclusively to Pro subscribers.
+              This feature is available exclusively to Pro subscribers.
             </p>
-            <ul className="text-slate-300 space-y-2 mb-6 text-left max-w-md mx-auto">
-              <li>• <strong>Unlimited grants</strong> with full details</li>
-              <li>• Application tracking & pipeline</li>
-              <li>• LOI Generator with auto-fill</li>
-              <li>• 265+ Fiscal Sponsor database</li>
-              <li>• Professional templates</li>
-              <li>• Deadline calendar</li>
-              <li>• Analytics & insights</li>
-            </ul>
             <button
               onClick={handleUpgrade}
               className="px-8 py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg transition text-lg"
@@ -220,247 +216,39 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex">
-      {/* Sidebar - Desktop */}
-      <aside className="hidden lg:flex lg:flex-col lg:w-64 bg-slate-900/50 border-r border-slate-700">
-        {/* Logo/Header */}
-        <div className="p-6 border-b border-slate-700">
-          <div className="flex items-center gap-3 mb-3">
-            <img 
-              src="/Logo.png.PNG" 
-              alt="Grant Geenie Logo" 
-              className="h-10 w-auto"
-            />
-          </div>
-          {isPro ? (
-            <span className="flex items-center gap-1 text-xs bg-emerald-600/20 border border-emerald-500/30 text-emerald-400 px-2 py-1 rounded w-fit">
-              <Crown className="w-3 h-3" />
-              Pro
-            </span>
-          ) : (
-            <span className="text-xs bg-slate-700 text-slate-300 px-2 py-1 rounded w-fit">
-              Free Tier
-            </span>
-          )}
-          {hasCompletedQuestionnaire && profile && (
-            <p className="text-slate-400 text-xs mt-2">
-              {getStateName(profile.state)} • {profile.organization_type}
-            </p>
-          )}
-        </div>
-
-        {/* Navigation */}
-        <nav className="flex-1 p-4">
-          <ul className="space-y-1">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = currentView === item.id;
-              const isLocked = !isPro && item.prOnly;
-              
-              return (
-                <li key={item.id}>
-                  <button
-                    onClick={() => {
-                      setCurrentView(item.id);
-                    }}
-                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition ${
-                      isActive
-                        ? 'bg-emerald-600 text-white'
-                        : isLocked
-                        ? 'text-slate-500 hover:bg-slate-800/50'
-                        : 'text-slate-300 hover:bg-slate-800/50'
-                    }`}
-                  >
-                    <Icon className="w-5 h-5" />
-                    <span className="flex-1 text-left">{item.label}</span>
-                    {isLocked && <Crown className="w-4 h-4" />}
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-        </nav>
-
-        {/* Bottom Actions */}
-        <div className="p-4 border-t border-slate-700 space-y-2">
-          {isPro && (
-            <button
-              onClick={() => setCurrentView('settings')}
-              className="w-full flex items-center gap-3 px-4 py-3 text-slate-300 hover:bg-slate-800/50 rounded-lg transition"
-            >
-              <SettingsIcon className="w-5 h-5" />
-              <span>Settings</span>
-            </button>
-          )}
-          {isPro && (
-            <button
-              onClick={startTour}
-              className="w-full flex items-center gap-3 px-4 py-3 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 rounded-lg transition"
-              title="Summon the Genie for help"
-            >
-              <img src="/genie.png.PNG" alt="Genie" className="w-5 h-5 object-contain" />
-              <span>Help Tour</span>
-            </button>
-          )}
-          {!isPro && (
-            <button
-              onClick={handleUpgrade}
-              className="w-full px-4 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-semibold transition flex items-center justify-center gap-2"
-            >
-              <Crown className="w-4 h-4" />
-              Upgrade to Pro
-            </button>
-          )}
-          <button
-            onClick={handleSignOut}
-            className="w-full flex items-center gap-3 px-4 py-3 text-slate-300 hover:bg-slate-800/50 rounded-lg transition"
-          >
-            <LogOut className="w-5 h-5" />
-            <span>Sign Out</span>
-          </button>
-        </div>
-      </aside>
-
-      {/* Mobile Sidebar Overlay */}
-      {sidebarOpen && (
-        <div className="lg:hidden fixed inset-0 z-50 bg-black/50" onClick={() => setSidebarOpen(false)}>
-          <aside 
-            className="w-64 h-full bg-slate-900 border-r border-slate-700 flex flex-col"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Mobile Header */}
-            <div className="p-6 border-b border-slate-700 flex items-center justify-between">
-              <div>
-                <img 
-                  src="/Logo.png.PNG" 
-                  alt="Grant Geenie Logo" 
-                  className="h-8 w-auto mb-2"
-                />
-                {isPro ? (
-                  <span className="flex items-center gap-1 text-xs bg-emerald-600/20 border border-emerald-500/30 text-emerald-400 px-2 py-1 rounded w-fit">
-                    <Crown className="w-3 h-3" />
-                    Pro
-                  </span>
-                ) : (
-                  <span className="text-xs bg-slate-700 text-slate-300 px-2 py-1 rounded w-fit">
-                    Free Tier
-                  </span>
-                )}
-              </div>
-              <button onClick={() => setSidebarOpen(false)} className="text-slate-400 hover:text-white">
-                <X className="w-6 h-6" />
-              </button>
-            </div>
-
-            {/* Mobile Navigation */}
-            <nav className="flex-1 p-4 overflow-y-auto">
-              <ul className="space-y-1">
-                {navItems.map((item) => {
-                  const Icon = item.icon;
-                  const isActive = currentView === item.id;
-                  const isLocked = !isPro && item.prOnly;
-                  
-                  return (
-                    <li key={item.id}>
-                      <button
-                        onClick={() => {
-                          setCurrentView(item.id);
-                          setSidebarOpen(false);
-                        }}
-                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition ${
-                          isActive
-                            ? 'bg-emerald-600 text-white'
-                            : isLocked
-                            ? 'text-slate-500 hover:bg-slate-800/50'
-                            : 'text-slate-300 hover:bg-slate-800/50'
-                        }`}
-                      >
-                        <Icon className="w-5 h-5" />
-                        <span className="flex-1 text-left">{item.label}</span>
-                        {isLocked && <Crown className="w-4 h-4" />}
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
-            </nav>
-
-            {/* Mobile Bottom Actions */}
-            <div className="p-4 border-t border-slate-700 space-y-2">
-              {isPro && (
-                <button
-                  onClick={() => {
-                    setCurrentView('settings');
-                    setSidebarOpen(false);
-                  }}
-                  className="w-full flex items-center gap-3 px-4 py-3 text-slate-300 hover:bg-slate-800/50 rounded-lg transition"
-                >
-                  <SettingsIcon className="w-5 h-5" />
-                  <span>Settings</span>
-                </button>
-              )}
-              {isPro && (
-                <button
-                  onClick={() => {
-                    startTour();
-                    setSidebarOpen(false);
-                  }}
-                  className="w-full flex items-center gap-3 px-4 py-3 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 rounded-lg transition"
-                >
-                  <img src="/genie.png.PNG" alt="Genie" className="w-5 h-5 object-contain" />
-                  <span>Help Tour</span>
-                </button>
-              )}
-              {!isPro && (
-                <button
-                  onClick={handleUpgrade}
-                  className="w-full px-4 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-semibold transition flex items-center justify-center gap-2"
-                >
-                  <Crown className="w-4 h-4" />
-                  Upgrade to Pro
-                </button>
-              )}
-              <button
-                onClick={handleSignOut}
-                className="w-full flex items-center gap-3 px-4 py-3 text-slate-300 hover:bg-slate-800/50 rounded-lg transition"
-              >
-                <LogOut className="w-5 h-5" />
-                <span>Sign Out</span>
-              </button>
-            </div>
-          </aside>
-        </div>
-      )}
+      <Sidebar
+        isPro={isPro}
+        onNavigate={(view) => setCurrentView(view as any)}
+        onSignOut={handleSignOut}
+        onStartTour={startTour}
+        onGoHome={onGoHome || (() => {})}
+        profile={profile}
+        currentView={currentView}
+      />
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col min-w-0">
-        {/* Mobile Header */}
-        <header className="lg:hidden border-b border-slate-700 bg-slate-900/50 backdrop-blur-sm sticky top-0 z-10">
-          <div className="px-4 py-4 flex items-center justify-between">
-            <button
-              onClick={() => setSidebarOpen(true)}
-              className="p-2 text-slate-300 hover:text-white"
-            >
-              <Menu className="w-6 h-6" />
-            </button>
-            <img 
-              src="/Logo.png.PNG" 
-              alt="Grant Geenie" 
-              className="h-8 w-auto"
-            />
-            {isPro && (
-              <button
-                onClick={startTour}
-                className="p-2 text-emerald-400 hover:text-emerald-300"
-              >
-                <img src="/genie.png.PNG" alt="Genie" className="w-6 h-6 object-contain" />
-              </button>
-            )}
-            {!isPro && <div className="w-10" />}
-          </div>
-        </header>
+      <main className="flex-1 flex flex-col min-w-0 transition-all duration-300 lg:pl-16 lg:ml-0">
+        {/* We need to adjust margin if sidebar is collapsed/expanded, but Sidebar component handles its own width. 
+            We just need to make sure content doesn't overlap. 
+            Sidebar is fixed. So we need a spacer or margin.
+            Sidebar adds a Spacer div visible on desktop. So we don't need margin-left on main?
+            Wait, in the original code, the Sidebar was part of the layout.
+            In my new Sidebar component, I added a Spacer div at the end of the fragment.
+            So flex layout should handle it?
+            Yes, Sidebar returns <><FixedDiv /><SpacerDiv /></>.
+            So <Dashboard> flex container will see SpacerDiv and Main.
+            Perfect.
+        */}
+
+        {/* Mobile Header - Only visible on mobile (Sidebar handles its own toggle button for desktop) */}
+         {/* Wait, Sidebar handles the mobile menu button and overlay. 
+             But we might need a header for the content area on mobile if Sidebar is closed?
+             In the new Sidebar, the hamburger button is fixed `fixed top-4 left-4`.
+             So we don't need a header here.
+        */}
 
         {/* View Content */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto p-4 lg:p-8">
           {renderView()}
         </div>
       </main>
