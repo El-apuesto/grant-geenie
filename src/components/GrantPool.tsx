@@ -131,7 +131,7 @@ export default function GrantPool({ isPro, profile }: GrantPoolProps) {
           
           filtered = filtered.filter(grant => {
             const searchText = `${grant.title} ${grant.description}`.toLowerCase();
-            return keywords.some(keyword => searchText.includes(keyword));
+            return keywords.some((keyword: string) => searchText.includes(keyword));
           });
         }
         
