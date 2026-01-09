@@ -194,7 +194,7 @@ function AppContent() {
   }
 
   if (appState === 'dashboard') {
-    return <Dashboard onGoHome={handleGoHome} />;
+    return <Dashboard />;
   }
 
   return null;
