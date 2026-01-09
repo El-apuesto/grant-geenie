@@ -129,9 +129,9 @@ export default function Sidebar({ isPro, onNavigate, onSignOut, onStartTour, onG
               </div>
             )}
           </div>
-          {!collapsed && profile && profile.state && profile.org_type && (
+          {!collapsed && profile && profile.state && profile.organization_type && ( // Reverted to organization_type
             <p className="text-slate-400 text-xs">
-              {getStateName(profile.state)} • {profile.org_type}
+              {getStateName(profile.state)} • {profile.organization_type}
             </p>
           )}
         </div>
@@ -145,7 +145,8 @@ export default function Sidebar({ isPro, onNavigate, onSignOut, onStartTour, onG
             const agencyOnly = (item as any).agencyOnly;
 
             // Hide agency tools if user is not an agency
-            if (agencyOnly && profile?.org_type !== 'Agency') {
+            // Reverted to check organization_type
+            if (agencyOnly && profile?.organization_type !== 'Agency') {
               return null;
             }
             
