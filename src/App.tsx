@@ -6,7 +6,7 @@ import { analytics } from './lib/analytics';
 import Landing from './components/Landing';
 import Auth from './components/Auth';
 import Questionnaire from './components/Questionnaire';
-import Dashboard from './components/Dashboard';
+import DashboardContainer from './components/DashboardContainer';
 import BillingSuccess from './components/BillingSuccess';
 import BillingCancel from './components/BillingCancel';
 import TermsOfService from './pages/TermsOfService';
@@ -194,7 +194,7 @@ function AppContent() {
   }
 
   if (appState === 'dashboard') {
-    return <Dashboard />;
+    return <DashboardContainer />;
   }
 
   return null;
