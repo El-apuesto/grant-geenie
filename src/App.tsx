@@ -116,11 +116,11 @@ function AppContent() {
     try {
       const { data } = await supabase
         .from('profiles')
-        .select('questionnaire_completed')
+        .select('onboarding_completed')
         .eq('id', user.id)
         .maybeSingle();
 
-      if (data?.questionnaire_completed) {
+      if (data?.onboarding_completed) {
         setQuestionnaireCompleted(true);
         setAppState('dashboard');
       } else {
