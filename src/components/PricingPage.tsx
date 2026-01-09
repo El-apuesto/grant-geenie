@@ -171,12 +171,9 @@ export default function PricingPage() {
                 <span>Advanced management tools</span>
               </li>
             </ul>
-            <a 
-              href="mailto:support@grantgeenie.com?subject=Agency%20Plan%20Inquiry"
-              className="w-full py-3 bg-slate-800 hover:bg-slate-700 text-white font-semibold rounded-lg transition text-center block"
-            >
-              Contact Support
-            </a>
+            <div className="w-full py-3 bg-slate-800/50 text-slate-500 font-semibold rounded-lg text-center cursor-default">
+              By Invitation Only
+            </div>
           </div>
 
         </div>
