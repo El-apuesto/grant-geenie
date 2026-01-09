@@ -6,7 +6,7 @@ import { Profile } from '../types';
 import { US_STATES } from '../lib/states';
 import { ArrowLeft, Play, RefreshCw, Sun, Moon } from 'lucide-react';
 
-const ORG_TYPES = ['Nonprofit', 'Small Business', 'Freelancer/Solo', 'Artist/Creator', 'Other'];
+const ORG_TYPES = ['Nonprofit', 'Small Business', 'Freelancer/Solo', 'Artist/Creator', 'Agency', 'Other'];
 
 interface SettingsProps {
   onBack: () => void;
