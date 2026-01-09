@@ -17,7 +17,8 @@ export default function GrantPool({ isPro, profile }: GrantPoolProps) {
   // Agency Search State
   const [agencyKeyword, setAgencyKeyword] = useState('');
   const [searchOnlyKeyword, setSearchOnlyKeyword] = useState(false);
-  const isAgency = profile?.org_type === 'Agency';
+  // Reverted to organization_type
+  const isAgency = profile?.organization_type === 'Agency';
 
   useEffect(() => {
     if (profile) {
