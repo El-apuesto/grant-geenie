@@ -113,7 +113,7 @@ export default function ApplicationTracker({ isPro }: ApplicationTrackerProps) {
 
     setFormData({
       ...formData,
-      grant_id: grant.id,
+      grant_id: grant.id.toString(), // Ensure string
       grant_title: grant.title,
       funder_name: grant.agency_name,
       due_date: dueDate,
@@ -186,7 +186,7 @@ export default function ApplicationTracker({ isPro }: ApplicationTrackerProps) {
   const handleEdit = (app: Application) => {
     setEditingApp(app);
     setFormData({
-      grant_id: app.grant_id || '',
+      grant_id: app.grant_id ? String(app.grant_id) : '',
       grant_title: app.grant_title,
       funder_name: app.funder_name,
       application_type: app.application_type,
@@ -194,8 +194,8 @@ export default function ApplicationTracker({ isPro }: ApplicationTrackerProps) {
       due_date: app.due_date || '',
       submitted_date: app.submitted_date || '',
       decision_date: app.decision_date || '',
-      amount_requested: app.amount_requested ? app.amount_requested.toString() : '',
-      amount_awarded: app.amount_awarded ? app.amount_awarded.toString() : '',
+      amount_requested: app.amount_requested !== undefined && app.amount_requested !== null ? String(app.amount_requested) : '',
+      amount_awarded: app.amount_awarded !== undefined && app.amount_awarded !== null ? String(app.amount_awarded) : '',
       notes: app.notes || '',
     });
     setShowGrantSelector(false); // Skip selector when editing
