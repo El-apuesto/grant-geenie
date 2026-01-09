@@ -5,17 +5,17 @@ import { supabase } from "../lib/supabase";
 export default function BillingSuccess() {
   const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
   const [errorMessage, setErrorMessage] = useState("");
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
 
   useEffect(() => {
+    // Wait for auth to initialize
+    if (authLoading) return;
+
     const verifyPayment = async () => {
       console.log("🔍 Starting payment verification...");
       
       const params = new URLSearchParams(window.location.search);
       const sessionId = params.get("session_id");
-      
-      console.log("Session ID:", sessionId);
-      console.log("User:", user);
       
       if (!sessionId) {
         console.error("❌ No session ID found");
@@ -27,24 +27,20 @@ export default function BillingSuccess() {
       if (!user) {
         console.error("❌ User not authenticated");
         setStatus("error");
-        setErrorMessage("User not authenticated");
+        setErrorMessage("Please log in to verify your payment");
         return;
       }
 
       try {
         console.log("📞 Calling /api/stripe-success...");
         
-        // Call your existing Vercel API endpoint
         const response = await fetch("/api/stripe-success", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ sessionId }),
         });
 
-        console.log("Response status:", response.status);
-        
         const data = await response.json();
-        console.log("Response data:", data);
 
         if (!response.ok) {
           throw new Error(data.error || "Payment verification failed");
@@ -58,23 +54,31 @@ export default function BillingSuccess() {
         console.log("✅ Session refreshed!");
         setStatus("success");
         
-        // Redirect to home (dashboard) after 2 seconds
-        console.log("Redirecting to dashboard in 2 seconds...");
+        // Redirect to dashboard immediately
         setTimeout(() => {
-          window.location.href = "/";
-        }, 2000);
+          window.location.href = "/dashboard";
+        }, 1500);
         
       } catch (error: any) {
         console.error("❌ Payment verification error:", error);
+        // If the error is that it was already processed, we can consider it a success
+        if (error.message?.includes('already processed')) {
+           setStatus("success");
+           setTimeout(() => {
+             window.location.href = "/dashboard";
+           }, 1500);
+           return;
+        }
+        
         setStatus("error");
         setErrorMessage(error.message || "An unexpected error occurred");
       }
     };
 
     verifyPayment();
-  }, [user]);
+  }, [user, authLoading]);
 
-  if (status === "loading") {
+  if (status === "loading" || authLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
         <div className="text-center">
@@ -93,15 +97,20 @@ export default function BillingSuccess() {
           <div className="text-red-500 text-5xl mb-4">✗</div>
           <h1 className="text-2xl font-bold text-white mb-2">Payment Verification Failed</h1>
           <p className="text-slate-400 mb-2">{errorMessage}</p>
-          <p className="text-sm text-slate-500 mb-6">
-            If you were charged, your payment will be processed. Contact support if issues persist.
-          </p>
-          <button 
-            onClick={() => window.location.href = "/"}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2 px-6 rounded transition-colors"
-          >
-            Return to Dashboard
-          </button>
+          <div className="flex gap-3 justify-center mt-6">
+            <button 
+              onClick={() => window.location.href = "/dashboard"}
+              className="bg-slate-700 hover:bg-slate-600 text-white font-semibold py-2 px-6 rounded transition-colors"
+            >
+              Go to Dashboard
+            </button>
+            <a 
+              href="mailto:support@grantgeenie.com"
+              className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2 px-6 rounded transition-colors"
+            >
+              Contact Support
+            </a>
+          </div>
         </div>
       </div>
     );
@@ -112,8 +121,14 @@ export default function BillingSuccess() {
       <div className="text-center max-w-md px-4">
         <div className="text-emerald-500 text-5xl mb-4">✓</div>
         <h1 className="text-2xl font-bold text-white mb-2">Payment Successful!</h1>
-        <p className="text-slate-400 mb-2">Your subscription has been activated.</p>
-        <p className="text-sm text-slate-500">Redirecting to dashboard...</p>
+        <p className="text-slate-400 mb-2">Your subscription is active.</p>
+        <p className="text-sm text-slate-500 mb-6">Redirecting to dashboard...</p>
+        <button 
+          onClick={() => window.location.href = "/dashboard"}
+          className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2 px-6 rounded transition-colors"
+        >
+          Go to Dashboard Now
+        </button>
       </div>
     </div>
   );
