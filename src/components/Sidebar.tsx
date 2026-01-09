@@ -21,15 +21,15 @@ export default function Sidebar({ isPro, onNavigate, onSignOut, onStartTour, onG
   const { user } = useAuth();
 
   const navigation = [
-    { name: 'Home', view: 'home', icon: Globe, prOnly: false },
-    { name: 'Dashboard', view: 'dashboard', icon: Home, prOnly: false },
+    { name: 'Dashboard Home', view: 'dashboard', icon: Home, prOnly: false },
+    { name: 'Agency Tools', view: 'agency', icon: Briefcase, prOnly: false },
     { name: 'Application Tracker', view: 'tracker', icon: ClipboardList, prOnly: true },
     { name: 'Calendar', view: 'calendar', icon: Calendar, prOnly: true },
     { name: 'LOI Generator', view: 'loi', icon: FileText, prOnly: true },
     { name: 'Templates', view: 'templates', icon: FileText, prOnly: true },
     { name: 'Fiscal Sponsors', view: 'fiscalSponsors', icon: Building2, prOnly: true },
     { name: 'Analytics', view: 'analytics', icon: BarChart3, prOnly: true },
-    { name: 'Agency Tools', view: 'agency', icon: Briefcase, prOnly: false }, // No badge, looks standard
+    { name: 'Website', view: 'home', icon: Globe, prOnly: false },
   ];
 
   const handleNavigate = (view: string) => {
