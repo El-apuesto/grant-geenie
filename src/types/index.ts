@@ -8,7 +8,7 @@ export interface Profile {
   id: string;
   user_id: string;
   state: string;
-  org_type: string;
+  organization_type: string; // Reverted to match DB
   questionnaire_completed: boolean;
   has_coupon_code: string | null;
   subscription_status: string | null; // 'active', 'past_due', 'canceled', etc.
