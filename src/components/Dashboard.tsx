@@ -6,11 +6,12 @@ import { Bookmark, Search, ArrowRight, Zap, Target, Briefcase } from 'lucide-rea
 import { Grant } from '../types';
 
 interface DashboardProps {
-  onNavigate: (view: string) => void;
-  profile: Profile | null;
+  onNavigate?: (view: string) => void;
+  profile?: Profile | null;
+  onGoHome?: () => void;
 }
 
-export default function Dashboard({ onNavigate, profile }: DashboardProps) {
+export default function Dashboard({ onNavigate = () => {}, profile, onGoHome }: DashboardProps) {
   const { user } = useAuth();
   const [stats, setStats] = useState({
     savedGrants: 0,
