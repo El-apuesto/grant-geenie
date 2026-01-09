@@ -1,7 +1,7 @@
 export interface Profile {
   id: string;
   email: string;
-  organization_type: string | null; // Reverted to organization_type
+  organization_type: string | null;
   state: string | null;
   focus_area: string | null;
   onboarding_completed: boolean;
@@ -9,6 +9,32 @@ export interface Profile {
   stripe_customer_id?: string;
   created_at?: string;
   updated_at?: string;
+  // Added missing fields
+  primary_fields?: string[]; 
+  questionnaire_completed?: boolean;
+}
+
+export interface User {
+  id: string;
+  email?: string;
+}
+
+export interface Application {
+  id: string;
+  user_id: string;
+  grant_id?: string;
+  grant_title: string;
+  funder_name: string;
+  application_type: 'LOI' | 'Full Application' | 'Letter of Intent' | 'Proposal';
+  status: 'Draft' | 'In Progress' | 'Submitted' | 'Under Review' | 'Awarded' | 'Declined' | 'Withdrawn';
+  due_date?: string;
+  submitted_date?: string;
+  decision_date?: string;
+  amount_requested?: number;
+  amount_awarded?: number;
+  notes?: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Grant {
@@ -27,10 +53,9 @@ export interface Grant {
   apply_url: string | null;
   eligible_applicants: string;
   category_of_funding_activity: string;
-  state: string | null; // For state-specific filtering
+  state: string | null; 
   created_at: string;
   
-  // These fields are returned by the Grants.gov API but might not be in our DB
   opportunityTitle?: string;
   opportunityCategory?: string;
 }
