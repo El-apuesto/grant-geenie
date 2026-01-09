@@ -1,4 +1,4 @@
-import { Search, ClipboardList, Calendar as CalendarIcon, FileText, Building2, BarChart3, Crown, ArrowRight, TrendingUp, AlertCircle, CheckCircle, XCircle } from 'lucide-react';
+import { Search, ClipboardList, Calendar as CalendarIcon, FileText, Building2, BarChart3, Crown, ArrowRight, TrendingUp, AlertCircle, CheckCircle, XCircle, Briefcase } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
@@ -151,6 +151,14 @@ export default function DashboardHome({ isPro, onNavigate }: DashboardHomeProps)
       color: 'cyan',
       prOnly: true,
     },
+    {
+      id: 'agency',
+      title: 'Agency Tools',
+      description: 'Shadow profiles & client management',
+      icon: Briefcase,
+      color: 'emerald',
+      prOnly: false,
+    },
   ];
 
   const getColorClasses = (color: string, isLocked: boolean) => {
@@ -191,8 +199,6 @@ export default function DashboardHome({ isPro, onNavigate }: DashboardHomeProps)
 
   return (
     <div className="relative min-h-screen p-8">
-      {/* REMOVED: PromoPopup - it was annoying Pro users */}
-
       {/* Faded Logo Background */}
       <div 
         className="fixed inset-0 flex items-center justify-center pointer-events-none opacity-5"
