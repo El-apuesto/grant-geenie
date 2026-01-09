@@ -49,7 +49,7 @@ export default function Dashboard({ onGoHome }: DashboardProps) {
         if (err) throw err;
         if (data) {
           setProfile(data);
-          if (!data.state || !data.org_type) { // Changed from organization_type to org_type to match DB/Type
+          if (!data.state || !data.organization_type) { // Reverted to organization_type
             setShowQuestionnaire(true);
           }
         }
@@ -103,7 +103,7 @@ export default function Dashboard({ onGoHome }: DashboardProps) {
   };
 
   const isPro = profile?.subscription_status === 'active';
-  const hasCompletedQuestionnaire = profile?.state && profile?.org_type; // Changed from organization_type
+  const hasCompletedQuestionnaire = profile?.state && profile?.organization_type; // Reverted to organization_type
 
   if (showQuestionnaire) {
     return <Questionnaire onComplete={handleQuestionnaireComplete} />;
