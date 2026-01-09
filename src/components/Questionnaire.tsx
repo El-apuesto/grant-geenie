@@ -200,7 +200,7 @@ export default function Questionnaire({ onComplete }: QuestionnaireProps) {
         id: user.id,
         email: user.email,
         state: answers.state,
-        organization_type: orgType,
+        org_type: orgType,
         business_location: answers.business_location,
         legal_entity: answers.legal_entity,
         annual_revenue: answers.annual_revenue,
