@@ -9,7 +9,7 @@ import CalendarPage from './CalendarPage';
 import LOIGenerator from './LOIGenerator';
 import TemplatesPage from './TemplatesPage';
 import FiscalSponsors from './FiscalSponsors';
-import Analytics from './Analytics';
+import Analytics from './AnalyticsPage';
 import AgencyTools from './AgencyTools';
 import PricingPage from './PricingPage';
 import { Profile } from '../types';
@@ -67,17 +67,21 @@ export default function DashboardContainer() {
     { id: 'agency' as ViewType, label: 'Agency Tools', icon: Briefcase, proOnly: false },
   ];
 
+  const handleNavigate = (view: string) => {
+    setCurrentView(view as ViewType);
+  };
+
   const renderView = () => {
     switch (currentView) {
       case 'home':
-        return <DashboardHome isPro={isPro} onNavigate={setCurrentView} />;
+        return <DashboardHome isPro={isPro} onNavigate={handleNavigate} />;
       case 'grants':
       case 'pool':
-        return <GrantPool isPro={isPro} />;
+        return <GrantPool isPro={isPro} profile={profile} />;
       case 'tracker':
         return <ApplicationTracker isPro={isPro} />;
       case 'calendar':
-        return <CalendarPage isPro={isPro} />;
+        return <CalendarPage />;
       case 'loi':
         return <LOIGenerator isPro={isPro} />;
       case 'templates':
@@ -85,13 +89,13 @@ export default function DashboardContainer() {
       case 'fiscal':
         return <FiscalSponsors isPro={isPro} />;
       case 'analytics':
-        return <Analytics isPro={isPro} />;
+        return <Analytics />;
       case 'agency':
         return <AgencyTools isPro={isPro} />;
       case 'pricing':
         return <PricingPage />;
       default:
-        return <DashboardHome isPro={isPro} onNavigate={setCurrentView} />;
+        return <DashboardHome isPro={isPro} onNavigate={handleNavigate} />;
     }
   };
 
