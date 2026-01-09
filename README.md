@@ -1,8 +1,8 @@
-# Grant Genie 🧞‍♂️
+# Grant Geenie 🧞‍♂️
 
 **Find the perfect grants for your nonprofit, artist, or solopreneur.**
 
-Grant Genie matches you with grants based on your location, organization type, and needs. Discover federal grants + state-specific opportunities in minutes.
+Grant Geenie matches you with grants based on your location, organization type, and needs. Discover federal grants + state-specific opportunities in minutes.
 
 ## Features
 
@@ -120,3 +120,4 @@ Have questions? Open an issue or contact the team.
 ---
 
 **Made with ❤️ for nonprofits, artists, and solopreneurs.**
+**Last Updated: January 2026**
