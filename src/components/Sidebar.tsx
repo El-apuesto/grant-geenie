@@ -22,7 +22,7 @@ export default function Sidebar({ isPro, onNavigate, onSignOut, onStartTour, onG
 
   const navigation = [
     { name: 'Dashboard Home', view: 'dashboard', icon: Home, prOnly: false },
-    { name: 'Agency Tools', view: 'agency', icon: Briefcase, prOnly: false },
+    { name: 'Agency Tools', view: 'agency', icon: Briefcase, prOnly: false, agencyOnly: true },
     { name: 'Application Tracker', view: 'tracker', icon: ClipboardList, prOnly: true },
     { name: 'Calendar', view: 'calendar', icon: Calendar, prOnly: true },
     { name: 'LOI Generator', view: 'loi', icon: FileText, prOnly: true },
@@ -142,6 +142,12 @@ export default function Sidebar({ isPro, onNavigate, onSignOut, onStartTour, onG
             const Icon = item.icon;
             const active = isActive(item.view);
             const locked = item.prOnly && !isPro;
+            const agencyOnly = (item as any).agencyOnly;
+
+            // Hide agency tools if user is not an agency
+            if (agencyOnly && profile?.org_type !== 'Agency') {
+              return null;
+            }
             
             return (
               <button
