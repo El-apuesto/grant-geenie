@@ -42,7 +42,6 @@ export default function Settings({ onBack, onRestartTour, onRetakeQuestionnaire 
       if (err) throw err;
       if (data) {
         setProfile(data);
-        // Reverted to organization_type
         setOrgType(data.organization_type || '');
         setState(data.state || '');
       }
@@ -64,7 +63,7 @@ export default function Settings({ onBack, onRestartTour, onRetakeQuestionnaire 
       const { error: err } = await supabase
         .from('profiles')
         .update({
-          organization_type: orgType, // Reverted to organization_type
+          organization_type: orgType,
           state: state,
         })
         .eq('id', user.id);
