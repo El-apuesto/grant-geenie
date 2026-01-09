@@ -52,7 +52,7 @@ export default function Questionnaire({ onComplete }: QuestionnaireProps) {
         .upsert({
           id: user.id,
           email: user.email,
-          organization_type: finalAnswers.org_type, // Reverted to organization_type
+          organization_type: finalAnswers.org_type,
           state: finalAnswers.state,
           focus_area: finalAnswers.focus,
           onboarding_completed: true,
