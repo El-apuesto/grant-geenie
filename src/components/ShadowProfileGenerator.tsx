@@ -3,10 +3,25 @@ import { Building2, Wand2, Briefcase, Users, ArrowRight } from 'lucide-react';
 import { Profile } from '../types';
 
 interface ShadowProfileGeneratorProps {
-  onProfileGenerated: (profile: Partial<Profile>) => void;
+  onProfileGenerated: (profile: any) => void;
 }
 
-const ARCHETYPES = {
+// Define specific types for the archetype structure to satisfy TypeScript indexing
+type ArchetypeKey = 'municipality' | 'nonprofit' | 'artist';
+
+interface Template {
+  mission: (name: string, loc: string) => string;
+  description: (name: string, loc: string) => string;
+  programs: string[];
+}
+
+interface Archetype {
+  label: string;
+  needs: string[];
+  templates: Record<string, Template>;
+}
+
+const ARCHETYPES: Record<ArchetypeKey, Archetype> = {
   municipality: {
     label: 'Rural Municipality',
     needs: ['Infrastructure', 'Arts & Culture', 'Public Safety', 'Economic Development'],
@@ -51,21 +66,25 @@ export default function ShadowProfileGenerator({ onProfileGenerated }: ShadowPro
   const [formData, setFormData] = useState({
     name: '',
     state: '',
-    type: 'municipality',
+    type: 'municipality' as ArchetypeKey,
     need: 'Arts & Culture'
   });
 
   const [generated, setGenerated] = useState<any>(null);
 
   const handleGenerate = () => {
-    const archetype = ARCHETYPES[formData.type as keyof typeof ARCHETYPES];
-    const template = archetype.templates[formData.need as keyof typeof archetype.templates] || archetype.templates[Object.keys(archetype.templates)[0]];
+    const archetype = ARCHETYPES[formData.type];
+    // Fallback logic if the selected need isn't in the template map (though UI prevents this, TS worries)
+    const templateKey = archetype.templates[formData.need] ? formData.need : Object.keys(archetype.templates)[0];
+    const template = archetype.templates[templateKey];
     
+    if (!template) return;
+
     const mission = template.mission(formData.name, formData.state);
     const desc = template.description(formData.name, formData.state);
     const programs = template.programs;
 
-    const profileData: Partial<Profile> = {
+    const profileData = {
       // Simulate profile fields
       id: 'shadow-' + Date.now(),
       legal_entity: archetype.label,
@@ -134,7 +153,7 @@ export default function ShadowProfileGenerator({ onProfileGenerated }: ShadowPro
                 <label className="block text-slate-300 mb-2 text-sm">Type</label>
                 <select
                   value={formData.type}
-                  onChange={e => setFormData({...formData, type: e.target.value, need: ARCHETYPES[e.target.value as keyof typeof ARCHETYPES].needs[0]})}
+                  onChange={e => setFormData({...formData, type: e.target.value as ArchetypeKey, need: ARCHETYPES[e.target.value as ArchetypeKey].needs[0]})}
                   className="w-full bg-slate-700 border border-slate-600 rounded px-4 py-2 text-white"
                 >
                   {Object.entries(ARCHETYPES).map(([key, val]) => (
@@ -150,7 +169,7 @@ export default function ShadowProfileGenerator({ onProfileGenerated }: ShadowPro
                   onChange={e => setFormData({...formData, need: e.target.value})}
                   className="w-full bg-slate-700 border border-slate-600 rounded px-4 py-2 text-white"
                 >
-                  {ARCHETYPES[formData.type as keyof typeof ARCHETYPES].needs.map(need => (
+                  {ARCHETYPES[formData.type].needs.map(need => (
                     <option key={need} value={need}>{need}</option>
                   ))}
                 </select>
