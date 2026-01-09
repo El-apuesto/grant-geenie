@@ -141,36 +141,9 @@ export default function Dashboard({ onGoHome }: DashboardProps) {
 
     // Agency Tools View
     if (currentView === 'agency') {
-        // If we want to gate this strictly:
-        // if (!isAgency) return <AgencyGate />
-        
-        // For now, render the tool as requested
         return (
             <div className="space-y-6">
-                <div className="bg-amber-900/20 border border-amber-700/50 p-6 rounded-lg mb-6">
-                    <div className="flex items-start gap-4">
-                        <Briefcase className="w-8 h-8 text-amber-500 flex-shrink-0" />
-                        <div>
-                            <h2 className="text-xl font-bold text-white mb-2">Agency Tools</h2>
-                            <p className="text-slate-300">
-                                Create shadow profiles and manage applications for your clients. 
-                                <br />
-                                <span className="text-sm text-amber-400 mt-2 inline-block">
-                                    Want to offer this service to your own clients? <a href="#" className="underline hover:text-amber-300">Contact us about our Agency Plan</a>.
-                                </span>
-                            </p>
-                        </div>
-                    </div>
-                </div>
-                
                 <ShadowProfileGenerator onProfileGenerated={(shadowProfile) => {
-                    // When a profile is generated, we could automatically switch to LOI view 
-                    // and pass this state. For now, the user manually copies or we update state context.
-                    // The ShadowProfileGenerator gives feedback "Use for Application".
-                    // Let's make it alert or console log for now, as LOIGenerator has its own toggle.
-                    // Ideally, we lift this state up.
-                    // For this iteration, we'll let the user generate it here, and maybe copy-paste details,
-                    // OR we tell them "Now go to LOI Generator and enable Agency Mode".
                     alert("Shadow Profile Created! Go to LOI Generator and enable 'Agency Mode' to use these details.");
                 }} />
             </div>
