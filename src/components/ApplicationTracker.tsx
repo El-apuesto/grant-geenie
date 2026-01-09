@@ -37,8 +37,8 @@ export default function ApplicationTracker({ isPro }: ApplicationTrackerProps) {
     due_date: '',
     submitted_date: '',
     decision_date: '',
-    amount_requested: '',
-    amount_awarded: '',
+    amount_requested: '', // Kept as string for input
+    amount_awarded: '',   // Kept as string for input
     notes: '',
   });
 
@@ -194,8 +194,8 @@ export default function ApplicationTracker({ isPro }: ApplicationTrackerProps) {
       due_date: app.due_date || '',
       submitted_date: app.submitted_date || '',
       decision_date: app.decision_date || '',
-      amount_requested: app.amount_requested?.toString() || '',
-      amount_awarded: app.amount_awarded?.toString() || '',
+      amount_requested: app.amount_requested ? app.amount_requested.toString() : '',
+      amount_awarded: app.amount_awarded ? app.amount_awarded.toString() : '',
       notes: app.notes || '',
     });
     setShowGrantSelector(false); // Skip selector when editing
