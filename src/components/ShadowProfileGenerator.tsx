@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
-import { Users, Plus, Trash2, CheckCircle, Search, Edit2, Loader2 } from 'lucide-react';
+import { Users, Plus, Trash2, CheckCircle, Search, Edit2, Loader2, AlertCircle } from 'lucide-react';
 import { US_STATES } from '../lib/states';
 
 interface ShadowProfileGeneratorProps {
@@ -27,6 +27,7 @@ export default function ShadowProfileGenerator({ onProfileSelect, currentProfile
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [showForm, setShowForm] = useState(false);
+  const [error, setError] = useState('');
   const [formData, setFormData] = useState({
     name: '',
     organization_type: '',
@@ -45,12 +46,14 @@ export default function ShadowProfileGenerator({ onProfileSelect, currentProfile
       const { data, error } = await supabase
         .from('shadow_profiles')
         .select('*')
+        .eq('user_id', user?.id) // Explicitly filter by user_id for safety
         .order('created_at', { ascending: false });
 
       if (error) throw error;
       setProfiles(data || []);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error loading profiles:', error);
+      setError('Failed to load profiles. ' + (error.message || ''));
     } finally {
       setLoading(false);
     }
@@ -58,28 +61,50 @@ export default function ShadowProfileGenerator({ onProfileSelect, currentProfile
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user || !formData.name || !formData.organization_type || !formData.state) return;
+    setError('');
+
+    if (!user) {
+      setError('You must be logged in to create a profile.');
+      return;
+    }
+    
+    if (!formData.name || !formData.organization_type || !formData.state) {
+      setError('Please fill in all required fields.');
+      return;
+    }
 
     setSubmitting(true);
     try {
+      const payload = {
+        user_id: user.id,
+        name: formData.name,
+        organization_type: formData.organization_type,
+        state: formData.state,
+        focus_area: formData.focus_area
+      };
+
+      console.log('Creating profile with:', payload);
+
       const { data, error } = await supabase
         .from('shadow_profiles')
-        .insert([{
-          user_id: user.id,
-          ...formData
-        }])
+        .insert([payload])
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase insert error:', error);
+        throw error;
+      }
+
+      console.log('Profile created successfully:', data);
 
       setProfiles([data, ...profiles]);
       setFormData({ name: '', organization_type: '', state: '', focus_area: '' });
       setShowForm(false);
       onProfileSelect(data.id);
-    } catch (error) {
-      console.error('Error creating profile:', error);
-      alert('Failed to create profile. Please try again.');
+    } catch (error: any) {
+      console.error('Full creation error:', error);
+      setError(error.message || 'Failed to create profile. Please check your connection.');
     } finally {
       setSubmitting(false);
     }
@@ -101,8 +126,9 @@ export default function ShadowProfileGenerator({ onProfileSelect, currentProfile
       if (currentProfileId === id) {
         onProfileSelect(''); // Deselect if deleting current
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error deleting profile:', error);
+      alert('Failed to delete: ' + error.message);
     }
   };
 
@@ -127,19 +153,29 @@ export default function ShadowProfileGenerator({ onProfileSelect, currentProfile
           </p>
         </div>
         <button
-          onClick={() => setShowForm(!showForm)}
+          onClick={() => {
+            setShowForm(!showForm);
+            setError('');
+          }}
           className="px-3 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
         >
           {showForm ? 'Cancel' : <><Plus className="w-4 h-4" /> Add Client</>}
         </button>
       </div>
 
+      {error && (
+        <div className="bg-red-900/20 border border-red-500/50 text-red-200 px-4 py-3 rounded-lg mb-6 flex items-start gap-2">
+          <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+          <span className="text-sm">{error}</span>
+        </div>
+      )}
+
       {showForm && (
         <form onSubmit={handleCreate} className="bg-slate-900/50 p-4 rounded-lg border border-slate-700 mb-6 animate-fade-in">
           <h3 className="text-white font-medium mb-4">New Client Profile</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div>
-              <label className="block text-slate-400 text-xs mb-1">Client Name</label>
+              <label className="block text-slate-400 text-xs mb-1">Client Name *</label>
               <input
                 type="text"
                 value={formData.name}
@@ -150,7 +186,7 @@ export default function ShadowProfileGenerator({ onProfileSelect, currentProfile
               />
             </div>
             <div>
-              <label className="block text-slate-400 text-xs mb-1">Org Type</label>
+              <label className="block text-slate-400 text-xs mb-1">Org Type *</label>
               <select
                 value={formData.organization_type}
                 onChange={e => setFormData({...formData, organization_type: e.target.value})}
@@ -162,7 +198,7 @@ export default function ShadowProfileGenerator({ onProfileSelect, currentProfile
               </select>
             </div>
             <div>
-              <label className="block text-slate-400 text-xs mb-1">State</label>
+              <label className="block text-slate-400 text-xs mb-1">State *</label>
               <select
                 value={formData.state}
                 onChange={e => setFormData({...formData, state: e.target.value})}
@@ -174,7 +210,7 @@ export default function ShadowProfileGenerator({ onProfileSelect, currentProfile
               </select>
             </div>
             <div>
-              <label className="block text-slate-400 text-xs mb-1">Primary Focus</label>
+              <label className="block text-slate-400 text-xs mb-1">Primary Focus *</label>
               <select
                 value={formData.focus_area}
                 onChange={e => setFormData({...formData, focus_area: e.target.value})}
