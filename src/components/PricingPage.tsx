@@ -148,32 +148,38 @@ export default function PricingPage() {
             </UpgradeButton>
           </div>
 
-          {/* Agency Plan - Secretive */}
-          <div className="bg-slate-900/50 border border-slate-700/50 rounded-lg p-6 flex flex-col">
+          {/* Agency Plan - Amber Styled */}
+          <div className="bg-slate-900/50 border-2 border-amber-500/50 rounded-lg p-6 flex flex-col relative overflow-hidden shadow-[0_0_20px_rgba(245,158,11,0.15)]">
+            <div className="absolute top-0 right-0 p-2 opacity-10">
+                <Check className="w-24 h-24 text-amber-500" />
+            </div>
             <h3 className="text-xl font-bold text-white mb-2">Agency</h3>
             <div className="mb-4">
               <div>
-                <span className="text-3xl font-bold text-white">Contact Us</span>
+                <span className="text-2xl font-bold text-amber-400">Contact Grant Hustle</span>
               </div>
-              <div className="text-sm text-slate-500 mt-2">Application Management</div>
+              <div className="text-sm text-slate-500 mt-2">for pricing</div>
             </div>
             <ul className="space-y-3 mb-6 flex-1">
               <li className="flex items-start gap-2 text-slate-400">
-                <Check className="w-5 h-5 text-slate-600 mt-0.5 flex-shrink-0" />
+                <Check className="w-5 h-5 text-amber-500 mt-0.5 flex-shrink-0" />
                 <span>Multi-client profiles</span>
               </li>
               <li className="flex items-start gap-2 text-slate-400">
-                <Check className="w-5 h-5 text-slate-600 mt-0.5 flex-shrink-0" />
+                <Check className="w-5 h-5 text-amber-500 mt-0.5 flex-shrink-0" />
                 <span>Client application drafting</span>
               </li>
               <li className="flex items-start gap-2 text-slate-400">
-                <HelpCircle className="w-5 h-5 text-slate-600 mt-0.5 flex-shrink-0" />
+                <HelpCircle className="w-5 h-5 text-amber-500 mt-0.5 flex-shrink-0" />
                 <span>Advanced management tools</span>
               </li>
             </ul>
-            <div className="w-full py-3 bg-slate-800/50 text-slate-500 font-semibold rounded-lg text-center cursor-default">
-              By Invitation Only
-            </div>
+            <a 
+              href="mailto:support@grantgeenie.com?subject=Agency%20Plan%20Inquiry"
+              className="w-full py-3 bg-amber-600 hover:bg-amber-700 text-white font-semibold rounded-lg transition text-center block shadow-lg shadow-amber-900/20"
+            >
+              Contact Grant Hustle
+            </a>
           </div>
 
         </div>
