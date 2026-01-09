@@ -60,6 +60,13 @@ export default function Dashboard({ onNavigate = () => {}, profile, onGoHome }: 
     }
   };
 
+  const formatDate = (dateString: string) => {
+    if (!dateString) return 'Rolling';
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return 'Check Details';
+    return date.toLocaleDateString();
+  };
+
   return (
     <div className="space-y-8">
       {/* Welcome Section */}
@@ -175,7 +182,7 @@ export default function Dashboard({ onNavigate = () => {}, profile, onGoHome }: 
               <div className="flex gap-4 text-xs text-slate-500">
                 <span>{grant.agency_name}</span>
                 <span>•</span>
-                <span>Deadline: {new Date(grant.close_date).toLocaleDateString()}</span>
+                <span>Deadline: {formatDate(grant.close_date)}</span>
               </div>
             </div>
           ))}
