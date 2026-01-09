@@ -1,93 +1,63 @@
 import { useState, useEffect } from 'react';
-import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
+import { useAuth } from '../contexts/AuthContext';
 import { Profile } from '../types';
-import { ArrowRight, Sparkles, Target, Zap, Clock, TrendingUp, CheckCircle, ShieldCheck, XCircle, AlertTriangle } from 'lucide-react';
-import confetti from 'canvas-confetti';
+import { Bookmark, Search, ArrowRight, Zap, Target, Briefcase } from 'lucide-react';
+import { Grant } from '../types';
 
 interface DashboardProps {
+  onNavigate: (view: string) => void;
   profile: Profile | null;
-  onNavigate: (tab: string) => void;
 }
 
-export default function Dashboard({ profile, onNavigate }: DashboardProps) {
+export default function Dashboard({ onNavigate, profile }: DashboardProps) {
   const { user } = useAuth();
   const [stats, setStats] = useState({
-    matchesFound: 0,
-    applicationsStarted: 0,
-    deadlinesThisMonth: 0,
-    totalPotentialFunding: 0
+    savedGrants: 0,
+    matchedGrants: 0,
+    upcomingDeadlines: 0
   });
+  const [recentGrants, setRecentGrants] = useState<Grant[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Agency Specific State
-  const [agencyStats, setAgencyStats] = useState({
-    clientsManaged: 0,
-    activeGrants: 0,
-    pendingReports: 0,
-    complianceScore: 0
-  });
-
-  // Use organization_type instead of org_type
-  const isAgency = profile?.organization_type === 'Agency';
+  // Use optional chaining for safe access
+  const isAgency = profile?.organization_type === 'Agency'; // Reverted to organization_type
 
   useEffect(() => {
-    if (user && profile) {
-      loadStats();
-      if (isAgency) loadAgencyStats();
-      checkQuestionnaireCompletion();
+    if (user) {
+      loadDashboardData();
     }
-  }, [user, profile]);
+  }, [user]);
 
-  const checkQuestionnaireCompletion = () => {
-    // Only trigger confetti if explicitly just finished questionnaire (could use a flag or just do it on first load if completed)
-    // For now, let's just trigger it if they have matches but low app usage to encourage them
-    if (profile?.questionnaire_completed && stats.matchesFound > 0 && stats.applicationsStarted === 0) {
-      confetti({
-        particleCount: 100,
-        spread: 70,
-        origin: { y: 0.6 }
+  const loadDashboardData = async () => {
+    if (!user) return;
+
+    try {
+      // Get saved grants count
+      const { count: savedCount } = await supabase
+        .from('saved_grants')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id);
+
+      // Get recent grants (simulated matching logic for dashboard)
+      const { data: grants } = await supabase
+        .from('grants')
+        .select('*')
+        .limit(3);
+
+      setStats({
+        savedGrants: savedCount || 0,
+        matchedGrants: 150, // This would be dynamic in production
+        upcomingDeadlines: 5
       });
+
+      if (grants) setRecentGrants(grants);
+    } catch (error) {
+      console.error('Error loading dashboard:', error);
+    } finally {
+      setLoading(false);
     }
   };
-
-  const loadStats = async () => {
-    if (!profile) return;
-    
-    // In a real app, these would be separate DB queries
-    // For now, we'll simulate based on profile data
-    const mockPotentialFunding = profile.annual_revenue === '$1M - $5M' ? 500000 : 
-                                profile.annual_revenue === '$100k - $500k' ? 100000 : 50000;
-
-    setStats({
-      matchesFound: isAgency ? 124 : 12, // Agencies see more
-      applicationsStarted: 3,
-      deadlinesThisMonth: 2,
-      totalPotentialFunding: mockPotentialFunding
-    });
-  };
-
-  const loadAgencyStats = async () => {
-    // Simulate fetching agency-specific metrics
-    setAgencyStats({
-      clientsManaged: 5,
-      activeGrants: 8,
-      pendingReports: 2,
-      complianceScore: 94
-    });
-  };
-
-  const StatCard = ({ icon: Icon, label, value, color }: any) => (
-    <div className="bg-slate-800 border border-slate-700 rounded-lg p-6 hover:border-emerald-500/50 transition-colors">
-      <div className="flex items-start justify-between mb-4">
-        <div className={`p-3 rounded-lg ${color} bg-opacity-20`}>
-          <Icon className={`w-6 h-6 ${color.replace('bg-', 'text-')}`} />
-        </div>
-        <span className="text-slate-400 text-sm font-medium">Expected</span>
-      </div>
-      <h3 className="text-2xl font-bold text-white mb-1">{value}</h3>
-      <p className="text-slate-400 text-sm">{label}</p>
-    </div>
-  );
 
   return (
     <div className="space-y-8">
@@ -95,158 +65,119 @@ export default function Dashboard({ profile, onNavigate }: DashboardProps) {
       <div className="flex justify-between items-end">
         <div>
           <h1 className="text-3xl font-bold text-white mb-2">
-            Welcome back, {profile?.organization_type || 'Partner'}!
+            Welcome back, {profile?.organization_type || 'User'}! {/* Reverted to organization_type */}
           </h1>
           <p className="text-slate-400">
             {isAgency 
-              ? "Here's the status of your managed grants and clients." 
-              : "Here's your grant funding overview for this month."}
+              ? "Here's what's happening with your client grant portfolio."
+              : "Here's your grant funding overview for the week."}
           </p>
         </div>
         <button 
-          onClick={() => onNavigate(isAgency ? 'agency' : 'pool')}
-          className="flex items-center gap-2 px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-semibold transition-all shadow-lg shadow-emerald-900/20"
+          onClick={() => onNavigate('pool')}
+          className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
         >
-          {isAgency ? (
-            <>
-              <ShieldCheck className="w-5 h-5" />
-              Go to Agency Tools
-            </>
-          ) : (
-            <>
-              <Sparkles className="w-5 h-5" />
-              Find New Grants
-            </>
-          )}
+          <Search className="w-4 h-4" />
+          Find New Grants
         </button>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard 
-          icon={Target} 
-          label="Grant Matches" 
-          value={stats.matchesFound}
-          color="text-emerald-400 bg-emerald-400" 
-        />
-        <StatCard 
-          icon={TrendingUp} 
-          label="Potential Funding" 
-          value={`$${(stats.totalPotentialFunding / 1000).toFixed(0)}k`}
-          color="text-blue-400 bg-blue-400" 
-        />
-        <StatCard 
-          icon={Zap} 
-          label="Active Applications" 
-          value={stats.applicationsStarted}
-          color="text-purple-400 bg-purple-400" 
-        />
-        <StatCard 
-          icon={Clock} 
-          label="Deadlines (30 Days)" 
-          value={stats.deadlinesThisMonth}
-          color="text-orange-400 bg-orange-400" 
-        />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="bg-slate-800 p-6 rounded-xl border border-slate-700">
+          <div className="flex items-center gap-4 mb-2">
+            <div className="p-3 bg-blue-500/20 rounded-lg text-blue-400">
+              <Bookmark className="w-6 h-6" />
+            </div>
+            <div>
+              <p className="text-slate-400 text-sm">Saved Grants</p>
+              <h3 className="text-2xl font-bold text-white">{stats.savedGrants}</h3>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-slate-800 p-6 rounded-xl border border-slate-700">
+          <div className="flex items-center gap-4 mb-2">
+            <div className="p-3 bg-emerald-500/20 rounded-lg text-emerald-400">
+              <Target className="w-6 h-6" />
+            </div>
+            <div>
+              <p className="text-slate-400 text-sm">New Matches</p>
+              <h3 className="text-2xl font-bold text-white">{stats.matchedGrants}</h3>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-slate-800 p-6 rounded-xl border border-slate-700">
+          <div className="flex items-center gap-4 mb-2">
+            <div className="p-3 bg-purple-500/20 rounded-lg text-purple-400">
+              <Zap className="w-6 h-6" />
+            </div>
+            <div>
+              <p className="text-slate-400 text-sm">Closing Soon</p>
+              <h3 className="text-2xl font-bold text-white">{stats.upcomingDeadlines}</h3>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* AGENCY DASHBOARD SECTION */}
+      {/* Agency Quick Actions (Only visible to Agencies) */}
       {isAgency && (
-        <div className="mt-8">
-          <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-            <ShieldCheck className="w-6 h-6 text-emerald-400" />
-            Agency Overview
-          </h2>
-          
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Client Status */}
-            <div className="bg-slate-800 border border-slate-700 rounded-lg p-6">
-              <h3 className="text-white font-semibold mb-4">Client Portfolio</h3>
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-slate-400">Active Clients</span>
-                <span className="text-white font-bold">{agencyStats.clientsManaged}</span>
-              </div>
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-slate-400">Active Grants</span>
-                <span className="text-white font-bold">{agencyStats.activeGrants}</span>
-              </div>
-              <div className="w-full bg-slate-700 h-2 rounded-full overflow-hidden">
-                <div className="bg-emerald-500 h-full w-[75%]"></div>
-              </div>
-              <p className="text-xs text-slate-500 mt-2">75% capacity utilized</p>
-            </div>
-
-            {/* Compliance / Reporting */}
-            <div className="bg-slate-800 border border-slate-700 rounded-lg p-6">
-              <h3 className="text-white font-semibold mb-4">Compliance Watch</h3>
-              
-              <div className="flex items-center gap-4 mb-4">
-                <div className="flex-1">
-                  <span className="block text-3xl font-bold text-white">{agencyStats.complianceScore}%</span>
-                  <span className="text-xs text-slate-400">Audit Score</span>
-                </div>
-                <div className="h-12 w-12 rounded-full border-4 border-emerald-500 flex items-center justify-center">
-                  <CheckCircle className="w-6 h-6 text-emerald-500" />
-                </div>
-              </div>
-
-              {agencyStats.pendingReports > 0 ? (
-                <div className="p-3 bg-orange-900/30 border border-orange-500/30 rounded flex items-center gap-3">
-                  <AlertTriangle className="w-5 h-5 text-orange-400" />
-                  <div>
-                    <p className="text-orange-200 text-sm font-medium">{agencyStats.pendingReports} Reports Due</p>
-                    <p className="text-orange-300/60 text-xs">Due within 14 days</p>
-                  </div>
-                </div>
-              ) : (
-                 <div className="p-3 bg-emerald-900/30 border border-emerald-500/30 rounded flex items-center gap-3">
-                  <CheckCircle className="w-5 h-5 text-emerald-400" />
-                  <p className="text-emerald-200 text-sm">All reports up to date</p>
-                </div>
-              )}
-            </div>
-
-            {/* Quick Actions */}
-            <div className="bg-slate-800 border border-slate-700 rounded-lg p-6">
-               <h3 className="text-white font-semibold mb-4">Quick Actions</h3>
-               <div className="space-y-3">
-                 <button 
-                  onClick={() => onNavigate('agency')}
-                  className="w-full py-2 px-4 bg-slate-700 hover:bg-slate-600 text-white rounded transition text-sm flex items-center justify-between"
-                 >
-                   <span>New Client Audit</span>
-                   <ArrowRight className="w-4 h-4" />
-                 </button>
-                 <button className="w-full py-2 px-4 bg-slate-700 hover:bg-slate-600 text-white rounded transition text-sm flex items-center justify-between">
-                   <span>Submit Monthly Report</span>
-                   <ArrowRight className="w-4 h-4" />
-                 </button>
-                 <button className="w-full py-2 px-4 bg-slate-700 hover:bg-slate-600 text-white rounded transition text-sm flex items-center justify-between">
-                   <span>Add Team Member</span>
-                   <ArrowRight className="w-4 h-4" />
-                 </button>
-               </div>
-            </div>
+        <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <Briefcase className="w-5 h-5 text-emerald-400" />
+            <h2 className="text-xl font-bold text-white">Agency Quick Actions</h2>
+          </div>
+          <div className="grid md:grid-cols-2 gap-4">
+            <button 
+              onClick={() => onNavigate('agency')}
+              className="p-4 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-lg text-left transition-colors group"
+            >
+              <h3 className="text-white font-medium mb-1 group-hover:text-emerald-400 transition-colors">Client Readiness Audit</h3>
+              <p className="text-sm text-slate-400">Run a quick check for a new client.</p>
+            </button>
+            <button 
+              onClick={() => onNavigate('pool')}
+              className="p-4 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-lg text-left transition-colors group"
+            >
+              <h3 className="text-white font-medium mb-1 group-hover:text-emerald-400 transition-colors">National Search</h3>
+              <p className="text-sm text-slate-400">Find grants outside your home state.</p>
+            </button>
           </div>
         </div>
       )}
 
-      {/* Recent Activity Feed (Placeholder) */}
-      <div className="bg-slate-800 border border-slate-700 rounded-lg overflow-hidden">
-        <div className="p-6 border-b border-slate-700">
-          <h3 className="text-lg font-bold text-white">Recent Activity</h3>
+      {/* Recent Opportunities */}
+      <div className="bg-slate-900 rounded-xl border border-slate-800 overflow-hidden">
+        <div className="p-6 border-b border-slate-800 flex justify-between items-center">
+          <h2 className="text-xl font-bold text-white">Top Recommendations</h2>
+          <button 
+            onClick={() => onNavigate('pool')}
+            className="text-emerald-400 hover:text-emerald-300 text-sm font-medium flex items-center gap-1"
+          >
+            View All <ArrowRight className="w-4 h-4" />
+          </button>
         </div>
-        <div className="p-6">
-          <div className="space-y-6">
-            {[1, 2, 3].map((_, i) => (
-              <div key={i} className="flex gap-4">
-                <div className="w-2 h-2 mt-2 rounded-full bg-emerald-500"></div>
-                <div>
-                  <p className="text-slate-300">New grant match found: "Rural Business Development Grant"</p>
-                  <p className="text-sm text-slate-500">{i * 2 + 1} hours ago</p>
-                </div>
+        
+        <div className="divide-y divide-slate-800">
+          {loading ? (
+            <div className="p-8 text-center text-slate-500">Loading recommendations...</div>
+          ) : recentGrants.map((grant) => (
+            <div key={grant.id} className="p-6 hover:bg-slate-800/50 transition-colors">
+              <div className="flex justify-between items-start mb-2">
+                <h3 className="text-white font-medium">{grant.title}</h3>
+                <span className="text-xs text-emerald-400 bg-emerald-900/30 px-2 py-1 rounded border border-emerald-900/50">
+                  98% Match
+                </span>
               </div>
-            ))}
-          </div>
+              <p className="text-sm text-slate-400 mb-4 line-clamp-2">{grant.description}</p>
+              <div className="flex gap-4 text-xs text-slate-500">
+                <span>{grant.agency_name}</span>
+                <span>•</span>
+                <span>Deadline: {new Date(grant.close_date).toLocaleDateString()}</span>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </div>
