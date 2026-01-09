@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Download, FileText, Bookmark } from 'lucide-react';
+import { Download, FileText, Bookmark, Users } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -18,6 +18,14 @@ interface LOIGeneratorProps {
 }
 
 type LOITemplateType = 'federal' | 'foundation' | 'corporate' | 'arts';
+
+type ShadowProfile = {
+  legal_entity?: string;
+  state?: string;
+  primary_fields?: string[];
+  mission_statement?: string;
+  org_history?: string;
+};
 
 const LOI_TEMPLATES = [
   {
@@ -52,15 +60,16 @@ export default function LOIGenerator({ isPro }: LOIGeneratorProps) {
   const [savedGrants, setSavedGrants] = useState<SavedGrant[]>([]);
   const [selectedGrantId, setSelectedGrantId] = useState<string>('');
   const [selectedTemplate, setSelectedTemplate] = useState<LOITemplateType>('foundation');
-  const [formData, setFormData] = useState({
-    funderName: '',
-    funderContact: '',
-    projectTitle: '',
-    requestedAmount: '',
-    projectSummary: '',
-    alignment: '',
-    timeline: '',
+  const [useShadowProfile, setUseShadowProfile] = useState(false);
+  const [shadowProfile, setShadowProfile] = useState<ShadowProfile>({
+    legal_entity: 'Rural Municipality',
+    state: 'Mississippi',
+    primary_fields: ['Arts & Culture'],
+    mission_statement: 'To revitalize our rural community by leveraging local culture, heritage, and creative placemaking to strengthen the economy and quality of life.',
+    org_history: 'We are a small rural community working to increase access to arts programming, preserve local heritage, and create opportunities for youth and families to thrive locally.',
   });
+
+  const activeProfile = useShadowProfile ? shadowProfile : profile;
 
   useEffect(() => {
     if (!user) return;
@@ -89,6 +98,16 @@ export default function LOIGenerator({ isPro }: LOIGeneratorProps) {
     loadSavedGrants();
   }, [user]);
 
+  const [formData, setFormData] = useState({
+    funderName: '',
+    funderContact: '',
+    projectTitle: '',
+    requestedAmount: '',
+    projectSummary: '',
+    alignment: '',
+    timeline: '',
+  });
+
   const handleGrantSelect = (grantId: string) => {
     setSelectedGrantId(grantId);
     
@@ -106,12 +125,12 @@ export default function LOIGenerator({ isPro }: LOIGeneratorProps) {
   };
 
   const generateLOI = () => {
-    if (!profile) return '';
+    if (!activeProfile) return '';
 
     const today = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
-    const orgName = profile.legal_entity || 'our organization';
-    const location = profile.state || '[Location]';
-    const focusAreas = (profile.primary_fields || []).join(', ') || '[your focus area]';
+    const orgName = (activeProfile as any).legal_entity || 'our organization';
+    const location = (activeProfile as any).state || '[Location]';
+    const focusAreas = ((activeProfile as any).primary_fields || []).join(', ') || '[your focus area]';
 
     const templates: Record<LOITemplateType, string> = {
       federal: `${formData.funderContact || '[Program Officer Name]'}
@@ -123,7 +142,7 @@ RE: Letter of Inquiry - ${formData.projectTitle || '[Project Title]'}
 
 Dear ${formData.funderContact || '[Program Officer Name]'},
 
-Pursuant to the funding opportunity announcement for ${formData.funderName || '[Program Name]'}, ${orgName}, a ${profile.legal_entity || '[organization type]'} based in ${location}, respectfully submits this Letter of Inquiry for consideration.
+Pursuant to the funding opportunity announcement for ${formData.funderName || '[Program Name]'}, ${orgName}, a ${orgName} based in ${location}, respectfully submits this Letter of Inquiry for consideration.
 
 PROJECT OVERVIEW
 
@@ -133,17 +152,17 @@ We are requesting ${formData.requestedAmount || '$[amount]'} in federal funding 
 
 ALIGNMENT WITH PROGRAM PRIORITIES
 
-${formData.alignment || 'This project directly addresses the program priorities outlined in [citation], specifically focusing on [relevant priority areas]. Our approach aligns with federal objectives for [relevant federal goals].'}
+${formData.alignment || 'This project directly addresses the program priorities outlined in the solicitation, focusing on the needs of rural communities and measurable outcomes.'}
 
 ORGANIZATIONAL CAPACITY
 
-${orgName} has demonstrated capacity in ${focusAreas}. We maintain compliance with all federal regulations and have successfully managed federal awards in the past.
+${orgName} has demonstrated capacity in ${focusAreas}. We maintain compliance with all federal regulations and will implement a documented project management and reporting plan.
 
 COMMUNITY IMPACT
 
-This project will serve ${location} communities, addressing critical needs in ${focusAreas}. We will implement rigorous evaluation measures to track outcomes and ensure accountability of federal funds.
+This project will serve ${location} communities, addressing critical needs in ${focusAreas}. We will implement practical evaluation measures to track outcomes and ensure accountability of funds.
 
-We appreciate your consideration of this inquiry and welcome the opportunity to submit a full application. Please contact us if you require additional information.
+We appreciate your consideration of this inquiry and welcome the opportunity to submit a full application.
 
 Respectfully submitted,
 
@@ -161,27 +180,27 @@ Dear ${formData.funderContact || '[Program Officer Name]'},
 
 RE: Letter of Inquiry - ${formData.projectTitle || '[Project Title]'}
 
-I am writing on behalf of ${orgName}, based in ${location}, to explore a partnership opportunity with ${formData.funderName || '[Foundation Name]'} that would create meaningful impact in ${focusAreas}.
+On behalf of ${orgName} in ${location}, thank you for considering this letter of inquiry regarding "${formData.projectTitle || '[Project Title]'}".
 
-OUR SHARED VISION
+OUR MISSION
 
-${formData.alignment || `We have long admired ${formData.funderName || 'your foundation'}\'s commitment to [specific foundation values]. Our work aligns closely with your mission, particularly in the areas of [shared priorities].`}
+${(activeProfile as any).mission_statement || `Our mission is to advance equitable opportunity in ${location} through community-driven work in ${focusAreas}.`}
 
 PROJECT OVERVIEW
 
-"${formData.projectTitle || '[Project Title]'}" is a ${formData.timeline || '[duration]'} initiative designed to ${formData.projectSummary || '[describe what your project accomplishes and why it matters to the community you serve]'}.
+"${formData.projectTitle || '[Project Title]'}" is a ${formData.timeline || '[duration]'} initiative designed to ${formData.projectSummary || '[describe what your project accomplishes and why it matters to the community you serve]' }.
 
-We are seeking ${formData.requestedAmount || '$[amount]'} to bring this vision to life.
+We are seeking ${formData.requestedAmount || '$[amount]'} to launch and deliver this work.
 
 WHY THIS MATTERS NOW
 
-Our community in ${location} faces significant challenges in ${focusAreas}. This project represents a strategic opportunity to create lasting change by [specific approach or innovation].
+${(activeProfile as any).org_history || `Rural communities in ${location} face limited access to resources and programming. This project will expand access and strengthen long-term community capacity.`}
 
-OUR PARTNERSHIP APPROACH
+ALIGNMENT
 
-We view this not simply as a grant request, but as an invitation to partner in transformative work. We are committed to transparent communication, rigorous evaluation, and meaningful collaboration throughout the grant period.
+${formData.alignment || `This project aligns with ${formData.funderName || 'your foundation'}'s commitment to measurable community impact and underserved populations.`}
 
-Thank you for considering this inquiry. I would welcome the opportunity to discuss how we might work together to advance our shared goals. I am available at your convenience for a conversation.
+Thank you for your consideration. We would welcome the opportunity to discuss fit and next steps.
 
 With gratitude,
 
@@ -197,37 +216,30 @@ ${today}
 
 RE: Strategic Partnership Opportunity - ${formData.projectTitle || '[Project Title]'}
 
-Dear ${formData.funderContact || '[Name]'},
+Dear ${formData.funderContact || '[Name]' },
 
-I am reaching out to explore a strategic partnership between ${formData.funderName || '[Company Name]'} and ${orgName} that would deliver measurable social impact while advancing your corporate social responsibility objectives.
+${orgName} in ${location} is seeking a corporate partnership to deliver "${formData.projectTitle || '[Project Title]'}"—a project with measurable community impact.
 
 THE OPPORTUNITY
 
-"${formData.projectTitle || '[Project Title]'}" represents a ${formData.timeline || '[duration]'} initiative that ${formData.projectSummary || '[describe the project and its business relevance]'}.
+Investment requested: ${formData.requestedAmount || '$[amount]'}
+Timeline: ${formData.timeline || '[duration]'}
 
-Investment: ${formData.requestedAmount || '$[amount]'}
+PROJECT OVERVIEW
 
-STRATEGIC ALIGNMENT
+${formData.projectSummary || '[Brief project description]'}
 
-${formData.alignment || `This partnership aligns with ${formData.funderName || 'your company'}\'s stated commitment to [specific CSR priorities]. The project directly supports your goals around [relevant corporate values].`}
+ALIGNMENT
 
-RETURN ON INVESTMENT
+${formData.alignment || `This initiative aligns with ${formData.funderName || 'your company'}'s stated priorities in community investment and equitable opportunity.`}
 
-• Community Impact: [Number] individuals in ${location} will benefit directly
-• Brand Alignment: Authentic connection with ${focusAreas}
-• Employee Engagement: Opportunities for volunteer involvement
-• Measurable Outcomes: Quarterly reports with specific KPIs
-• Media Value: Recognition in [relevant channels]
+MEASURABLE OUTCOMES
 
-THE BUSINESS CASE
+• Increased access to services/programming in ${location}
+• Community engagement and participation growth
+• Transparent reporting and documented outcomes
 
-Our partnership offers ${formData.funderName || 'your company'} visible leadership in corporate citizenship while creating real solutions for ${location} communities. We provide transparent reporting and opportunities for meaningful employee engagement.
-
-NEXT STEPS
-
-I would appreciate the opportunity to present this proposal in person and discuss how we can structure a partnership that delivers value for both ${formData.funderName || 'your company'} and our community.
-
-Thank you for your consideration. I look forward to exploring this opportunity together.
+We welcome a conversation about how to structure a partnership that creates shared value.
 
 Best regards,
 
@@ -245,35 +257,27 @@ Dear ${formData.funderContact || '[Name]'},
 
 RE: Letter of Inquiry - ${formData.projectTitle || '[Project Title]'}
 
-I write to you today with excitement about "${formData.projectTitle || '[Project Title]'}," a project that promises to enrich our community through ${focusAreas} while advancing the artistic vision that ${formData.funderName || 'your organization'} has championed.
+${orgName} in ${location} respectfully submits this Letter of Inquiry for "${formData.projectTitle || '[Project Title]'}"—a community-based arts initiative designed to expand access, strengthen rural identity, and activate shared public spaces.
 
-THE CREATIVE VISION
+ARTISTIC & COMMUNITY VISION
 
-${formData.projectSummary || '[Describe your artistic vision and what makes this project unique or innovative in your field]'}
+${formData.projectSummary || '[Describe your artistic vision and community engagement approach]'}
 
-This ${formData.timeline || '[duration]'} project will unfold across ${location}, bringing [specific artistic experiences] to our community.
+REQUEST
 
-We are seeking ${formData.requestedAmount || '$[amount]'} to realize this vision.
+We are seeking ${formData.requestedAmount || '$[amount]'} for a ${formData.timeline || '[duration]'} project.
 
-ARTISTIC MERIT & INNOVATION
+WHY THIS MATTERS
 
-${formData.alignment || `This project pushes creative boundaries by [innovative element]. It honors artistic traditions while [how it innovates or challenges conventions]. The work resonates deeply with ${formData.funderName || 'your'} commitment to [specific artistic values].`}
+${(activeProfile as any).org_history || `In rural communities, limited access to arts programming and creative opportunities can contribute to isolation and reduced civic engagement. This project will create visible, participatory cultural experiences.`}
 
-COMMUNITY ENGAGEMENT
+ALIGNMENT
 
-Art thrives in community. This project will:
-• Engage [number] community members as active participants
-• Provide access to high-quality ${focusAreas} experiences
-• Create opportunities for emerging artists in ${location}
-• Build lasting cultural infrastructure
+${formData.alignment || `This proposal aligns with ${formData.funderName || 'your organization'}'s commitment to creative placemaking, rural access, and community-led cultural development.`}
 
-IMPACT & LEGACY
+Thank you for considering this inquiry. We would be honored to submit a full proposal.
 
-Beyond the immediate artistic experience, this project will transform how our community engages with ${focusAreas}. We will document and share our process, contributing to the broader field while creating work that resonates locally.
-
-Thank you for considering this inquiry. I would be honored to discuss this project further and share how we might collaborate to bring transformative art to our community.
-
-In creativity and partnership,
+In partnership,
 
 [Your Name and Title]
 ${orgName}
@@ -290,7 +294,7 @@ ${user?.email || '[email]'}
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `LOI_${selectedTemplate}_${formData.funderName.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.txt`;
+    a.download = `LOI_${selectedTemplate}_${(formData.funderName || 'Funder').replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.txt`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -323,6 +327,84 @@ ${user?.email || '[email]'}
         <p className="text-slate-400">
           Choose your funder type, then customize your LOI with pre-written professional language.
         </p>
+      </div>
+
+      {/* Agency Mode (Shadow Profile) */}
+      <div className="bg-slate-800 border border-slate-700 rounded-lg p-4 mb-6">
+        <div className="flex items-start gap-3">
+          <Users className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" />
+          <div className="flex-1">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <div className="text-white font-semibold">Agency Mode (Shadow Profile)</div>
+                <div className="text-slate-400 text-sm">Draft an LOI for a town/artist without needing their full in-app profile.</div>
+              </div>
+              <label className="inline-flex items-center gap-2 text-sm text-slate-300">
+                <input
+                  type="checkbox"
+                  checked={useShadowProfile}
+                  onChange={(e) => setUseShadowProfile(e.target.checked)}
+                />
+                Use shadow profile
+              </label>
+            </div>
+
+            {useShadowProfile && (
+              <div className="mt-4 grid md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-slate-300 mb-2 text-sm">Entity / Legal name</label>
+                  <input
+                    type="text"
+                    value={shadowProfile.legal_entity || ''}
+                    onChange={(e) => setShadowProfile(prev => ({ ...prev, legal_entity: e.target.value }))}
+                    className="w-full bg-slate-700 border border-slate-600 rounded px-4 py-2 text-white"
+                    placeholder="Town of ... / Artist name / Nonprofit name"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-300 mb-2 text-sm">State / Region</label>
+                  <input
+                    type="text"
+                    value={shadowProfile.state || ''}
+                    onChange={(e) => setShadowProfile(prev => ({ ...prev, state: e.target.value }))}
+                    className="w-full bg-slate-700 border border-slate-600 rounded px-4 py-2 text-white"
+                    placeholder="e.g., Mississippi"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-300 mb-2 text-sm">Primary focus</label>
+                  <input
+                    type="text"
+                    value={(shadowProfile.primary_fields || []).join(', ')}
+                    onChange={(e) => setShadowProfile(prev => ({ ...prev, primary_fields: e.target.value.split(',').map(s => s.trim()).filter(Boolean) }))}
+                    className="w-full bg-slate-700 border border-slate-600 rounded px-4 py-2 text-white"
+                    placeholder="Arts & Culture, Youth, Main Street"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-300 mb-2 text-sm">Mission statement</label>
+                  <input
+                    type="text"
+                    value={shadowProfile.mission_statement || ''}
+                    onChange={(e) => setShadowProfile(prev => ({ ...prev, mission_statement: e.target.value }))}
+                    className="w-full bg-slate-700 border border-slate-600 rounded px-4 py-2 text-white"
+                    placeholder="One-sentence mission"
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-slate-300 mb-2 text-sm">Background (2–4 sentences)</label>
+                  <textarea
+                    value={shadowProfile.org_history || ''}
+                    onChange={(e) => setShadowProfile(prev => ({ ...prev, org_history: e.target.value }))}
+                    className="w-full bg-slate-700 border border-slate-600 rounded px-4 py-2 text-white"
+                    rows={3}
+                    placeholder="Who you are, what problem exists locally, why you are positioned to solve it."
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Template Selector */}
