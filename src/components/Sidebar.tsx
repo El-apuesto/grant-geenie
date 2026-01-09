@@ -29,7 +29,7 @@ export default function Sidebar({ isPro, onNavigate, onSignOut, onStartTour, onG
     { name: 'Templates', view: 'templates', icon: FileText, prOnly: true },
     { name: 'Fiscal Sponsors', view: 'fiscalSponsors', icon: Building2, prOnly: true },
     { name: 'Analytics', view: 'analytics', icon: BarChart3, prOnly: true },
-    { name: 'Agency Tools', view: 'agency', icon: Briefcase, prOnly: false, agencyOnly: true }, // Agency Tool
+    { name: 'Agency Tools', view: 'agency', icon: Briefcase, prOnly: false }, // No badge, looks standard
   ];
 
   const handleNavigate = (view: string) => {
@@ -142,12 +142,6 @@ export default function Sidebar({ isPro, onNavigate, onSignOut, onStartTour, onG
             const Icon = item.icon;
             const active = isActive(item.view);
             const locked = item.prOnly && !isPro;
-            // For now, Agency Tools is visible to everyone but might show a sales page if clicked.
-            // Or we can hide it if we want strict gating.
-            // User said: "add it and it can be open... agency plan subscription... contact us type"
-            // So we show it. 
-            // We'll treat it as accessible but maybe the view content handles the "Contact Us" if needed.
-            // For simplicity, let's treat it as unlocked in sidebar but special view logic.
             
             return (
               <button
@@ -163,9 +157,7 @@ export default function Sidebar({ isPro, onNavigate, onSignOut, onStartTour, onG
                     ? 'bg-emerald-600 text-white'
                     : locked
                     ? 'text-slate-500 cursor-not-allowed opacity-50'
-                    : (item as any).agencyOnly 
-                      ? 'text-amber-400 hover:bg-amber-900/20' // Agency stands out
-                      : 'text-slate-300 hover:bg-slate-800'
+                    : 'text-slate-300 hover:bg-slate-800'
                   }
                 `}
               >
@@ -175,9 +167,6 @@ export default function Sidebar({ isPro, onNavigate, onSignOut, onStartTour, onG
                     <span className="font-medium">{item.name}</span>
                     {locked && (
                       <span className="ml-auto text-xs bg-slate-700 px-1.5 py-0.5 rounded">Pro</span>
-                    )}
-                     {(item as any).agencyOnly && (
-                      <span className="ml-auto text-xs bg-amber-600/20 border border-amber-500/30 text-amber-400 px-1.5 py-0.5 rounded">Agency</span>
                     )}
                   </>
                 )}
