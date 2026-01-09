@@ -1,232 +1,111 @@
-import { useState } from 'react';
-import { Menu, X, Home, Globe, ClipboardList, Calendar, FileText, Building2, Settings as SettingsIcon, LogOut, BarChart3, ChevronLeft, ChevronRight, Briefcase } from 'lucide-react';
-import { Profile } from '../types';
-import { getStateName } from '../lib/states';
+import { LayoutDashboard, Target, FileText, Search, Settings, ShieldCheck, Menu, Crown } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { Profile } from '../types';
 
 interface SidebarProps {
-  isPro: boolean;
-  onNavigate: (view: string) => void;
-  onSignOut: () => void;
-  onStartTour: () => void;
-  onGoHome: () => void;
+  activeTab: string;
+  onTabChange: (tab: string) => void;
+  isOpen: boolean;
+  onClose: () => void;
   profile: Profile | null;
-  currentView: string;
 }
 
-export default function Sidebar({ isPro, onNavigate, onSignOut, onStartTour, onGoHome, profile, currentView }: SidebarProps) {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [collapsed, setCollapsed] = useState(false);
-  const [upgrading, setUpgrading] = useState(false);
-  const { user } = useAuth();
+export default function Sidebar({ activeTab, onTabChange, isOpen, onClose, profile }: SidebarProps) {
+  const { signOut } = useAuth();
+  
+  // Update: Only check isAgency if profile exists. Safely check organization_type.
+  const isAgency = profile?.organization_type === 'Agency';
+  const isPro = profile?.subscription_status === 'active';
 
-  const navigation = [
-    { name: 'Dashboard Home', view: 'dashboard', icon: Home, prOnly: false },
-    { name: 'Agency Tools', view: 'agency', icon: Briefcase, prOnly: false, agencyOnly: true },
-    { name: 'Application Tracker', view: 'tracker', icon: ClipboardList, prOnly: true },
-    { name: 'Calendar', view: 'calendar', icon: Calendar, prOnly: true },
-    { name: 'LOI Generator', view: 'loi', icon: FileText, prOnly: true },
-    { name: 'Templates', view: 'templates', icon: FileText, prOnly: true },
-    { name: 'Fiscal Sponsors', view: 'fiscalSponsors', icon: Building2, prOnly: true },
-    { name: 'Analytics', view: 'analytics', icon: BarChart3, prOnly: true },
-    { name: 'Website', view: 'home', icon: Globe, prOnly: false },
+  const menuItems = [
+    { id: 'dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+    { id: 'pool', icon: Search, label: 'Grant Pool' },
+    { id: 'wizard', icon: FileText, label: 'Application Builder' },
+    // Only show Agency Tools if organization_type is 'Agency'
+    ...(isAgency ? [{ id: 'agency', icon: ShieldCheck, label: 'Agency Tools' }] : []),
+    { id: 'settings', icon: Settings, label: 'Settings' },
   ];
 
-  const handleNavigate = (view: string) => {
-    if (view === 'home') {
-      onGoHome();
-      setMobileMenuOpen(false);
-      return;
-    }
-    onNavigate(view);
-    setMobileMenuOpen(false);
-  };
-
-  const handleUpgrade = async () => {
-    if (!user?.id) return;
-    
-    setUpgrading(true);
-    try {
-      const response = await fetch('/api/create-checkout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: user.id,
-          priceId: 'price_1QfCHWP4hdswJ2yVo1RZ3zRv', // Your intro price ID
-        }),
-      });
-
-      const { url } = await response.json();
-      if (url) window.location.href = url;
-    } catch (error) {
-      console.error('Upgrade failed:', error);
-      alert('Failed to start checkout. Please try again.');
-    } finally {
-      setUpgrading(false);
+  const handleTabClick = (tabId: string) => {
+    onTabChange(tabId);
+    if (window.innerWidth < 768) {
+      onClose();
     }
   };
-
-  const isActive = (view: string) => currentView === view;
 
   return (
     <>
-      {/* Mobile hamburger button */}
-      <button
-        onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-        className="lg:hidden fixed top-4 left-4 z-50 p-2 rounded-lg bg-slate-800 shadow-lg border border-slate-700"
-      >
-        {mobileMenuOpen ? <X size={24} className="text-white" /> : <Menu size={24} className="text-white" />}
-      </button>
-
-      {/* Mobile overlay */}
-      {mobileMenuOpen && (
-        <div
-          className="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-40"
-          onClick={() => setMobileMenuOpen(false)}
+      {/* Mobile Overlay */}
+      {isOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-40 md:hidden"
+          onClick={onClose}
         />
       )}
 
-      {/* Sidebar - Always visible on desktop, collapsible */}
-      <div
-        className={`
-          fixed top-0 left-0 h-full bg-slate-900 shadow-xl z-40 border-r border-slate-700
-          transform transition-all duration-300 ease-in-out
-          lg:translate-x-0
-          ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-          ${collapsed ? 'lg:w-16' : 'lg:w-64'}
-          w-64
-        `}
-      >
-        {/* Desktop Collapse Toggle Button */}
-        <button
-          onClick={() => setCollapsed(!collapsed)}
-          className="hidden lg:flex absolute -right-3 top-6 w-6 h-6 items-center justify-center bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-full text-slate-300 hover:text-white transition-colors z-50"
-          title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-        >
-          {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
-        </button>
-
-        {/* Logo Section */}
-        <div className={`p-6 border-b border-slate-700 ${collapsed ? 'lg:p-3' : ''}`}>
-          <div className={`flex items-center gap-3 mb-2 ${collapsed ? 'lg:flex-col lg:gap-1' : ''}`}>
-            <video
-              src="/copy_5652D782-A5FB-43F0-A6C6-DCB56BB35546 2.webm"
-              autoPlay
-              loop
-              muted
-              playsInline
-              className={`object-contain ${collapsed ? 'lg:w-8 lg:h-8' : 'w-10 h-10'}`}
-            />
-            {!collapsed && (
-              <div>
-                <h2 className="text-xl font-bold text-white">Grant Geenie</h2>
-                {!isPro && (
-                  <span className="text-xs bg-slate-700 text-slate-300 px-2 py-0.5 rounded">Free Tier</span>
-                )}
-                {isPro && (
-                  <span className="text-xs bg-emerald-600/20 border border-emerald-500/30 text-emerald-400 px-2 py-0.5 rounded">Pro</span>
-                )}
-              </div>
-            )}
+      {/* Sidebar */}
+      <div className={`
+        fixed md:static inset-y-0 left-0 z-50
+        w-64 bg-slate-900 border-r border-slate-800 transform transition-transform duration-200 ease-in-out
+        ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+      `}>
+        <div className="p-6">
+          <div className="flex items-center gap-3 mb-8">
+            <div className="w-8 h-8 bg-gradient-to-br from-emerald-400 to-cyan-400 rounded-lg flex items-center justify-center">
+              <Crown className="w-5 h-5 text-slate-900" />
+            </div>
+            <h1 className="text-xl font-bold bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
+              Grant Geenie
+            </h1>
           </div>
-          {!collapsed && profile && profile.state && profile.organization_type && (
-            <p className="text-slate-400 text-xs">
-              {getStateName(profile.state)} • {profile.organization_type}
-            </p>
-          )}
+
+          <nav className="space-y-2">
+            {menuItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = activeTab === item.id;
+              
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => handleTabClick(item.id)}
+                  className={`
+                    w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200
+                    ${isActive 
+                      ? 'bg-emerald-600/20 text-emerald-400 border border-emerald-500/20' 
+                      : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                    }
+                  `}
+                >
+                  <Icon className={`w-5 h-5 ${isActive ? 'text-emerald-400' : ''}`} />
+                  <span className="font-medium">{item.label}</span>
+                </button>
+              );
+            })}
+          </nav>
         </div>
 
-        {/* Navigation */}
-        <nav className="px-3 py-4 space-y-1 flex-1 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 200px)' }}>
-          {navigation.map((item) => {
-            const Icon = item.icon;
-            const active = isActive(item.view);
-            const locked = item.prOnly && !isPro;
-            const agencyOnly = (item as any).agencyOnly;
-
-            // Hide agency tools if user is not an agency
-            if (agencyOnly && profile?.organization_type !== 'Agency') {
-              return null;
-            }
-            
-            return (
-              <button
-                key={item.name}
-                onClick={() => !locked && handleNavigate(item.view)}
-                disabled={locked}
-                title={collapsed ? item.name : ''}
-                className={`
-                  w-full flex items-center gap-3 px-3 py-2.5 rounded-lg
-                  transition-colors duration-200 text-left text-sm
-                  ${collapsed ? 'lg:justify-center lg:px-2' : ''}
-                  ${active
-                    ? 'bg-emerald-600 text-white'
-                    : locked
-                    ? 'text-slate-500 cursor-not-allowed opacity-50'
-                    : 'text-slate-300 hover:bg-slate-800'
-                  }
-                `}
+        <div className="absolute bottom-0 left-0 right-0 p-6 border-t border-slate-800 bg-slate-900">
+          {!isPro && (
+            <div className="mb-4 p-4 rounded-lg bg-gradient-to-br from-indigo-600 to-purple-600 text-white">
+              <h3 className="font-bold mb-1">Upgrade to Pro</h3>
+              <p className="text-sm text-indigo-100 mb-3">Unlock unlimited grant matches and AI writing.</p>
+              <button 
+                onClick={() => onTabChange('settings')}
+                className="w-full py-2 bg-white text-indigo-600 rounded font-semibold text-sm hover:bg-indigo-50 transition"
               >
-                <Icon size={18} />
-                {!collapsed && (
-                  <>
-                    <span className="font-medium">{item.name}</span>
-                    {locked && (
-                      <span className="ml-auto text-xs bg-slate-700 px-1.5 py-0.5 rounded">Pro</span>
-                    )}
-                  </>
-                )}
-              </button>
-            );
-          })}
-        </nav>
-
-        {/* Bottom Actions */}
-        <div className="absolute bottom-0 left-0 right-0 border-t border-slate-700 bg-slate-900">
-          {isPro && (
-            <button
-              onClick={onStartTour}
-              title={collapsed ? 'Product Tour' : ''}
-              className={`w-full flex items-center gap-3 px-6 py-3 text-slate-300 hover:bg-slate-800 transition-colors text-sm ${collapsed ? 'lg:justify-center lg:px-2' : ''}`}
-            >
-              <span className="text-2xl">🪔</span>
-              {!collapsed && <span className="font-medium">Product Tour</span>}
-            </button>
-          )}
-          {isPro && (
-            <button
-              onClick={() => handleNavigate('settings')}
-              title={collapsed ? 'Settings' : ''}
-              className={`w-full flex items-center gap-3 px-6 py-3 text-slate-300 hover:bg-slate-800 transition-colors text-sm border-t border-slate-700 ${collapsed ? 'lg:justify-center lg:px-2' : ''}`}
-            >
-              <SettingsIcon size={18} />
-              {!collapsed && <span className="font-medium">Settings</span>}
-            </button>
-          )}
-          <button
-            onClick={onSignOut}
-            title={collapsed ? 'Sign Out' : ''}
-            className={`w-full flex items-center gap-3 px-6 py-3 text-slate-300 hover:bg-slate-800 transition-colors text-sm border-t border-slate-700 ${collapsed ? 'lg:justify-center lg:px-2' : ''}`}
-          >
-            <LogOut size={18} />
-            {!collapsed && <span className="font-medium">Sign Out</span>}
-          </button>
-          {!isPro && !collapsed && (
-            <div className="p-4 bg-slate-800/50">
-              <button
-                onClick={handleUpgrade}
-                disabled={upgrading}
-                className="w-full px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-600 text-white rounded-lg transition font-semibold text-sm"
-              >
-                {upgrading ? 'Loading...' : 'Upgrade to Pro'}
+                View Plans
               </button>
             </div>
           )}
+          
+          <button
+            onClick={() => signOut()}
+            className="w-full flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"
+          >
+            <span className="font-medium">Sign Out</span>
+          </button>
         </div>
       </div>
-
-      {/* Spacer for desktop sidebar - adjusts based on collapsed state */}
-      <div className={`hidden lg:block flex-shrink-0 transition-all duration-300 ${collapsed ? 'w-16' : 'w-64'}`} />
     </>
   );
 }
