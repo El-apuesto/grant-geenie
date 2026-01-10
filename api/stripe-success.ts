@@ -68,7 +68,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     console.log('Existing profile:', existingProfile);
 
-    // Get subscription details
+    // Get subscription details - only use columns that exist in database
     const subscriptionId = session.subscription as string;
     let subscriptionData: any = {
       subscription_tier: 'pro',
@@ -81,9 +81,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       subscriptionData = {
         subscription_status: subscription.status,
         subscription_tier: 'pro',
-        subscription_current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
-        subscription_cancel_at_period_end: subscription.cancel_at_period_end || false,
         stripe_customer_id: session.customer as string,
+        stripe_subscription_id: subscriptionId,
       };
       console.log('Subscription data prepared:', subscriptionData);
     }
