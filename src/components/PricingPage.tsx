@@ -103,48 +103,42 @@ export default function PricingPage() {
             </UpgradeButton>
           </div>
 
-          {/* SEASON PASS - FOR BETA TESTERS */}
-          <div className="bg-slate-800/50 border-2 border-blue-500 rounded-lg p-6 relative">
-            <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-blue-600 text-white px-3 py-1 rounded-full text-sm font-semibold">
-              Beta Special
-            </div>
+          {/* Season Pass */}
+          <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-6">
             <h3 className="text-xl font-bold text-white mb-2">Season Pass</h3>
             <div className="mb-4">
               <div>
                 <span className="text-4xl font-bold text-white">$79.99</span>
               </div>
-              <div className="text-sm text-blue-400 font-semibold mt-2">
-                4 months of Pro access
-              </div>
-              <div className="text-xs text-slate-400 mt-1">~$20/month</div>
+              <div className="text-sm text-slate-400 mt-2">4 months of Pro access</div>
             </div>
             <ul className="space-y-3 mb-6">
               <li className="flex items-start gap-2 text-slate-300">
-                <Check className="w-5 h-5 text-blue-400 mt-0.5 flex-shrink-0" />
+                <Check className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" />
                 <span>Unlimited grant matches</span>
               </li>
               <li className="flex items-start gap-2 text-slate-300">
-                <Check className="w-5 h-5 text-blue-400 mt-0.5 flex-shrink-0" />
+                <Check className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" />
                 <span>Application tracker</span>
               </li>
               <li className="flex items-start gap-2 text-slate-300">
-                <Check className="w-5 h-5 text-blue-400 mt-0.5 flex-shrink-0" />
+                <Check className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" />
                 <span>LOI Generator</span>
               </li>
               <li className="flex items-start gap-2 text-slate-300">
-                <Check className="w-5 h-5 text-blue-400 mt-0.5 flex-shrink-0" />
+                <Check className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" />
                 <span>Fiscal Sponsors database</span>
               </li>
               <li className="flex items-start gap-2 text-slate-300">
-                <Check className="w-5 h-5 text-blue-400 mt-0.5 flex-shrink-0" />
+                <Check className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" />
                 <span>Calendar & deadlines</span>
               </li>
               <li className="flex items-start gap-2 text-slate-300">
-                <Check className="w-5 h-5 text-blue-400 mt-0.5 flex-shrink-0" />
+                <Check className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" />
                 <span>Advanced analytics</span>
               </li>
               <li className="flex items-start gap-2 text-slate-300">
-                <Check className="w-5 h-5 text-blue-400 mt-0.5 flex-shrink-0" />
+                <Check className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" />
                 <span>Priority support</span>
               </li>
             </ul>
