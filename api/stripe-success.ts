@@ -57,7 +57,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     console.log('Checking if user profile exists...');
     const { data: existingProfile, error: fetchError } = await supabase
       .from('profiles')
-      .select('id, subscription_tier, subscription_status')
+      .select('id')
       .eq('id', userId)
       .single();
 
@@ -66,29 +66,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(500).json({ error: 'User profile not found', details: fetchError.message });
     }
 
-    console.log('Existing profile:', existingProfile);
+    console.log('Existing profile found:', existingProfile.id);
 
-    // Get subscription details - only use columns that exist in database
-    const subscriptionId = session.subscription as string;
-    let subscriptionData: any = {
+    // Simple update - only core fields that MUST exist
+    const subscriptionData = {
       subscription_tier: 'pro',
       subscription_status: 'active',
     };
 
-    if (subscriptionId) {
-      console.log('Fetching subscription details from Stripe...');
-      const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-      subscriptionData = {
-        subscription_status: subscription.status,
-        subscription_tier: 'pro',
-        stripe_customer_id: session.customer as string,
-        stripe_subscription_id: subscriptionId,
-      };
-      console.log('Subscription data prepared:', subscriptionData);
-    }
+    console.log('Updating profile with:', subscriptionData);
 
     // Update user subscription status in Supabase
-    console.log('Updating user profile...');
     const { data: updatedProfile, error: updateError } = await supabase
       .from('profiles')
       .update(subscriptionData)
@@ -106,7 +94,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         error: 'Failed to update subscription', 
         message: updateError.message,
         code: updateError.code,
-        hint: updateError.hint
+        hint: updateError.hint,
+        details: updateError.details
       });
     }
 
@@ -116,6 +105,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).json({ success: true, profile: updatedProfile });
   } catch (error: any) {
     console.error('Unexpected error:', error);
-    return res.status(500).json({ error: error.message, stack: error.stack });
+    return res.status(500).json({ 
+      error: error.message, 
+      details: error.toString(),
+      stack: error.stack 
+    });
   }
 }
