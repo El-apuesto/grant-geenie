@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
-import { Home, Search, ClipboardList, Calendar as CalendarIcon, FileText, Building2, BarChart3, Briefcase, LogOut, Crown } from 'lucide-react';
+import { Home, Search, ClipboardList, Calendar as CalendarIcon, FileText, Building2, BarChart3, Briefcase, LogOut, Crown, Menu, X } from 'lucide-react';
 import DashboardHome from './DashboardHome';
 import GrantPool from './GrantPool';
 import ApplicationTracker from './ApplicationTracker';
@@ -22,6 +22,7 @@ export default function DashboardContainer() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isPro, setIsPro] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -69,6 +70,7 @@ export default function DashboardContainer() {
 
   const handleNavigate = (view: string) => {
     setCurrentView(view as ViewType);
+    setSidebarOpen(false); // Close sidebar on navigation (mobile)
   };
 
   const renderView = () => {
@@ -108,22 +110,45 @@ export default function DashboardContainer() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex relative">
+      {/* Mobile Overlay */}
+      {sidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
-      <div className="w-64 bg-slate-800/50 border-r border-slate-700 flex flex-col">
-        {/* Logo */}
-        <div className="p-6 border-b border-slate-700">
-          <h1 className="text-2xl font-bold text-white">Grant Geenie</h1>
-          {isPro && (
-            <div className="mt-2 flex items-center gap-2 text-xs text-emerald-400">
-              <Crown className="w-4 h-4" />
-              <span>Pro Member</span>
-            </div>
-          )}
+      <div className={`
+        fixed lg:static inset-y-0 left-0 z-50
+        w-64 bg-slate-800/95 backdrop-blur-sm lg:bg-slate-800/50 
+        border-r border-slate-700 
+        flex flex-col
+        transform transition-transform duration-300 ease-in-out
+        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+      `}>
+        {/* Logo & Close Button */}
+        <div className="p-6 border-b border-slate-700 flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-white">Grant Geenie</h1>
+            {isPro && (
+              <div className="mt-2 flex items-center gap-2 text-xs text-emerald-400">
+                <Crown className="w-4 h-4" />
+                <span>Pro Member</span>
+              </div>
+            )}
+          </div>
+          <button
+            onClick={() => setSidebarOpen(false)}
+            className="lg:hidden text-slate-400 hover:text-white p-2 rounded-lg hover:bg-slate-700 transition"
+          >
+            <X className="w-5 h-5" />
+          </button>
         </div>
 
-        {/* Menu Items */}
-        <nav className="flex-1 p-4 space-y-2">
+        {/* Menu Items - Scrollable if needed */}
+        <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
           {menuItems.map((item) => {
             const Icon = item.icon;
             const isLocked = item.proOnly && !isPro;
@@ -132,10 +157,10 @@ export default function DashboardContainer() {
             return (
               <button
                 key={item.id}
-                onClick={() => !isLocked && setCurrentView(item.id)}
+                onClick={() => !isLocked && handleNavigate(item.id)}
                 disabled={isLocked}
                 className={`
-                  w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all
+                  w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all
                   ${
                     isActive
                       ? 'bg-emerald-600 text-white'
@@ -146,19 +171,19 @@ export default function DashboardContainer() {
                 `}
               >
                 <Icon className="w-5 h-5" />
-                <span className="font-medium">{item.label}</span>
+                <span className="font-medium text-sm">{item.label}</span>
                 {isLocked && <Crown className="w-4 h-4 ml-auto" />}
               </button>
             );
           })}
         </nav>
 
-        {/* Bottom Actions */}
-        <div className="p-4 border-t border-slate-700 space-y-2">
+        {/* Bottom Actions - Fixed at bottom */}
+        <div className="p-4 border-t border-slate-700 space-y-2 bg-slate-800/50">
           {!isPro && (
             <button
-              onClick={() => setCurrentView('pricing')}
-              className="w-full px-4 py-3 bg-gradient-to-r from-emerald-600 to-blue-600 hover:from-emerald-700 hover:to-blue-700 text-white rounded-lg font-semibold transition flex items-center justify-center gap-2"
+              onClick={() => handleNavigate('pricing')}
+              className="w-full px-4 py-2.5 bg-gradient-to-r from-emerald-600 to-blue-600 hover:from-emerald-700 hover:to-blue-700 text-white rounded-lg font-semibold transition flex items-center justify-center gap-2 text-sm"
             >
               <Crown className="w-4 h-4" />
               Upgrade to Pro
@@ -166,7 +191,7 @@ export default function DashboardContainer() {
           )}
           <button
             onClick={handleSignOut}
-            className="w-full flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg transition"
+            className="w-full flex items-center gap-3 px-4 py-2.5 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg transition text-sm"
           >
             <LogOut className="w-5 h-5" />
             <span>Sign Out</span>
@@ -175,9 +200,24 @@ export default function DashboardContainer() {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="p-8">
-          {renderView()}
+      <div className="flex-1 flex flex-col min-h-screen">
+        {/* Mobile Header with Menu Button */}
+        <div className="lg:hidden bg-slate-800/50 border-b border-slate-700 p-4 flex items-center justify-between sticky top-0 z-30">
+          <button
+            onClick={() => setSidebarOpen(true)}
+            className="text-white p-2 hover:bg-slate-700 rounded-lg transition"
+          >
+            <Menu className="w-6 h-6" />
+          </button>
+          <h1 className="text-xl font-bold text-white">Grant Geenie</h1>
+          <div className="w-10" /> {/* Spacer for centering */}
+        </div>
+
+        {/* Main Content Area */}
+        <div className="flex-1 overflow-y-auto">
+          <div className="p-4 lg:p-8">
+            {renderView()}
+          </div>
         </div>
       </div>
     </div>
