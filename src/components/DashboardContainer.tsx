@@ -31,14 +31,6 @@ export default function DashboardContainer() {
   useEffect(() => {
     if (user) {
       loadProfile();
-      
-      // Set up periodic profile refresh to detect subscription changes
-      const intervalId = setInterval(() => {
-        loadProfile();
-      }, 5000); // Check every 5 seconds
-
-      // Clean up interval on unmount
-      return () => clearInterval(intervalId);
     }
   }, [user]);
 
@@ -57,14 +49,13 @@ export default function DashboardContainer() {
         const newIsPro = profileData.subscription_tier === 'pro' || profileData.subscription_tier === 'enterprise';
         const newIsEnterprise = profileData.subscription_tier === 'enterprise';
         
-        // Log if subscription status changed
-        if (newIsPro !== isPro || newIsEnterprise !== isEnterprise) {
-          console.log('Subscription status changed:', { 
-            old: { pro: isPro, enterprise: isEnterprise }, 
-            new: { pro: newIsPro, enterprise: newIsEnterprise }, 
-            tier: profileData.subscription_tier 
-          });
-        }
+        // Log subscription status on load
+        console.log('Profile loaded:', { 
+          tier: profileData.subscription_tier,
+          status: profileData.subscription_status,
+          isPro: newIsPro,
+          isEnterprise: newIsEnterprise
+        });
         
         setIsPro(newIsPro);
         setIsEnterprise(newIsEnterprise);
