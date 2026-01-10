@@ -25,59 +25,98 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const { sessionId } = req.body;
 
+    console.log('=== Payment Verification Started ===');
+    console.log('Session ID:', sessionId);
+
     if (!sessionId) {
       return res.status(400).json({ error: 'Missing sessionId' });
     }
 
     // Retrieve the checkout session from Stripe
+    console.log('Fetching session from Stripe...');
     const session = await stripe.checkout.sessions.retrieve(sessionId);
+    console.log('Session retrieved:', {
+      payment_status: session.payment_status,
+      customer: session.customer,
+      subscription: session.subscription,
+      metadata: session.metadata
+    });
 
     if (!session || session.payment_status !== 'paid') {
-      return res.status(400).json({ error: 'Payment not completed' });
+      return res.status(400).json({ error: 'Payment not completed', payment_status: session?.payment_status });
     }
 
     const userId = session.metadata?.user_id;
+    console.log('User ID from metadata:', userId);
 
     if (!userId) {
       return res.status(400).json({ error: 'No user ID in session metadata' });
     }
 
+    // Check if user exists first
+    console.log('Checking if user profile exists...');
+    const { data: existingProfile, error: fetchError } = await supabase
+      .from('profiles')
+      .select('id, subscription_tier, subscription_status')
+      .eq('id', userId)
+      .single();
+
+    if (fetchError) {
+      console.error('Error fetching user profile:', fetchError);
+      return res.status(500).json({ error: 'User profile not found', details: fetchError.message });
+    }
+
+    console.log('Existing profile:', existingProfile);
+
     // Get subscription details
     const subscriptionId = session.subscription as string;
-    let subscriptionData = null;
+    let subscriptionData: any = {
+      subscription_tier: 'pro',
+      subscription_status: 'active',
+    };
 
     if (subscriptionId) {
+      console.log('Fetching subscription details from Stripe...');
       const subscription = await stripe.subscriptions.retrieve(subscriptionId);
       subscriptionData = {
         subscription_status: subscription.status,
-        subscription_tier: 'pro', // Set tier to pro
+        subscription_tier: 'pro',
         subscription_current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
         subscription_cancel_at_period_end: subscription.cancel_at_period_end || false,
+        stripe_customer_id: session.customer as string,
       };
-    } else {
-      // Fallback if no subscription (shouldn't happen)
-      subscriptionData = {
-        subscription_status: 'active',
-        subscription_tier: 'pro',
-      };
+      console.log('Subscription data prepared:', subscriptionData);
     }
-
-    console.log('Updating user profile with:', subscriptionData);
 
     // Update user subscription status in Supabase
-    const { error: updateError } = await supabase
+    console.log('Updating user profile...');
+    const { data: updatedProfile, error: updateError } = await supabase
       .from('profiles')
       .update(subscriptionData)
-      .eq('id', userId);
+      .eq('id', userId)
+      .select();
 
     if (updateError) {
-      console.error('Error updating subscription:', updateError);
-      return res.status(500).json({ error: 'Failed to update subscription' });
+      console.error('Supabase update error:', {
+        message: updateError.message,
+        details: updateError.details,
+        hint: updateError.hint,
+        code: updateError.code
+      });
+      return res.status(500).json({ 
+        error: 'Failed to update subscription', 
+        message: updateError.message,
+        code: updateError.code,
+        hint: updateError.hint
+      });
     }
 
-    return res.status(200).json({ success: true });
+    console.log('Profile updated successfully:', updatedProfile);
+    console.log('=== Payment Verification Complete ===');
+
+    return res.status(200).json({ success: true, profile: updatedProfile });
   } catch (error: any) {
-    console.error('Error verifying payment:', error);
-    return res.status(500).json({ error: error.message });
+    console.error('Unexpected error:', error);
+    return res.status(500).json({ error: error.message, stack: error.stack });
   }
 }
