@@ -6,6 +6,7 @@ export interface Profile {
   focus_area: string | null;
   onboarding_completed: boolean;
   subscription_status: 'free' | 'active' | 'past_due' | 'canceled';
+  subscription_tier: string | null;
   stripe_customer_id?: string;
   created_at?: string;
   updated_at?: string;
