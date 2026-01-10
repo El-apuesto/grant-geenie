@@ -130,7 +130,13 @@ export default function DashboardContainer() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex relative">
-      {showTour && <ProductTour onComplete={() => setShowTour(false)} />}
+      {showTour && (
+        <ProductTour 
+          isActive={showTour} 
+          onComplete={() => setShowTour(false)} 
+          onSkip={() => setShowTour(false)} 
+        />
+      )}
       
       {/* Mobile Overlay */}
       {sidebarOpen && (
