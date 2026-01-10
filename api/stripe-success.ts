@@ -42,10 +42,32 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: 'No user ID in session metadata' });
     }
 
+    // Get subscription details
+    const subscriptionId = session.subscription as string;
+    let subscriptionData = null;
+
+    if (subscriptionId) {
+      const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+      subscriptionData = {
+        subscription_status: subscription.status,
+        subscription_tier: 'pro', // Set tier to pro
+        subscription_current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+        subscription_cancel_at_period_end: subscription.cancel_at_period_end || false,
+      };
+    } else {
+      // Fallback if no subscription (shouldn't happen)
+      subscriptionData = {
+        subscription_status: 'active',
+        subscription_tier: 'pro',
+      };
+    }
+
+    console.log('Updating user profile with:', subscriptionData);
+
     // Update user subscription status in Supabase
     const { error: updateError } = await supabase
       .from('profiles')
-      .update({ subscription_status: 'active' })
+      .update(subscriptionData)
       .eq('id', userId);
 
     if (updateError) {
