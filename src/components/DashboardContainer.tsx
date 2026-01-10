@@ -27,6 +27,14 @@ export default function DashboardContainer() {
   useEffect(() => {
     if (user) {
       loadProfile();
+      
+      // Set up periodic profile refresh to detect subscription changes
+      const intervalId = setInterval(() => {
+        loadProfile();
+      }, 5000); // Check every 5 seconds
+
+      // Clean up interval on unmount
+      return () => clearInterval(intervalId);
     }
   }, [user]);
 
@@ -42,7 +50,14 @@ export default function DashboardContainer() {
 
       if (profileData) {
         setProfile(profileData);
-        setIsPro(profileData.subscription_tier === 'pro');
+        const newIsPro = profileData.subscription_tier === 'pro';
+        
+        // Log if subscription status changed
+        if (newIsPro !== isPro) {
+          console.log('Subscription status changed:', { old: isPro, new: newIsPro, tier: profileData.subscription_tier });
+        }
+        
+        setIsPro(newIsPro);
       }
     } catch (error) {
       console.error('Error loading profile:', error);
