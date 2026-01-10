@@ -22,7 +22,32 @@ const STEPS = [
   {
     id: 'focus',
     question: 'What is your main focus area?',
-    options: ['Arts & Culture', 'Education', 'Environment', 'Health', 'Social Justice', 'Technology', 'Community Development']
+    options: ['Arts & Culture', 'Education', 'Environment', 'Health', 'Social Justice', 'Technology', 'Community Development', 'Infrastructure']
+  },
+  {
+    id: 'budget_size',
+    question: 'What is your typical project budget range?',
+    options: ['Under $10K', '$10K-$50K', '$50K-$100K', '$100K-$500K', '$500K+']
+  },
+  {
+    id: 'experience_level',
+    question: 'How experienced are you with grant applications?',
+    options: ['New to grants', 'Some experience', 'Very experienced', 'Professional grant writer']
+  },
+  {
+    id: 'urgency',
+    question: 'How soon do you need funding?',
+    options: ['Immediate (1-3 months)', 'Soon (3-6 months)', 'Planning ahead (6-12 months)', 'Long-term (1+ years)']
+  },
+  {
+    id: 'project_stage',
+    question: 'What stage is your project in?',
+    options: ['Planning/Idea stage', 'Development phase', 'Ready to launch', 'Already active', 'Expansion phase']
+  },
+  {
+    id: 'collaboration',
+    question: 'Are you open to collaborative projects?',
+    options: ['Yes, actively seeking partners', 'Yes, but prefer leading', 'Maybe, depends on the opportunity', 'No, prefer independent projects']
   }
 ];
 
@@ -42,6 +67,12 @@ export default function Questionnaire({ onComplete }: QuestionnaireProps) {
     }
   };
 
+  const handleBack = () => {
+    if (currentStep > 0) {
+      setCurrentStep(prev => prev - 1);
+    }
+  };
+
   const submitAnswers = async (finalAnswers: Record<string, string>) => {
     if (!user) return;
     setLoading(true);
@@ -55,6 +86,11 @@ export default function Questionnaire({ onComplete }: QuestionnaireProps) {
           organization_type: finalAnswers.org_type,
           state: finalAnswers.state,
           focus_area: finalAnswers.focus,
+          budget_size: finalAnswers.budget_size,
+          experience_level: finalAnswers.experience_level,
+          urgency: finalAnswers.urgency,
+          project_stage: finalAnswers.project_stage,
+          collaboration: finalAnswers.collaboration,
           onboarding_completed: true,
           updated_at: new Date().toISOString(),
         });
@@ -121,6 +157,15 @@ export default function Questionnaire({ onComplete }: QuestionnaireProps) {
             ))
           )}
         </div>
+
+        {currentStep > 0 && (
+          <button
+            onClick={handleBack}
+            className="mt-6 text-slate-400 hover:text-white transition text-sm"
+          >
+            ← Back
+          </button>
+        )}
 
         {loading && (
           <div className="mt-6 text-center text-slate-400 text-sm animate-pulse">
