@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
-import { Home, Search, ClipboardList, Calendar as CalendarIcon, FileText, Building2, BarChart3, Briefcase, LogOut, Crown, Menu, X } from 'lucide-react';
+import { Home, Search, ClipboardList, Calendar as CalendarIcon, FileText, Building2, BarChart3, Briefcase, LogOut, Crown, Menu, X, Settings as SettingsIcon } from 'lucide-react';
 import DashboardHome from './DashboardHome';
 import GrantPool from './GrantPool';
 import ApplicationTracker from './ApplicationTracker';
@@ -12,17 +12,21 @@ import FiscalSponsors from './FiscalSponsors';
 import Analytics from './AnalyticsPage';
 import AgencyTools from './AgencyTools';
 import PricingPage from './PricingPage';
+import Settings from './Settings';
+import ProductTour from './ProductTour';
 import { Profile } from '../types';
 
-type ViewType = 'home' | 'grants' | 'pool' | 'tracker' | 'calendar' | 'loi' | 'templates' | 'fiscal' | 'analytics' | 'agency' | 'pricing';
+type ViewType = 'home' | 'grants' | 'pool' | 'tracker' | 'calendar' | 'loi' | 'templates' | 'fiscal' | 'analytics' | 'agency' | 'pricing' | 'settings';
 
 export default function DashboardContainer() {
   const { user, signOut } = useAuth();
   const [currentView, setCurrentView] = useState<ViewType>('home');
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isPro, setIsPro] = useState(false);
+  const [isEnterprise, setIsEnterprise] = useState(false);
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [showTour, setShowTour] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -50,14 +54,20 @@ export default function DashboardContainer() {
 
       if (profileData) {
         setProfile(profileData);
-        const newIsPro = profileData.subscription_tier === 'pro';
+        const newIsPro = profileData.subscription_tier === 'pro' || profileData.subscription_tier === 'enterprise';
+        const newIsEnterprise = profileData.subscription_tier === 'enterprise';
         
         // Log if subscription status changed
-        if (newIsPro !== isPro) {
-          console.log('Subscription status changed:', { old: isPro, new: newIsPro, tier: profileData.subscription_tier });
+        if (newIsPro !== isPro || newIsEnterprise !== isEnterprise) {
+          console.log('Subscription status changed:', { 
+            old: { pro: isPro, enterprise: isEnterprise }, 
+            new: { pro: newIsPro, enterprise: newIsEnterprise }, 
+            tier: profileData.subscription_tier 
+          });
         }
         
         setIsPro(newIsPro);
+        setIsEnterprise(newIsEnterprise);
       }
     } catch (error) {
       console.error('Error loading profile:', error);
@@ -72,15 +82,16 @@ export default function DashboardContainer() {
   };
 
   const menuItems = [
-    { id: 'home' as ViewType, label: 'Home', icon: Home, proOnly: false },
-    { id: 'grants' as ViewType, label: 'Find Grants', icon: Search, proOnly: false },
-    { id: 'tracker' as ViewType, label: 'Applications', icon: ClipboardList, proOnly: true },
-    { id: 'calendar' as ViewType, label: 'Calendar', icon: CalendarIcon, proOnly: true },
-    { id: 'loi' as ViewType, label: 'LOI Generator', icon: FileText, proOnly: true },
-    { id: 'templates' as ViewType, label: 'Templates', icon: FileText, proOnly: true },
-    { id: 'fiscal' as ViewType, label: 'Fiscal Sponsors', icon: Building2, proOnly: true },
-    { id: 'analytics' as ViewType, label: 'Analytics', icon: BarChart3, proOnly: true },
-    { id: 'agency' as ViewType, label: 'Agency Tools', icon: Briefcase, proOnly: false },
+    { id: 'home' as ViewType, label: 'Home', icon: Home, proOnly: false, enterpriseOnly: false, isLink: true, href: '/' },
+    { id: 'grants' as ViewType, label: 'Find Grants', icon: Search, proOnly: false, enterpriseOnly: false },
+    { id: 'tracker' as ViewType, label: 'Applications', icon: ClipboardList, proOnly: true, enterpriseOnly: false },
+    { id: 'calendar' as ViewType, label: 'Calendar', icon: CalendarIcon, proOnly: true, enterpriseOnly: false },
+    { id: 'loi' as ViewType, label: 'LOI Generator', icon: FileText, proOnly: true, enterpriseOnly: false },
+    { id: 'templates' as ViewType, label: 'Templates', icon: FileText, proOnly: true, enterpriseOnly: false },
+    { id: 'fiscal' as ViewType, label: 'Fiscal Sponsors', icon: Building2, proOnly: true, enterpriseOnly: false },
+    { id: 'analytics' as ViewType, label: 'Analytics', icon: BarChart3, proOnly: true, enterpriseOnly: false },
+    { id: 'agency' as ViewType, label: 'Agency Tools', icon: Briefcase, proOnly: false, enterpriseOnly: true },
+    { id: 'settings' as ViewType, label: 'Settings', icon: SettingsIcon, proOnly: false, enterpriseOnly: false },
   ];
 
   const handleNavigate = (view: string) => {
@@ -108,9 +119,11 @@ export default function DashboardContainer() {
       case 'analytics':
         return <Analytics />;
       case 'agency':
-        return <AgencyTools isPro={isPro} />;
+        return <AgencyTools isPro={isEnterprise} />;
       case 'pricing':
         return <PricingPage />;
+      case 'settings':
+        return <Settings onBack={() => handleNavigate('home')} onRestartTour={() => setShowTour(true)} />;
       default:
         return <DashboardHome isPro={isPro} onNavigate={handleNavigate} />;
     }
@@ -126,6 +139,8 @@ export default function DashboardContainer() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex relative">
+      {showTour && <ProductTour onComplete={() => setShowTour(false)} />}
+      
       {/* Mobile Overlay */}
       {sidebarOpen && (
         <div 
@@ -147,12 +162,17 @@ export default function DashboardContainer() {
         <div className="p-6 border-b border-slate-700 flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-white">Grant Geenie</h1>
-            {isPro && (
+            {isEnterprise ? (
+              <div className="mt-2 flex items-center gap-2 text-xs text-purple-400">
+                <Crown className="w-4 h-4" />
+                <span>Enterprise</span>
+              </div>
+            ) : isPro ? (
               <div className="mt-2 flex items-center gap-2 text-xs text-emerald-400">
                 <Crown className="w-4 h-4" />
                 <span>Pro Member</span>
               </div>
-            )}
+            ) : null}
           </div>
           <button
             onClick={() => setSidebarOpen(false)}
@@ -166,8 +186,22 @@ export default function DashboardContainer() {
         <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
           {menuItems.map((item) => {
             const Icon = item.icon;
-            const isLocked = item.proOnly && !isPro;
+            const isLocked = (item.proOnly && !isPro) || (item.enterpriseOnly && !isEnterprise);
             const isActive = currentView === item.id;
+
+            // Special handling for Home link
+            if (item.isLink) {
+              return (
+                <a
+                  key={item.id}
+                  href={item.href}
+                  className="w-full flex items-center gap-3 px-4 py-2.5 text-slate-300 hover:bg-slate-700 hover:text-white rounded-lg transition-all text-sm font-medium"
+                >
+                  <Icon className="w-5 h-5" />
+                  <span>{item.label}</span>
+                </a>
+              );
+            }
 
             return (
               <button
@@ -175,7 +209,7 @@ export default function DashboardContainer() {
                 onClick={() => !isLocked && handleNavigate(item.id)}
                 disabled={isLocked}
                 className={`
-                  w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all
+                  w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all text-sm font-medium
                   ${
                     isActive
                       ? 'bg-emerald-600 text-white'
@@ -186,8 +220,16 @@ export default function DashboardContainer() {
                 `}
               >
                 <Icon className="w-5 h-5" />
-                <span className="font-medium text-sm">{item.label}</span>
-                {isLocked && <Crown className="w-4 h-4 ml-auto" />}
+                <span>{item.label}</span>
+                {isLocked && (
+                  <div className="ml-auto flex items-center gap-1">
+                    {item.enterpriseOnly ? (
+                      <span className="text-[10px] bg-purple-600/20 text-purple-400 px-1.5 py-0.5 rounded">ENT</span>
+                    ) : (
+                      <Crown className="w-4 h-4" />
+                    )}
+                  </div>
+                )}
               </button>
             );
           })}
@@ -202,6 +244,15 @@ export default function DashboardContainer() {
             >
               <Crown className="w-4 h-4" />
               Upgrade to Pro
+            </button>
+          )}
+          {isPro && !isEnterprise && (
+            <button
+              onClick={() => alert('Contact sales@granthustle.com for Enterprise access')}
+              className="w-full px-4 py-2.5 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-lg font-semibold transition flex items-center justify-center gap-2 text-sm"
+            >
+              <Crown className="w-4 h-4" />
+              Upgrade to Enterprise
             </button>
           )}
           <button
