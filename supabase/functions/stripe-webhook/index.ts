@@ -31,11 +31,11 @@ serve(async (req) => {
       const userId = session.metadata?.user_id || session.client_reference_id
 
       if (userId) {
-        // Update database
+        // Update database - FIXED: Changed from 'premium' to 'pro'
         const { data: profile } = await supabase
           .from('profiles')
           .update({
-            subscription_tier: 'premium',
+            subscription_tier: 'pro',
             subscription_status: 'active',
             stripe_customer_id: session.customer as string,
           })
@@ -50,7 +50,7 @@ serve(async (req) => {
             subject: "Your Grant Hustle receipt and what's next",
             html: generateWelcomeEmail(
               profile.full_name || 'there',
-              'Premium',
+              'Pro',
               `${Deno.env.get('SITE_URL')}/dashboard`
             ),
           })
