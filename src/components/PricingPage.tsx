@@ -9,6 +9,8 @@ export default function PricingPage() {
     annual: 'price_1Sa9CtG85r4wkmwWNVjMLlVyk', // $149.99 / year recurring
   };
 
+  const PAYMENTS_COMING_SOON = true;
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4 md:p-8">
       <div className="max-w-6xl mx-auto">
@@ -94,7 +96,9 @@ export default function PricingPage() {
                 <span>Priority support</span>
               </li>
             </ul>
-            <UpgradeButton priceId={STRIPE_PRICE_IDS.monthly}>Subscribe Now</UpgradeButton>
+            <UpgradeButton priceId={STRIPE_PRICE_IDS.monthly} disabled={PAYMENTS_COMING_SOON}>
+              {PAYMENTS_COMING_SOON ? 'Coming Soon' : 'Subscribe Now'}
+            </UpgradeButton>
           </div>
 
           {/* Season Pass - 4 Months */}
@@ -137,7 +141,9 @@ export default function PricingPage() {
                 <span>Priority support</span>
               </li>
             </ul>
-            <UpgradeButton priceId={STRIPE_PRICE_IDS.season}>Subscribe Now</UpgradeButton>
+            <UpgradeButton priceId={STRIPE_PRICE_IDS.season} disabled={PAYMENTS_COMING_SOON}>
+              {PAYMENTS_COMING_SOON ? 'Coming Soon' : 'Subscribe Now'}
+            </UpgradeButton>
           </div>
 
           {/* Annual */}
@@ -180,7 +186,9 @@ export default function PricingPage() {
                 <span>Priority support</span>
               </li>
             </ul>
-            <UpgradeButton priceId={STRIPE_PRICE_IDS.annual}>Subscribe Now</UpgradeButton>
+            <UpgradeButton priceId={STRIPE_PRICE_IDS.annual} disabled={PAYMENTS_COMING_SOON}>
+              {PAYMENTS_COMING_SOON ? 'Coming Soon' : 'Subscribe Now'}
+            </UpgradeButton>
           </div>
 
           {/* Agency Tools */}
@@ -203,22 +211,22 @@ export default function PricingPage() {
               </li>
               <li className="flex items-start gap-2 text-slate-400">
                 <span className="w-5 h-5 flex-shrink-0" />
-                <span>Details included in welcome email</span>
+                <span>Video explainer (coming soon)</span>
               </li>
             </ul>
             <button
               type="button"
-              onClick={() => {}}
-              className="w-full py-3 rounded-lg font-semibold text-slate-900 bg-amber-400 hover:bg-amber-300 transition shadow-lg shadow-amber-500/20 ring-1 ring-amber-300/40"
+              disabled
+              className="w-full py-3 rounded-lg font-semibold text-slate-900 bg-amber-400 transition shadow-lg shadow-amber-500/20 ring-1 ring-amber-300/40 opacity-60 cursor-not-allowed"
             >
-              Contact Grant Hustle
+              Coming Soon
             </button>
           </div>
         </div>
 
         {/* Footer Info */}
         <div className="mt-12 text-center text-slate-400 text-sm">
-          <p>All paid plans include full Pro access and 30-day money-back guarantee</p>
+          <p>All plans include full Pro access and 30-day money-back guarantee</p>
           <p className="mt-2">Cancel anytime, no questions asked</p>
         </div>
       </div>
