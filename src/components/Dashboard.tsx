@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
-import { Home, Search, BarChart3, FileText, Building2, Calendar as CalendarIcon, ClipboardList, Settings as SettingsIcon, LogOut, Crown, Menu, X } from 'lucide-react';
+import { Home, Search, BarChart3, FileText, Building2, Calendar as CalendarIcon, ClipboardList, Settings as SettingsIcon, LogOut, Crown, Menu, X, Briefcase } from 'lucide-react';
 import DashboardHome from './DashboardHome';
 import GrantPool from './GrantPool';
 import ApplicationTracker from './ApplicationTracker';
@@ -13,6 +13,7 @@ import AnalyticsPage from './AnalyticsPage';
 import Settings from './Settings';
 import Questionnaire from './Questionnaire';
 import PricingPage from './PricingPage';
+import AgencyTools from './AgencyTools';
 import ProductTour from './ProductTour';
 import { useTour } from '../hooks/useTour';
 import { getStateName } from '../lib/states';
@@ -23,9 +24,10 @@ interface Profile {
   organization_type: string;
   questionnaire_completed: boolean;
   subscription_status: string | null;
+  has_agency_access?: boolean;
 }
 
-type ViewType = 'home' | 'grants' | 'tracker' | 'calendar' | 'loi' | 'fiscal' | 'templates' | 'analytics' | 'settings' | 'pricing';
+type ViewType = 'home' | 'grants' | 'tracker' | 'calendar' | 'loi' | 'fiscal' | 'templates' | 'analytics' | 'settings' | 'pricing' | 'agency';
 
 export default function Dashboard() {
   const { user, signOut } = useAuth();
@@ -103,6 +105,7 @@ export default function Dashboard() {
   };
 
   const isPro = profile?.subscription_status === 'active';
+  const isAgency = profile?.has_agency_access || false;
   const hasCompletedQuestionnaire = profile?.state && profile?.organization_type;
 
   if (showQuestionnaire) {
@@ -126,11 +129,29 @@ export default function Dashboard() {
     { id: 'fiscal' as ViewType, label: 'Fiscal Sponsors', icon: Building2, prOnly: true },
     { id: 'templates' as ViewType, label: 'Templates', icon: FileText, prOnly: true },
     { id: 'analytics' as ViewType, label: 'Analytics', icon: BarChart3, prOnly: true },
+    { id: 'agency' as ViewType, label: 'Agency Tools', icon: Briefcase, prOnly: false, agencyOnly: true },
   ];
 
   const renderView = () => {
     if (currentView === 'pricing') {
       return <PricingPage />;
+    }
+
+    if (currentView === 'agency') {
+      if (!isAgency) {
+        return (
+          <div className="p-8">
+            <div className="bg-slate-800/50 border border-amber-500/40 rounded-lg p-12 text-center">
+              <Briefcase className="w-16 h-16 text-amber-400 mx-auto mb-4" />
+              <h3 className="text-2xl font-bold text-white mb-4">Agency Tools</h3>
+              <p className="text-slate-400 mb-6">
+                Agency Tools are invite-only and must be enabled manually. Contact support to get access.
+              </p>
+            </div>
+          </div>
+        );
+      }
+      return <AgencyTools />;
     }
 
     if (currentView === 'settings') {
@@ -228,7 +249,12 @@ export default function Dashboard() {
               className="h-10 w-auto"
             />
           </div>
-          {isPro ? (
+          {isAgency ? (
+            <span className="flex items-center gap-1 text-xs bg-amber-600/20 border border-amber-500/30 text-amber-400 px-2 py-1 rounded w-fit">
+              <Briefcase className="w-3 h-3" />
+              Agency
+            </span>
+          ) : isPro ? (
             <span className="flex items-center gap-1 text-xs bg-emerald-600/20 border border-emerald-500/30 text-emerald-400 px-2 py-1 rounded w-fit">
               <Crown className="w-3 h-3" />
               Pro
@@ -251,7 +277,7 @@ export default function Dashboard() {
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = currentView === item.id;
-              const isLocked = !isPro && item.prOnly;
+              const isLocked = (!isPro && item.prOnly) || (!isAgency && item.agencyOnly);
               
               return (
                 <li key={item.id}>
@@ -259,7 +285,7 @@ export default function Dashboard() {
                     onClick={() => setCurrentView(item.id)}
                     className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition ${
                       isActive
-                        ? 'bg-emerald-600 text-white'
+                        ? item.agencyOnly ? 'bg-amber-600 text-white' : 'bg-emerald-600 text-white'
                         : isLocked
                         ? 'text-slate-500 hover:bg-slate-800/50 cursor-not-allowed'
                         : 'text-slate-300 hover:bg-slate-800/50'
@@ -268,7 +294,8 @@ export default function Dashboard() {
                   >
                     <Icon className="w-5 h-5" />
                     <span className="flex-1 text-left">{item.label}</span>
-                    {isLocked && <Crown className="w-4 h-4" />}
+                    {isLocked && item.agencyOnly && <Briefcase className="w-4 h-4" />}
+                    {isLocked && item.prOnly && <Crown className="w-4 h-4" />}
                   </button>
                 </li>
               );
@@ -331,7 +358,12 @@ export default function Dashboard() {
                   alt="Grant Geenie Logo" 
                   className="h-8 w-auto mb-2"
                 />
-                {isPro ? (
+                {isAgency ? (
+                  <span className="flex items-center gap-1 text-xs bg-amber-600/20 border border-amber-500/30 text-amber-400 px-2 py-1 rounded w-fit">
+                    <Briefcase className="w-3 h-3" />
+                    Agency
+                  </span>
+                ) : isPro ? (
                   <span className="flex items-center gap-1 text-xs bg-emerald-600/20 border border-emerald-500/30 text-emerald-400 px-2 py-1 rounded w-fit">
                     <Crown className="w-3 h-3" />
                     Pro
@@ -353,7 +385,7 @@ export default function Dashboard() {
                 {navItems.map((item) => {
                   const Icon = item.icon;
                   const isActive = currentView === item.id;
-                  const isLocked = !isPro && item.prOnly;
+                  const isLocked = (!isPro && item.prOnly) || (!isAgency && item.agencyOnly);
                   
                   return (
                     <li key={item.id}>
@@ -364,7 +396,7 @@ export default function Dashboard() {
                         }}
                         className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition ${
                           isActive
-                            ? 'bg-emerald-600 text-white'
+                            ? item.agencyOnly ? 'bg-amber-600 text-white' : 'bg-emerald-600 text-white'
                             : isLocked
                             ? 'text-slate-500 hover:bg-slate-800/50 cursor-not-allowed'
                             : 'text-slate-300 hover:bg-slate-800/50'
@@ -373,7 +405,8 @@ export default function Dashboard() {
                       >
                         <Icon className="w-5 h-5" />
                         <span className="flex-1 text-left">{item.label}</span>
-                        {isLocked && <Crown className="w-4 h-4" />}
+                        {isLocked && item.agencyOnly && <Briefcase className="w-4 h-4" />}
+                        {isLocked && item.prOnly && <Crown className="w-4 h-4" />}
                       </button>
                     </li>
                   );
