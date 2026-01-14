@@ -3,7 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { analytics } from '../lib/analytics';
 import { Grant } from '../types';
-import { ExternalLink, Search, DollarSign, Calendar, Bookmark, Lock, Crown, Filter, X } from 'lucide-react';
+import { ExternalLink, Search, DollarSign, Calendar, Bookmark, Lock, Filter, X } from 'lucide-react';
 
 interface GrantPoolProps {
   isPro: boolean;
@@ -18,42 +18,57 @@ export default function GrantPool({ isPro, profile }: GrantPoolProps) {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'deadline' | 'amount'>('deadline');
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (user) {
       loadGrants();
       loadSavedGrants();
     }
-  }, [user, profile]);
+  }, [user, profile, sortBy]);
 
   const loadGrants = async () => {
     try {
       setLoading(true);
+      setError(null);
       
-      const query = supabase
+      console.log('Loading grants for profile:', profile);
+      
+      let query = supabase
         .from('grants')
         .select('*')
         .eq('is_active', true);
       
       // Filter by user's state OR grants available in all states (state is null)
       if (profile?.state) {
-        query.or(`state.eq.${profile.state},state.is.null`);
+        query = query.or(`state.eq.${profile.state},state.is.null`);
       }
       
-      query.order(sortBy === 'deadline' ? 'deadline' : 'award_max', { ascending: sortBy === 'deadline' });
+      // Sort
+      query = query.order(sortBy === 'deadline' ? 'deadline' : 'award_max', { 
+        ascending: sortBy === 'deadline',
+        nullsFirst: false
+      });
       
+      // Limit results
       if (!isPro) {
-        query.limit(5);
+        query = query.limit(5);
       } else {
-        query.limit(10000);
+        query = query.limit(100);
       }
       
-      const { data, error } = await query;
+      const { data, error: queryError } = await query;
 
-      if (error) throw error;
+      if (queryError) {
+        console.error('Query error:', queryError);
+        throw queryError;
+      }
+      
+      console.log(`Loaded ${data?.length || 0} grants`);
       setGrants(data || []);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to load grants:', err);
+      setError(err.message || 'Failed to load grants');
     } finally {
       setLoading(false);
     }
@@ -86,7 +101,6 @@ export default function GrantPool({ isPro, profile }: GrantPoolProps) {
           .eq('user_id', user.id)
           .eq('grant_id', grantId);
         
-        // Track unsave event
         analytics.trackGrantAction('unfavorite', grantId);
         
         setSavedGrantIds(prev => {
@@ -99,7 +113,6 @@ export default function GrantPool({ isPro, profile }: GrantPoolProps) {
           .from('saved_grants')
           .insert({ user_id: user.id, grant_id: grantId });
         
-        // Track save event
         analytics.trackGrantAction('favorite', grantId);
         
         setSavedGrantIds(prev => new Set([...prev, grantId]));
@@ -118,17 +131,7 @@ export default function GrantPool({ isPro, profile }: GrantPoolProps) {
   };
 
   const handleGrantClick = (grantId: string) => {
-    // Track grant view
     analytics.trackGrantAction('view', grantId);
-  };
-
-  const handleUpgradeClick = () => {
-    // Track upgrade intent
-    analytics.trackEvent({
-      category: 'Conversion',
-      action: 'upgrade_click',
-      label: 'grant_pool_banner',
-    });
   };
 
   const formatCurrency = (amount: number) => {
@@ -177,52 +180,34 @@ export default function GrantPool({ isPro, profile }: GrantPoolProps) {
     );
   }
 
+  if (error) {
+    return (
+      <div className="p-8">
+        <div className="bg-red-900/20 border border-red-500/30 rounded-lg p-6">
+          <h3 className="text-xl font-bold text-red-400 mb-2">Error Loading Grants</h3>
+          <p className="text-slate-300 mb-4">{error}</p>
+          <button
+            onClick={() => loadGrants()}
+            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-semibold transition"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-8">
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-3xl font-bold text-white mb-2">
-          {isPro ? 'Grant Pool' : 'Grant Search Results'}
+          Grant Pool
         </h1>
         <p className="text-slate-400">
-          {isPro ? (
-            `${displayedGrants.length.toLocaleString()} ${showSavedOnly ? 'saved' : 'active'} grant opportunities`
-          ) : (
-            `Showing ${displayedGrants.length} of your 5 monthly free searches`
-          )}
+          {displayedGrants.length.toLocaleString()} {showSavedOnly ? 'saved' : 'active'} grant opportunities
         </p>
       </div>
-
-      {/* Free Tier Upgrade Banner */}
-      {!isPro && (
-        <div className="mb-6 bg-gradient-to-r from-emerald-900/20 to-blue-900/20 border border-emerald-500/30 rounded-lg p-6">
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <div className="flex items-center gap-2 mb-2">
-                <Crown className="w-5 h-5 text-emerald-400" />
-                <h3 className="text-xl font-bold text-white">Unlock Full Access with Pro</h3>
-              </div>
-              <p className="text-slate-300 mb-3">
-                You're viewing 5 grants with limited information. Upgrade to Pro to unlock:
-              </p>
-              <ul className="text-slate-300 space-y-1 mb-4 ml-4">
-                <li>• <strong>8,000+ grants</strong> with full details</li>
-                <li>• Save grants & direct application links</li>
-                <li>• Advanced search and filtering</li>
-              </ul>
-              <button
-                onClick={() => {
-                  handleUpgradeClick();
-                  window.open('https://buy.stripe.com/3cI5kD5VteGzciEdez7AI0b', '_blank');
-                }}
-                className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg transition"
-              >
-                Upgrade to Pro Now
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Search & Filters */}
       <div className="mb-6 flex flex-col sm:flex-row gap-4">
