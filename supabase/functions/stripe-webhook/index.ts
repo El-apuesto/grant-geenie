@@ -35,9 +35,10 @@ serve(async (req) => {
         const { data: profile } = await supabase
           .from('profiles')
           .update({
-            subscription_tier: 'premium',
+            subscription_tier: 'pro',
             subscription_status: 'active',
             stripe_customer_id: session.customer as string,
+            stripe_subscription_id: session.subscription as string,
           })
           .eq('id', userId)
           .select('email, full_name')
@@ -50,7 +51,7 @@ serve(async (req) => {
             subject: "Your Grant Hustle receipt and what's next",
             html: generateWelcomeEmail(
               profile.full_name || 'there',
-              'Premium',
+              'Pro',
               `${Deno.env.get('SITE_URL')}/dashboard`
             ),
           })
@@ -58,15 +59,20 @@ serve(async (req) => {
       }
     }
 
-    // Handle successful payment
+    // Handle successful payment (renewal)
     if (event.type === 'invoice.payment_succeeded') {
       const invoice = event.data.object as Stripe.Invoice
       const customerId = invoice.customer as string
 
+      // Restore access immediately on successful payment
       const { data: profile } = await supabase
         .from('profiles')
-        .select('email, full_name')
+        .update({
+          subscription_status: 'active',
+          subscription_tier: 'pro',
+        })
         .eq('stripe_customer_id', customerId)
+        .select('email, full_name')
         .single()
 
       if (profile && RESEND_API_KEY) {
@@ -78,22 +84,26 @@ serve(async (req) => {
       }
     }
 
-    // Handle failed payment
+    // Handle failed payment (immediate downgrade)
     if (event.type === 'invoice.payment_failed') {
       const invoice = event.data.object as Stripe.Invoice
       const customerId = invoice.customer as string
 
       const { data: profile } = await supabase
         .from('profiles')
-        .select('email, full_name')
+        .update({
+          subscription_tier: 'free',
+          subscription_status: 'payment_failed',
+        })
         .eq('stripe_customer_id', customerId)
+        .select('email, full_name')
         .single()
 
       if (profile && RESEND_API_KEY) {
         await sendEmail({
           to: profile.email,
           subject: 'Payment failed - Grant Hustle',
-          html: `<p>Hi ${profile.full_name || 'there'},</p><p>We couldn't process your payment. Please update your payment method to continue using Grant Hustle.</p>`,
+          html: `<p>Hi ${profile.full_name || 'there'},</p><p>We couldn't process your payment. Your account has been downgraded to Free. Update your payment method to restore Pro access.</p>`,
         })
       }
     }

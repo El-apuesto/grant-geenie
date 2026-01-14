@@ -6,18 +6,26 @@ const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
   apiVersion: "2023-10-16",
 });
 
-const supabase = createClient(
-  Deno.env.get("SUPABASE_DB_URL") || "",
-  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || ""
-);
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "";
+const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+
+const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
 
 serve(async (req) => {
+  const corsHeaders = {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+  };
+
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type" } });
+    return new Response("ok", { headers: corsHeaders });
   }
 
   try {
-    const { sessionId, userId } = await req.json();
+    const { sessionId, userId: claimedUserId } = await req.json();
+
+    if (!sessionId) throw new Error("Missing sessionId");
 
     const session = await stripe.checkout.sessions.retrieve(sessionId);
 
@@ -26,7 +34,12 @@ serve(async (req) => {
       throw new Error("Payment not completed");
     }
 
-    if (session.metadata?.user_id !== userId) {
+    const sessionUserId = session.metadata?.user_id;
+    const userId = claimedUserId || sessionUserId;
+
+    if (!userId) throw new Error("Missing userId");
+
+    if (sessionUserId && claimedUserId && sessionUserId !== claimedUserId) {
       throw new Error("User mismatch");
     }
 
@@ -52,31 +65,34 @@ serve(async (req) => {
 
     if (error) throw error;
 
-    // Send welcome email
+    // Send welcome email via edge function (optional)
     const frontendUrl = Deno.env.get("FRONTEND_URL") || "https://granthustle.org";
     const planName = session.metadata?.plan_name || "Pro";
 
-    await fetch(`${Deno.env.get("SUPABASE_DB_URL")}/functions/v1/send-welcome-email`, {
+    await fetch(`${SUPABASE_URL}/functions/v1/send-welcome-email`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`
+        "Authorization": `Bearer ${SERVICE_ROLE_KEY}`,
       },
       body: JSON.stringify({
         firstName: profile.first_name || "there",
         email: profile.email,
-        planName: planName,
-        dashboardUrl: `${frontendUrl}/dashboard`
-      })
+        planName,
+        dashboardUrl: `${frontendUrl}/dashboard`,
+      }),
     });
 
     return new Response(JSON.stringify({ success: true }), {
-      headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
     return new Response(JSON.stringify({ error: error.message }), {
       status: 400,
-      headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+      headers: {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*",
+      },
     });
   }
 });

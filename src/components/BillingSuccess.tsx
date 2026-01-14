@@ -18,7 +18,7 @@ export default function BillingSuccess() {
         return;
       }
 
-      if (!user) {
+      if (!user?.id) {
         setStatus("error");
         setErrorMessage("User not authenticated");
         return;
@@ -26,7 +26,7 @@ export default function BillingSuccess() {
 
       try {
         const { error } = await supabase.functions.invoke("confirm-session", {
-          body: { sessionId },
+          body: { sessionId, userId: user.id },
         });
 
         if (error) throw error;
