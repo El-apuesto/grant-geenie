@@ -4,9 +4,9 @@ import UpgradeButton from './UpgradeButton';
 export default function PricingPage() {
   // Live Stripe Price IDs - ALL RECURRING
   const STRIPE_PRICE_IDS = {
-    monthly: 'price_1Sa918G85r4wkmwW786cBMaH',    // $27.99/month recurring
-    season: 'price_1Sa9BPG85r4wkmwWd0BQE2vz',     // $79.99 (4-month season pass)
-    annual: 'price_1Sa9CtG85r4wkmwWNVjMLlVy'      // $149.99/year
+    monthly: 'price_1Sa918G85r4wkmwW786cBMaH', // $27.99/month recurring
+    season: 'price_1Sa9BPG85r4wkmwWd0BQE2vz', // $79.99 / 4 months recurring
+    annual: 'price_1Sa9CtG85r4wkmwWNVjMLlVyk', // $149.99 / year recurring
   };
 
   return (
@@ -14,16 +14,12 @@ export default function PricingPage() {
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="text-center mb-12">
-          <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
-            Choose Your Pro Plan
-          </h1>
-          <p className="text-xl text-slate-400">
-            All plans unlock full Pro access to Grant Geenie
-          </p>
+          <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">Choose Your Pro Plan</h1>
+          <p className="text-xl text-slate-400">All plans unlock full Pro access to Grant Geenie</p>
         </div>
 
         {/* Pricing Cards */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-4xl mx-auto">
+        <div className="grid md:grid-cols-2 lg:grid-cols-2 gap-6 max-w-4xl mx-auto">
           {/* Free Tier */}
           <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-6">
             <h3 className="text-xl font-bold text-white mb-2">Free</h3>
@@ -65,7 +61,7 @@ export default function PricingPage() {
                 <span className="text-slate-400">/month</span>
               </div>
               <div className="text-sm text-emerald-400 font-semibold mt-2">
-                💰 Use code FIRSTMONTH for $9.99 first month!
+                Use code FIRSTONTH for $9.99 first month.
               </div>
             </div>
             <ul className="space-y-3 mb-6">
@@ -98,9 +94,7 @@ export default function PricingPage() {
                 <span>Priority support</span>
               </li>
             </ul>
-            <UpgradeButton priceId={STRIPE_PRICE_IDS.monthly}>
-              Subscribe Now
-            </UpgradeButton>
+            <UpgradeButton priceId={STRIPE_PRICE_IDS.monthly}>Subscribe Now</UpgradeButton>
           </div>
 
           {/* Season Pass - 4 Months */}
@@ -143,13 +137,11 @@ export default function PricingPage() {
                 <span>Priority support</span>
               </li>
             </ul>
-            <UpgradeButton priceId={STRIPE_PRICE_IDS.season}>
-              Subscribe Now
-            </UpgradeButton>
+            <UpgradeButton priceId={STRIPE_PRICE_IDS.season}>Subscribe Now</UpgradeButton>
           </div>
 
           {/* Annual */}
-          <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-6 md:col-span-2 lg:col-span-1">
+          <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-6">
             <h3 className="text-xl font-bold text-white mb-2">Annual (Pro)</h3>
             <div className="mb-4">
               <div>
@@ -188,15 +180,45 @@ export default function PricingPage() {
                 <span>Priority support</span>
               </li>
             </ul>
-            <UpgradeButton priceId={STRIPE_PRICE_IDS.annual}>
-              Subscribe Now
-            </UpgradeButton>
+            <UpgradeButton priceId={STRIPE_PRICE_IDS.annual}>Subscribe Now</UpgradeButton>
+          </div>
+
+          {/* Agency Tools */}
+          <div className="bg-slate-800/50 border border-amber-500/40 rounded-lg p-6">
+            <h3 className="text-xl font-bold text-white mb-2">Agency Tools</h3>
+            <div className="mb-4">
+              <div>
+                <span className="text-4xl font-bold text-white">Custom</span>
+              </div>
+              <div className="text-sm text-amber-300 mt-2">Invite-only. Enabled manually.</div>
+            </div>
+            <ul className="space-y-3 mb-6">
+              <li className="flex items-start gap-2 text-slate-300">
+                <Check className="w-5 h-5 text-amber-300 mt-0.5 flex-shrink-0" />
+                <span>Extra agency-only tools pack</span>
+              </li>
+              <li className="flex items-start gap-2 text-slate-300">
+                <Check className="w-5 h-5 text-amber-300 mt-0.5 flex-shrink-0" />
+                <span>Added workflows & support</span>
+              </li>
+              <li className="flex items-start gap-2 text-slate-400">
+                <span className="w-5 h-5 flex-shrink-0" />
+                <span>Details included in welcome email</span>
+              </li>
+            </ul>
+            <button
+              type="button"
+              onClick={() => {}}
+              className="w-full py-3 rounded-lg font-semibold text-slate-900 bg-amber-400 hover:bg-amber-300 transition shadow-lg shadow-amber-500/20 ring-1 ring-amber-300/40"
+            >
+              Contact Grant Hustle
+            </button>
           </div>
         </div>
 
         {/* Footer Info */}
         <div className="mt-12 text-center text-slate-400 text-sm">
-          <p>All plans include full Pro access and 30-day money-back guarantee</p>
+          <p>All paid plans include full Pro access and 30-day money-back guarantee</p>
           <p className="mt-2">Cancel anytime, no questions asked</p>
         </div>
       </div>
