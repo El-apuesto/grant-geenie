@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
+import { supabase } from "../lib/supabase";
 
 interface UpgradeButtonProps {
   priceId: string;
@@ -25,30 +26,22 @@ export default function UpgradeButton({
 
     setLoading(true);
     try {
-      // FIXED: Call the Vercel API endpoint instead of Supabase Edge Function
-      const response = await fetch("/api/create-checkout", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          priceId,
-          userId: user.id,
-        }),
-      });
+      const { data, error } = await supabase.functions.invoke(
+        "create-checkout-session",
+        {
+          body: {
+            priceId,
+            userId: user.id,
+          },
+        }
+      );
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
-      }
+      if (error) throw error;
 
-      const data = await response.json();
+      const url = (data as any)?.url;
+      if (!url) throw new Error("No checkout URL returned");
 
-      if (data.url) {
-        window.location.href = data.url;
-      } else {
-        throw new Error("No checkout URL returned");
-      }
+      window.location.href = url;
     } catch (error) {
       console.error("Checkout error:", error);
       alert("Failed to start checkout. Please try again.");

@@ -3,6 +3,7 @@ import { Menu, X, Home, ClipboardList, Calendar, FileText, Building2, Settings a
 import { Profile } from '../types';
 import { getStateName } from '../lib/states';
 import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '../lib/supabase';
 
 interface SidebarProps {
   isPro: boolean;
@@ -36,20 +37,22 @@ export default function Sidebar({ isPro, onNavigate, onSignOut, onStartTour, pro
 
   const handleUpgrade = async () => {
     if (!user?.id) return;
-    
+
     setUpgrading(true);
     try {
-      const response = await fetch('/api/create-checkout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      const { data, error } = await supabase.functions.invoke('create-checkout-session', {
+        body: {
           userId: user.id,
-          priceId: 'price_1QfCHWP4hdswJ2yVo1RZ3zRv', // Your intro price ID
-        }),
+          // NOTE: Keep your actual Stripe price id here (or pass it in from config).
+          priceId: 'price_1QfCHWP4hdswJ2yVo1RZ3zRv',
+        },
       });
 
-      const { url } = await response.json();
+      if (error) throw error;
+
+      const url = (data as any)?.url;
       if (url) window.location.href = url;
+      else throw new Error('No checkout URL returned');
     } catch (error) {
       console.error('Upgrade failed:', error);
       alert('Failed to start checkout. Please try again.');
@@ -134,7 +137,7 @@ export default function Sidebar({ isPro, onNavigate, onSignOut, onStartTour, pro
             const Icon = item.icon;
             const active = isActive(item.view);
             const locked = item.prOnly && !isPro;
-            
+
             return (
               <button
                 key={item.name}

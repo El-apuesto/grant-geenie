@@ -1,0 +1,27 @@
+name: Block disallowed Vercel API
+
+on:
+  pull_request:
+  push:
+
+jobs:
+  no-vercel-api:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Disallow root /api folder
+        run: |
+          if [ -d "api" ]; then
+            echo "::error::Root /api folder is not allowed. Use supabase/functions instead."
+            echo "Found api directory contents:"
+            ls -la api || true
+            exit 1
+          fi
+
+      - name: Disallow frontend calls to /api
+        run: |
+          if grep -RIn --exclude-dir=node_modules --exclude-dir=dist --exclude-dir=supabase "/api/" src; then
+            echo "::error::Found frontend references to /api/. Use supabase.functions.invoke(...) instead."
+            exit 1
+          fi

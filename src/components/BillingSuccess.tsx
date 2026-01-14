@@ -9,63 +9,39 @@ export default function BillingSuccess() {
 
   useEffect(() => {
     const verifyPayment = async () => {
-      console.log("🔍 Starting payment verification...");
-      
       const params = new URLSearchParams(window.location.search);
       const sessionId = params.get("session_id");
-      
-      console.log("Session ID:", sessionId);
-      console.log("User:", user);
-      
+
       if (!sessionId) {
-        console.error("❌ No session ID found");
         setStatus("error");
         setErrorMessage("No session ID found in URL");
         return;
       }
 
       if (!user) {
-        console.error("❌ User not authenticated");
         setStatus("error");
         setErrorMessage("User not authenticated");
         return;
       }
 
       try {
-        console.log("📞 Calling /api/stripe-success...");
-        
-        // Call your existing Vercel API endpoint
-        const response = await fetch("/api/stripe-success", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ sessionId }),
+        const { error } = await supabase.functions.invoke("confirm-session", {
+          body: { sessionId },
         });
 
-        console.log("Response status:", response.status);
-        
-        const data = await response.json();
-        console.log("Response data:", data);
+        if (error) throw error;
 
-        if (!response.ok) {
-          throw new Error(data.error || "Payment verification failed");
-        }
-
-        console.log("✅ Payment verified! Refreshing session...");
-        
         // Refresh the session to get updated profile data
         await supabase.auth.refreshSession();
-        
-        console.log("✅ Session refreshed!");
+
         setStatus("success");
-        
+
         // Redirect to home (dashboard) after 2 seconds
-        console.log("Redirecting to dashboard in 2 seconds...");
         setTimeout(() => {
           window.location.href = "/";
         }, 2000);
-        
       } catch (error: any) {
-        console.error("❌ Payment verification error:", error);
+        console.error("Payment verification error:", error);
         setStatus("error");
         setErrorMessage(error.message || "An unexpected error occurred");
       }
@@ -96,8 +72,8 @@ export default function BillingSuccess() {
           <p className="text-sm text-slate-500 mb-6">
             If you were charged, your payment will be processed. Contact support if issues persist.
           </p>
-          <button 
-            onClick={() => window.location.href = "/"}
+          <button
+            onClick={() => (window.location.href = "/")}
             className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2 px-6 rounded transition-colors"
           >
             Return to Dashboard
