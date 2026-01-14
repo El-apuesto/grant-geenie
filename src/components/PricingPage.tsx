@@ -2,14 +2,12 @@ import { Check } from 'lucide-react';
 import UpgradeButton from './UpgradeButton';
 
 export default function PricingPage() {
-  // Live Stripe Price IDs - ALL RECURRING
+  // Live Stripe Price IDs - THREE SEPARATE RECURRING SUBSCRIPTIONS
   const STRIPE_PRICE_IDS = {
-    monthly: 'price_1Sa918G85r4wkmwW786cBMaH', // $27.99/month recurring
-    season: 'price_1Sa9BPG85r4wkmwWd0BQE2vz', // $79.99 / 4 months recurring
-    annual: 'price_1Sa9CtG85r4wkmwWNVjMLlVyk', // $149.99 / year recurring
+    monthly: 'price_1Sa918G85r4wkmwW786cBMaH',     // $27.99/month recurring
+    season: 'price_1Sa9BPG85r4wkmwWd0BQE2vz',      // $79.99 / 4 months recurring
+    annual: 'price_1Sa9CtG85r4wkmwWNVjMLlVyk',     // $149.99 / year recurring
   };
-
-  const PAYMENTS_COMING_SOON = true;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4 md:p-8">
@@ -63,7 +61,7 @@ export default function PricingPage() {
                 <span className="text-slate-400">/month</span>
               </div>
               <div className="text-sm text-emerald-400 font-semibold mt-2">
-                Use code FIRSTONTH for $9.99 first month.
+                Use code FIRSTMONTH for $9.99 first month.
               </div>
             </div>
             <ul className="space-y-3 mb-6">
@@ -96,8 +94,8 @@ export default function PricingPage() {
                 <span>Priority support</span>
               </li>
             </ul>
-            <UpgradeButton priceId={STRIPE_PRICE_IDS.monthly} disabled={PAYMENTS_COMING_SOON}>
-              {PAYMENTS_COMING_SOON ? 'Coming Soon' : 'Subscribe Now'}
+            <UpgradeButton priceId={STRIPE_PRICE_IDS.monthly}>
+              Subscribe Now
             </UpgradeButton>
           </div>
 
@@ -109,7 +107,7 @@ export default function PricingPage() {
                 <span className="text-4xl font-bold text-white">$79.99</span>
                 <span className="text-slate-400">/4 months</span>
               </div>
-              <div className="text-sm text-emerald-400 mt-2">~$20/month</div>
+              <div className="text-sm text-emerald-400 mt-2">~$20/month • Use code FIRSTMONTH</div>
             </div>
             <ul className="space-y-3 mb-6">
               <li className="flex items-start gap-2 text-slate-300">
@@ -141,8 +139,8 @@ export default function PricingPage() {
                 <span>Priority support</span>
               </li>
             </ul>
-            <UpgradeButton priceId={STRIPE_PRICE_IDS.season} disabled={PAYMENTS_COMING_SOON}>
-              {PAYMENTS_COMING_SOON ? 'Coming Soon' : 'Subscribe Now'}
+            <UpgradeButton priceId={STRIPE_PRICE_IDS.season}>
+              Subscribe Now
             </UpgradeButton>
           </div>
 
@@ -154,7 +152,7 @@ export default function PricingPage() {
                 <span className="text-4xl font-bold text-white">$149.99</span>
                 <span className="text-slate-400">/year</span>
               </div>
-              <div className="text-sm text-emerald-400 mt-2">~$12.50/month</div>
+              <div className="text-sm text-emerald-400 mt-2">~$12.50/month • Use code FIRSTMONTH</div>
             </div>
             <ul className="space-y-3 mb-6">
               <li className="flex items-start gap-2 text-slate-300">
@@ -186,8 +184,8 @@ export default function PricingPage() {
                 <span>Priority support</span>
               </li>
             </ul>
-            <UpgradeButton priceId={STRIPE_PRICE_IDS.annual} disabled={PAYMENTS_COMING_SOON}>
-              {PAYMENTS_COMING_SOON ? 'Coming Soon' : 'Subscribe Now'}
+            <UpgradeButton priceId={STRIPE_PRICE_IDS.annual}>
+              Subscribe Now
             </UpgradeButton>
           </div>
 
@@ -203,15 +201,19 @@ export default function PricingPage() {
             <ul className="space-y-3 mb-6">
               <li className="flex items-start gap-2 text-slate-300">
                 <Check className="w-5 h-5 text-amber-300 mt-0.5 flex-shrink-0" />
-                <span>Extra agency-only tools pack</span>
+                <span>Multi-client management</span>
               </li>
               <li className="flex items-start gap-2 text-slate-300">
                 <Check className="w-5 h-5 text-amber-300 mt-0.5 flex-shrink-0" />
-                <span>Added workflows & support</span>
+                <span>Advanced search & filtering</span>
+              </li>
+              <li className="flex items-start gap-2 text-slate-300">
+                <Check className="w-5 h-5 text-amber-300 mt-0.5 flex-shrink-0" />
+                <span>White-label options</span>
               </li>
               <li className="flex items-start gap-2 text-slate-400">
                 <span className="w-5 h-5 flex-shrink-0" />
-                <span>Video explainer (coming soon)</span>
+                <span>Contact us for pricing</span>
               </li>
             </ul>
             <button

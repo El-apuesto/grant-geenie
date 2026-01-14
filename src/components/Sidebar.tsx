@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Menu, X, Home, ClipboardList, Calendar, FileText, Building2, Settings as SettingsIcon, LogOut, BarChart3, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Menu, X, Home, ClipboardList, Calendar, FileText, Building2, Settings as SettingsIcon, LogOut, BarChart3, ChevronLeft, ChevronRight, Briefcase } from 'lucide-react';
 import { Profile } from '../types';
 import { getStateName } from '../lib/states';
 import { useAuth } from '../contexts/AuthContext';
@@ -20,6 +20,8 @@ export default function Sidebar({ isPro, onNavigate, onSignOut, onStartTour, pro
   const [upgrading, setUpgrading] = useState(false);
   const { user } = useAuth();
 
+  const isAgency = profile?.has_agency_access || false;
+
   const navigation = [
     { name: 'Dashboard', view: 'dashboard', icon: Home, prOnly: false },
     { name: 'Application Tracker', view: 'tracker', icon: ClipboardList, prOnly: true },
@@ -28,6 +30,7 @@ export default function Sidebar({ isPro, onNavigate, onSignOut, onStartTour, pro
     { name: 'Templates', view: 'templates', icon: FileText, prOnly: true },
     { name: 'Fiscal Sponsors', view: 'fiscalSponsors', icon: Building2, prOnly: true },
     { name: 'Analytics', view: 'analytics', icon: BarChart3, prOnly: true },
+    { name: 'Agency Tools', view: 'agency', icon: Briefcase, prOnly: false, agencyOnly: true },
   ];
 
   const handleNavigate = (view: string) => {
@@ -43,8 +46,7 @@ export default function Sidebar({ isPro, onNavigate, onSignOut, onStartTour, pro
       const { data, error } = await supabase.functions.invoke('create-checkout-session', {
         body: {
           userId: user.id,
-          // NOTE: Keep your actual Stripe price id here (or pass it in from config).
-          priceId: 'price_1QfCHWP4hdswJ2yVo1RZ3zRv',
+          priceId: 'price_1Sa918G85r4wkmwW786cBMaH',
         },
       });
 
@@ -115,11 +117,14 @@ export default function Sidebar({ isPro, onNavigate, onSignOut, onStartTour, pro
             {!collapsed && (
               <div>
                 <h2 className="text-xl font-bold text-white">Grant Geenie</h2>
-                {!isPro && (
+                {!isPro && !isAgency && (
                   <span className="text-xs bg-slate-700 text-slate-300 px-2 py-0.5 rounded">Free Tier</span>
                 )}
-                {isPro && (
+                {isPro && !isAgency && (
                   <span className="text-xs bg-emerald-600/20 border border-emerald-500/30 text-emerald-400 px-2 py-0.5 rounded">Pro</span>
+                )}
+                {isAgency && (
+                  <span className="text-xs bg-amber-600/20 border border-amber-500/30 text-amber-400 px-2 py-0.5 rounded">Agency</span>
                 )}
               </div>
             )}
@@ -136,7 +141,7 @@ export default function Sidebar({ isPro, onNavigate, onSignOut, onStartTour, pro
           {navigation.map((item) => {
             const Icon = item.icon;
             const active = isActive(item.view);
-            const locked = item.prOnly && !isPro;
+            const locked = (item.prOnly && !isPro) || (item.agencyOnly && !isAgency);
 
             return (
               <button
@@ -149,7 +154,7 @@ export default function Sidebar({ isPro, onNavigate, onSignOut, onStartTour, pro
                   transition-colors duration-200 text-left text-sm
                   ${collapsed ? 'lg:justify-center lg:px-2' : ''}
                   ${active
-                    ? 'bg-emerald-600 text-white'
+                    ? item.agencyOnly ? 'bg-amber-600 text-white' : 'bg-emerald-600 text-white'
                     : locked
                     ? 'text-slate-500 cursor-not-allowed opacity-50'
                     : 'text-slate-300 hover:bg-slate-800'
@@ -161,7 +166,9 @@ export default function Sidebar({ isPro, onNavigate, onSignOut, onStartTour, pro
                   <>
                     <span className="font-medium">{item.name}</span>
                     {locked && (
-                      <span className="ml-auto text-xs bg-slate-700 px-1.5 py-0.5 rounded">Pro</span>
+                      <span className="ml-auto text-xs bg-slate-700 px-1.5 py-0.5 rounded">
+                        {item.agencyOnly ? 'Agency' : 'Pro'}
+                      </span>
                     )}
                   </>
                 )}
@@ -178,7 +185,7 @@ export default function Sidebar({ isPro, onNavigate, onSignOut, onStartTour, pro
               title={collapsed ? 'Product Tour' : ''}
               className={`w-full flex items-center gap-3 px-6 py-3 text-slate-300 hover:bg-slate-800 transition-colors text-sm ${collapsed ? 'lg:justify-center lg:px-2' : ''}`}
             >
-              <span className="text-2xl">🪔</span>
+              <span className="text-2xl">🪄</span>
               {!collapsed && <span className="font-medium">Product Tour</span>}
             </button>
           )}
