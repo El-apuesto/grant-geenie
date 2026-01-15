@@ -6,7 +6,7 @@ export default function PricingPage() {
   const STRIPE_PRICE_IDS = {
     monthly: 'price_1Sa918G85r4wkmwW786cBMaH',     // $27.99/month recurring
     season: 'price_1Sa9BPG85r4wkmwWd0BQE2vz',      // $79.99 / 4 months recurring
-    annual: 'price_1Sa9CtG85r4wkmwWNVjMLlVyk',     // $149.99 / year recurring
+    annual: 'price_1Sa9CtG85r4wkmwWNVjMLlVy',      // $149.99 / year recurring
   };
 
   return (
