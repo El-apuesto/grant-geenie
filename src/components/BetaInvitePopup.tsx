@@ -1,28 +1,51 @@
 import { useState, useEffect } from 'react';
 import { X, Check } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '../lib/supabase';
 
 export default function BetaInvitePopup() {
+  const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
+  const [isPro, setIsPro] = useState(false);
 
   useEffect(() => {
-    // Check if user has seen the popup before
-    const hasSeenPopup = localStorage.getItem('hasSeenMasterclassPopup');
-    
-    if (!hasSeenPopup) {
-      // Show popup after 1 second delay
-      const timer = setTimeout(() => {
-        setIsOpen(true);
-      }, 1000);
-      return () => clearTimeout(timer);
-    }
-  }, []);
+    if (!user) return;
+
+    // Check if user is already Pro
+    const checkProStatus = async () => {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('is_pro')
+        .eq('id', user.id)
+        .single();
+      
+      if (profile?.is_pro) {
+        setIsPro(true);
+        return; // Don't show popup to Pro users
+      }
+
+      // Check if user has seen the popup before
+      const hasSeenPopup = localStorage.getItem('hasSeenMasterclassPopup');
+      
+      if (!hasSeenPopup) {
+        // Show popup after 1 second delay
+        const timer = setTimeout(() => {
+          setIsOpen(true);
+        }, 1000);
+        return () => clearTimeout(timer);
+      }
+    };
+
+    checkProStatus();
+  }, [user]);
 
   const handleClose = () => {
     setIsOpen(false);
     localStorage.setItem('hasSeenMasterclassPopup', 'true');
   };
 
-  if (!isOpen) return null;
+  // Don't render popup for Pro users
+  if (!isOpen || isPro) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">

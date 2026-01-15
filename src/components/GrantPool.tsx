@@ -39,9 +39,10 @@ export default function GrantPool({ isPro, profile }: GrantPoolProps) {
         .select('*')
         .eq('is_active', true);
       
-      // Filter by user's state OR grants available in all states (state is null)
+      // Filter by user's state using the new `states` array column
+      // Show grants that: (1) include user's state in the states array, OR (2) are nationwide (states is null or empty)
       if (profile?.state) {
-        query = query.or(`state.eq.${profile.state},state.is.null`);
+        query = query.or(`states.cs.{${profile.state}},states.is.null`);
       }
       
       // Sort
