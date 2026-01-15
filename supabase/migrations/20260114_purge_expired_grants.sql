@@ -14,7 +14,7 @@ BEGIN
   WHERE is_active = true
     AND is_rolling = false
     AND deadline IS NOT NULL
-    AND deadline < CURRENT_DATE;
+    AND deadline::date < CURRENT_DATE;
 
   -- Update them to inactive
   UPDATE grants
@@ -29,12 +29,17 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Schedule this to run daily at 2 AM UTC
--- (You'll set this up in Supabase Dashboard -> Database -> Cron Jobs)
+-- Test it manually first:
+-- SELECT * FROM purge_expired_grants();
+
+-- Then schedule it to run daily at 2 AM UTC
+-- Run this after testing:
+/*
 CREATE EXTENSION IF NOT EXISTS pg_cron;
 
 SELECT cron.schedule(
   'purge-expired-grants-daily',
-  '0 2 * * *', -- Run at 2 AM UTC every day
+  '0 2 * * *',
   $$SELECT purge_expired_grants();$$
 );
+*/
