@@ -2,7 +2,6 @@ import { Search, ClipboardList, Calendar as CalendarIcon, FileText, Building2, B
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
-import PromoPopup from './PromoPopup';
 
 interface DashboardHomeProps {
   isPro: boolean;
@@ -79,7 +78,7 @@ export default function DashboardHome({ isPro, onNavigate }: DashboardHomeProps)
           const deadlineDate = new Date(app.deadline);
           const today = new Date();
           const daysUntil = Math.ceil((deadlineDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-          
+
           return {
             id: app.id,
             title: app.grant_title,
@@ -158,7 +157,7 @@ export default function DashboardHome({ isPro, onNavigate }: DashboardHomeProps)
     if (isLocked) {
       return 'bg-slate-800/50 border-slate-700 text-slate-500';
     }
-    
+
     const colors: Record<string, string> = {
       emerald: 'bg-emerald-600/10 border-emerald-500/30 hover:bg-emerald-600/20 hover:border-emerald-500',
       blue: 'bg-blue-600/10 border-blue-500/30 hover:bg-blue-600/20 hover:border-blue-500',
@@ -169,13 +168,13 @@ export default function DashboardHome({ isPro, onNavigate }: DashboardHomeProps)
       cyan: 'bg-cyan-600/10 border-cyan-500/30 hover:bg-cyan-600/20 hover:border-cyan-500',
       slate: 'bg-slate-600/10 border-slate-500/30 hover:bg-slate-600/20 hover:border-slate-500',
     };
-    
+
     return colors[color] || colors.emerald;
   };
 
   const getIconColor = (color: string, isLocked: boolean) => {
     if (isLocked) return 'text-slate-600';
-    
+
     const colors: Record<string, string> = {
       emerald: 'text-emerald-500',
       blue: 'text-blue-500',
@@ -186,19 +185,15 @@ export default function DashboardHome({ isPro, onNavigate }: DashboardHomeProps)
       cyan: 'text-cyan-500',
       slate: 'text-slate-400',
     };
-    
+
     return colors[color] || colors.emerald;
   };
 
   return (
     <div className="relative min-h-screen p-8">
-      {/* Promo Popup - Shows after 1 second */}
-      <PromoPopup />
-
-      {/* Faded Logo Background */}
-      <div 
+      <div
         className="fixed inset-0 flex items-center justify-center pointer-events-none opacity-5"
-        style={{ 
+        style={{
           backgroundImage: 'url(/Logo.png.PNG)',
           backgroundSize: '600px',
           backgroundPosition: 'center',
@@ -206,9 +201,7 @@ export default function DashboardHome({ isPro, onNavigate }: DashboardHomeProps)
         }}
       />
 
-      {/* Content */}
       <div className="relative z-10 max-w-7xl mx-auto">
-        {/* Header */}
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-white mb-2">Dashboard</h1>
           <p className="text-slate-400 text-lg">
@@ -216,7 +209,6 @@ export default function DashboardHome({ isPro, onNavigate }: DashboardHomeProps)
           </p>
         </div>
 
-        {/* Stats Cards (Pro Only) */}
         {isPro && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6">
@@ -253,7 +245,6 @@ export default function DashboardHome({ isPro, onNavigate }: DashboardHomeProps)
           </div>
         )}
 
-        {/* Upcoming Deadlines (Pro Only) */}
         {isPro && upcomingDeadlines.length > 0 && (
           <div className="bg-slate-800/50 border border-orange-500/30 rounded-xl p-6 mb-8">
             <div className="flex items-center justify-between mb-4">
@@ -289,14 +280,13 @@ export default function DashboardHome({ isPro, onNavigate }: DashboardHomeProps)
           </div>
         )}
 
-        {/* Feature Grid */}
         <div>
           <h2 className="text-2xl font-bold text-white mb-6">Quick Access</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {features.map((feature) => {
               const Icon = feature.icon;
               const isLocked = feature.prOnly && !isPro;
-              
+
               return (
                 <button
                   key={feature.id}
@@ -309,33 +299,28 @@ export default function DashboardHome({ isPro, onNavigate }: DashboardHomeProps)
                     group
                   `}
                 >
-                  {/* Lock Badge */}
                   {isLocked && (
                     <div className="absolute top-3 right-3">
                       <Crown className="w-5 h-5 text-slate-600" />
                     </div>
                   )}
 
-                  {/* Icon */}
                   <div className="mb-4">
                     <Icon className={`w-10 h-10 ${getIconColor(feature.color, isLocked)}`} />
                   </div>
 
-                  {/* Title */}
                   <h3 className={`text-xl font-bold mb-2 ${
                     isLocked ? 'text-slate-500' : 'text-white'
                   }`}>
                     {feature.title}
                   </h3>
 
-                  {/* Description */}
                   <p className={`text-sm mb-4 ${
                     isLocked ? 'text-slate-600' : 'text-slate-400'
                   }`}>
                     {feature.description}
                   </p>
 
-                  {/* Arrow or Pro Badge */}
                   <div className="flex items-center justify-between">
                     {isLocked ? (
                       <span className="text-xs bg-slate-700 text-slate-400 px-2 py-1 rounded">
@@ -351,7 +336,6 @@ export default function DashboardHome({ isPro, onNavigate }: DashboardHomeProps)
           </div>
         </div>
 
-        {/* Upgrade CTA */}
         {!isPro && (
           <div className="mt-12 bg-gradient-to-r from-emerald-600/20 to-blue-600/20 border border-emerald-500/30 rounded-xl p-8 text-center">
             <Crown className="w-12 h-12 text-emerald-500 mx-auto mb-4" />
