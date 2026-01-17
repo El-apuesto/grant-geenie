@@ -11,22 +11,22 @@ export default function BetaInvitePopup() {
   useEffect(() => {
     if (!user) return;
 
-    // Check if user is already Pro
+    // Check if user is already Pro (match Dashboard logic)
     const checkProStatus = async () => {
       const { data: profile } = await supabase
         .from('profiles')
-        .select('is_pro')
+        .select('subscription_status')
         .eq('id', user.id)
         .single();
-      
-      if (profile?.is_pro) {
+
+      if (profile?.subscription_status === 'active') {
         setIsPro(true);
         return; // Don't show popup to Pro users
       }
 
       // Check if user has seen the popup before
       const hasSeenPopup = localStorage.getItem('hasSeenMasterclassPopup');
-      
+
       if (!hasSeenPopup) {
         // Show popup after 1 second delay
         const timer = setTimeout(() => {
@@ -50,7 +50,6 @@ export default function BetaInvitePopup() {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
       <div className="relative bg-gradient-to-br from-blue-50 to-indigo-100 rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-        {/* Close Button */}
         <button
           onClick={handleClose}
           className="absolute top-4 right-4 p-2 rounded-full bg-white/80 hover:bg-white text-gray-600 hover:text-gray-900 transition-all z-10"
@@ -60,14 +59,12 @@ export default function BetaInvitePopup() {
         </button>
 
         <div className="p-8">
-          {/* Header */}
           <div className="text-center mb-8">
             <h1 className="text-5xl font-bold text-gray-900 mb-4">🎁 FREE Bonus Gift</h1>
             <p className="text-2xl text-gray-700">Grant Writing Masterclass</p>
             <p className="text-xl text-indigo-600 font-semibold mt-2">Worth $297 - Yours FREE!</p>
           </div>
 
-          {/* Main Content Card */}
           <div className="bg-white rounded-2xl shadow-2xl p-8 mb-8">
             <div className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white p-6 rounded-xl mb-8">
               <h2 className="text-3xl font-bold mb-4">What You Get FREE When You Subscribe:</h2>
@@ -95,7 +92,6 @@ export default function BetaInvitePopup() {
               </ul>
             </div>
 
-            {/* Why This Matters */}
             <div className="mb-8">
               <h3 className="text-2xl font-bold text-gray-900 mb-4">Why This Is Worth $297:</h3>
               <div className="grid md:grid-cols-2 gap-4">
@@ -112,80 +108,6 @@ export default function BetaInvitePopup() {
               </div>
             </div>
 
-            {/* Competitive Comparison */}
-            <div className="mb-8">
-              <h3 className="text-2xl font-bold text-gray-900 mb-4">🏆 Why Grant Hustle Wins:</h3>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead className="bg-gray-100">
-                    <tr>
-                      <th className="p-3 text-left font-semibold">Feature</th>
-                      <th className="p-3 text-center font-semibold bg-indigo-100">Grant Hustle</th>
-                      <th className="p-3 text-center">Instrumentl</th>
-                      <th className="p-3 text-center">GrantWatch</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y">
-                    <tr>
-                      <td className="p-3 font-medium">Price</td>
-                      <td className="p-3 text-center bg-indigo-50"><strong className="text-indigo-600">$27.99/mo</strong></td>
-                      <td className="p-3 text-center text-gray-600">$179/mo</td>
-                      <td className="p-3 text-center text-gray-600">$49-99/mo</td>
-                    </tr>
-                    <tr>
-                      <td className="p-3 font-medium">Fiscal Sponsor Matcher</td>
-                      <td className="p-3 text-center bg-indigo-50">
-                        <span className="text-2xl">✅</span>
-                        <br />
-                        <small>400+ sponsors</small>
-                      </td>
-                      <td className="p-3 text-center"><span className="text-2xl">❌</span></td>
-                      <td className="p-3 text-center"><span className="text-2xl">❌</span></td>
-                    </tr>
-                    <tr>
-                      <td className="p-3 font-medium">AI LOI Generator</td>
-                      <td className="p-3 text-center bg-indigo-50"><span className="text-2xl">✅</span></td>
-                      <td className="p-3 text-center"><span className="text-2xl">❌</span></td>
-                      <td className="p-3 text-center"><span className="text-2xl">❌</span></td>
-                    </tr>
-                    <tr>
-                      <td className="p-3 font-medium">Application Templates</td>
-                      <td className="p-3 text-center bg-indigo-50">
-                        <span className="text-2xl">✅</span>
-                        <br />
-                        <small>4 templates</small>
-                      </td>
-                      <td className="p-3 text-center"><span className="text-2xl">❌</span></td>
-                      <td className="p-3 text-center"><span className="text-2xl">❌</span></td>
-                    </tr>
-                    <tr>
-                      <td className="p-3 font-medium">FREE Tier</td>
-                      <td className="p-3 text-center bg-indigo-50">
-                        <span className="text-2xl">✅</span>
-                        <br />
-                        <small>5 grants/mo forever</small>
-                      </td>
-                      <td className="p-3 text-center text-gray-600">14-day trial only</td>
-                      <td className="p-3 text-center text-gray-600">30-day trial</td>
-                    </tr>
-                    <tr>
-                      <td className="p-3 font-medium">First Month Price</td>
-                      <td className="p-3 text-center bg-indigo-50">
-                        <strong className="text-green-600 text-lg">$9.99</strong>
-                        <br />
-                        <small className="text-gray-600">70% off • Save $18</small>
-                        <br />
-                        <small className="text-gray-500">Then $27.99/mo</small>
-                      </td>
-                      <td className="p-3 text-center text-gray-600">$179</td>
-                      <td className="p-3 text-center text-gray-600">$49-99</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            {/* Unique Selling Points */}
             <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-6 rounded-xl">
               <h3 className="text-2xl font-bold text-gray-900 mb-4">🎯 What Makes Us Different:</h3>
               <div className="grid md:grid-cols-2 gap-4">
@@ -221,7 +143,6 @@ export default function BetaInvitePopup() {
             </div>
           </div>
 
-          {/* CTA Section */}
           <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-2xl shadow-2xl p-8 text-center">
             <h2 className="text-3xl font-bold mb-4">Ready to Get Started?</h2>
             <p className="text-xl mb-2">First month just $9.99 (70% off)</p>
