@@ -107,7 +107,7 @@ export default function PricingPage() {
                 <span className="text-4xl font-bold text-white">$79.99</span>
                 <span className="text-slate-400">/4 months</span>
               </div>
-              <div className="text-sm text-emerald-400 mt-2">~$20/month • Use code FIRSTMONTH</div>
+              <div className="text-sm text-emerald-400 mt-2">~$20/month</div>
             </div>
             <ul className="space-y-3 mb-6">
               <li className="flex items-start gap-2 text-slate-300">
@@ -152,7 +152,7 @@ export default function PricingPage() {
                 <span className="text-4xl font-bold text-white">$149.99</span>
                 <span className="text-slate-400">/year</span>
               </div>
-              <div className="text-sm text-emerald-400 mt-2">~$12.50/month • Use code FIRSTMONTH</div>
+              <div className="text-sm text-emerald-400 mt-2">~$12.50/month</div>
             </div>
             <ul className="space-y-3 mb-6">
               <li className="flex items-start gap-2 text-slate-300">
