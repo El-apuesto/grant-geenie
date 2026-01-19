@@ -62,10 +62,10 @@ serve(async (req) => {
     }
 
     console.log("Fetching user profile for:", userId);
-    // Get user profile for email
+    // Get user profile for email - only fetch email, not first_name
     const { data: profile, error: profileError } = await supabase
       .from("profiles")
-      .select("email, first_name")
+      .select("email")
       .eq("id", userId)
       .single();
 
@@ -107,7 +107,7 @@ serve(async (req) => {
           "Authorization": `Bearer ${SERVICE_ROLE_KEY}`,
         },
         body: JSON.stringify({
-          firstName: profile.first_name || "there",
+          firstName: "there",
           email: profile.email,
           planName,
           dashboardUrl: `${frontendUrl}/dashboard`,
