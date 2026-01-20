@@ -2,12 +2,14 @@ import { Check } from 'lucide-react';
 import UpgradeButton from './UpgradeButton';
 
 export default function PricingPage() {
-  // Live Stripe Price IDs - THREE SEPARATE RECURRING SUBSCRIPTIONS
-  const STRIPE_PRICE_IDS = {
-    monthly: 'price_1Sa918G85r4wkmwW786cBMaH',     // $27.99/month recurring
-    season: 'price_1Sa9BPG85r4wkmwWd0BQE2vz',      // $79.99 / 4 months recurring
-    annual: 'price_1Sa9CtG85r4wkmwWNVjMLlVyk',     // $149.99 / year recurring
+  // Lemon Squeezy Variant IDs
+  const LEMON_SQUEEZY_VARIANT_IDS = {
+    monthly: '1237283',  // Monthly subscription
+    seasonal: '1233593', // Seasonal (4 months)
+    annual: '1233685',   // Annual subscription
   };
+
+  const LEMON_SQUEEZY_STORE_ID = '275711';
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4 md:p-8">
@@ -94,7 +96,7 @@ export default function PricingPage() {
                 <span>Priority support</span>
               </li>
             </ul>
-            <UpgradeButton priceId={STRIPE_PRICE_IDS.monthly}>
+            <UpgradeButton variantId={LEMON_SQUEEZY_VARIANT_IDS.monthly} storeId={LEMON_SQUEEZY_STORE_ID}>
               Subscribe Now
             </UpgradeButton>
           </div>
@@ -139,7 +141,7 @@ export default function PricingPage() {
                 <span>Priority support</span>
               </li>
             </ul>
-            <UpgradeButton priceId={STRIPE_PRICE_IDS.season}>
+            <UpgradeButton variantId={LEMON_SQUEEZY_VARIANT_IDS.seasonal} storeId={LEMON_SQUEEZY_STORE_ID}>
               Subscribe Now
             </UpgradeButton>
           </div>
@@ -184,7 +186,7 @@ export default function PricingPage() {
                 <span>Priority support</span>
               </li>
             </ul>
-            <UpgradeButton priceId={STRIPE_PRICE_IDS.annual}>
+            <UpgradeButton variantId={LEMON_SQUEEZY_VARIANT_IDS.annual} storeId={LEMON_SQUEEZY_STORE_ID}>
               Subscribe Now
             </UpgradeButton>
           </div>
