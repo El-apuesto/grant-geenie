@@ -28,10 +28,13 @@ export default function UpgradeButton({
     setLoading(true);
     try {
       // Get store slug from environment or use default
-      const storeSlug = import.meta.env.VITE_LEMON_SQUEEZY_STORE_SLUG || 'granthustle';
+      const storeSlug = import.meta.env.VITE_LEMON_SQUEEZY_STORE_SLUG || 'icap.io';
       
-      // Create Lemon Squeezy checkout URL
-      const checkoutUrl = `https://${storeSlug}.lemonsqueezy.com/checkout/buy/${variantId}?checkout[email]=${encodeURIComponent(user.email || '')}&checkout[custom][user_id]=${user.id}`;
+      // Get current domain for redirects
+      const baseUrl = window.location.origin;
+      
+      // Create Lemon Squeezy checkout URL with redirect URLs
+      const checkoutUrl = `https://${storeSlug}.lemonsqueezy.com/checkout/buy/${variantId}?checkout[email]=${encodeURIComponent(user.email || '')}&checkout[custom][user_id]=${user.id}&checkout[success_url]=${encodeURIComponent(baseUrl + '/billing/success')}&checkout[cancel_url]=${encodeURIComponent(baseUrl + '/billing/cancel')}`;
       
       // Redirect to Lemon Squeezy checkout
       window.location.href = checkoutUrl;
